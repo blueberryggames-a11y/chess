@@ -446,7 +446,9 @@ let moveTimeLeft = { white: MOVE_TIME, black: MOVE_TIME };
 let gameEnded = false;
 let heartbeatTimer = null;
 let codeExpireTimer = null;
-let lastHeartbeat = { white: Date.now(), black: Date.now() };
+let gameStartTime = null;
+const DISCONNECT_GRACE = 20000; // ms — must be silent this long before flagged
+const GAME_START_GRACE = 15000; // ms — don't check disconnect for first 15s
 
 function lobbyStatus(html) { document.getElementById('lobby-status').innerHTML = html; }
 
@@ -532,6 +534,7 @@ function startGame() {
   renderBoard();
   updateUI();
   lastSeq = 0;
+  gameStartTime = Date.now();
   pollTimer = setInterval(pollMoves, 900);
   startMoveTimer();
   startHeartbeat();
@@ -541,19 +544,27 @@ function startGame() {
 function startHeartbeat() {
   heartbeatTimer = setInterval(async () => {
     if (gameEnded) { clearInterval(heartbeatTimer); return; }
-    // Send our heartbeat
+    // Send our own heartbeat
     const field = myColor === 'white' ? 'heartbeat_white' : 'heartbeat_black';
     await fbPatch(`rooms/${roomId}`, { [field]: Date.now() });
-    // Check opponent's heartbeat
+
+    // Don't check for disconnect during the initial grace period
+    if (Date.now() - gameStartTime < GAME_START_GRACE) return;
+
+    // Fetch and check opponent's heartbeat
     const room = await fbGet(`rooms/${roomId}`);
-    if (!room) return;
+    if (!room || gameEnded) return;
+
     const oppField = myColor === 'white' ? 'heartbeat_black' : 'heartbeat_white';
     const oppHb = room[oppField];
-    if (oppHb && Date.now() - oppHb > 8000 && game.status === 'playing') {
-      // Opponent disconnected
+
+    // Only flag disconnect if:
+    // 1. Opponent has sent at least one heartbeat (was connected at some point)
+    // 2. Their last heartbeat is older than DISCONNECT_GRACE
+    if (oppHb && (Date.now() - oppHb) > DISCONNECT_GRACE && game.status === 'playing') {
       triggerGameEnd('disconnect', myColor);
     }
-  }, 3000);
+  }, 5000); // check every 5 seconds
 }
 
 // ── Move Timer ────────────────────────────────────────────────────────────────
