@@ -297,19 +297,26 @@ window.createRoom = createRoom2;
 
 // Map 6-digit code <-> full peer ID using a free key-value store (jsonbin.io public bin trick via a simple relay)
 // We'll use localStorage as a shared lookup via a tiny free KV: kvdb.io
-const KV_BASE = 'https://kvdb.io/8JmFAcLKwJ2L4tLWf5QKRB/';
+const FB_BASE = 'https://chest-188bb-default-rtdb.firebaseio.com/rooms';
 
 async function storeCode(code, peerId) {
   try {
-    await fetch(KV_BASE + 'chess_' + code, { method: 'PUT', body: peerId });
-  } catch(e) { console.warn('KV store failed', e); }
+    const r = await fetch(`${FB_BASE}/${code}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ peerId, ts: Date.now() })
+    });
+    const d = await r.json();
+    console.log('Stored room:', d);
+  } catch(e) { console.warn('Firebase store failed', e); }
 }
 
 async function lookupCode(code) {
   try {
-    const r = await fetch(KV_BASE + 'chess_' + code);
-    if (!r.ok) return null;
-    return await r.text();
+    const r = await fetch(`${FB_BASE}/${code}.json`);
+    const d = await r.json();
+    if (!d || !d.peerId) return null;
+    return d.peerId;
   } catch(e) { return null; }
 }
 
