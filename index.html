@@ -166,7 +166,7 @@
   </div>
   <div class="card">
     <h2>Join a Room</h2>
-    <input id="join-id" placeholder="Enter Room ID" maxlength="6" />
+    <input id="join-id" placeholder="Enter 6-digit Code" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" />
     <br>
     <button onclick="joinRoom()">Join Room</button>
   </div>
@@ -263,15 +263,24 @@ function joinRoom() {
 }
 
 // Simpler approach: use the full PeerJS ID as the room code
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 function createRoom2() {
   lobbyStatus('Loading networking…');
   loadScript(PEERJS_CDN, () => {
     peer = new Peer(undefined, { debug: 0 });
-    peer.on('open', id => {
-      roomId = id;
+    peer.on('open', async id => {
+      const code = genCode();
+      roomId = code;
       myColor = 'white';
+      await storeCode(code, id);
       document.getElementById('lobby-status').innerHTML =
-        `Room ID: <b style="color:#e2c97e">${id}</b><br><small>Share this full ID with your opponent.</small>`;
+        `Room Code: <b style="color:#e2c97e;font-size:1.3rem;letter-spacing:3px">${code}</b><br><small style="color:#aaa">Share this 6-digit code with your opponent.</small>`;
       peer.on('connection', c => {
         conn = c;
         setupConn();
@@ -286,14 +295,34 @@ function createRoom2() {
 // Override createRoom with the simpler version
 window.createRoom = createRoom2;
 
+// Map 6-digit code <-> full peer ID using a free key-value store (jsonbin.io public bin trick via a simple relay)
+// We'll use localStorage as a shared lookup via a tiny free KV: kvdb.io
+const KV_BASE = 'https://kvdb.io/8JmFAcLKwJ2L4tLWf5QKRB/';
+
+async function storeCode(code, peerId) {
+  try {
+    await fetch(KV_BASE + 'chess_' + code, { method: 'PUT', body: peerId });
+  } catch(e) { console.warn('KV store failed', e); }
+}
+
+async function lookupCode(code) {
+  try {
+    const r = await fetch(KV_BASE + 'chess_' + code);
+    if (!r.ok) return null;
+    return await r.text();
+  } catch(e) { return null; }
+}
+
 window.joinRoom = function() {
-  const raw = document.getElementById('join-id').value.trim();
-  if (!raw) { lobbyStatus('Enter a Room ID.'); return; }
-  lobbyStatus('Connecting…');
+  const raw = document.getElementById('join-id').value.trim().toUpperCase();
+  if (raw.length !== 6) { lobbyStatus('Enter the 6-digit Room Code.'); return; }
+  lobbyStatus('Looking up room…');
   loadScript(PEERJS_CDN, () => {
     peer = new Peer(undefined, { debug: 0 });
-    peer.on('open', () => {
-      conn = peer.connect(raw, { reliable: true });
+    peer.on('open', async () => {
+      const peerId = await lookupCode(raw);
+      if (!peerId) { lobbyStatus('Room not found. Check the code and try again.'); return; }
+      conn = peer.connect(peerId, { reliable: true });
       conn.on('open', () => {
         myColor = 'black';
         roomId = raw;
