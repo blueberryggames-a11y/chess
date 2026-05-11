@@ -324,22 +324,12 @@
 
 // ══════════════════════════════════════════════════════════════
 //  MUSIC PLAYER
-//  Files served from the same GitHub raw URL as the icons.
 // ══════════════════════════════════════════════════════════════
 const MUSIC_BASE = 'https://raw.githubusercontent.com/blueberryggames-a11y/chess/main/music/';
 const MUSIC_FILES = [
-  'passobem.mp3',
-  'dirtyshoes.mp3',
-  `tiktiki.mp3`,
-  `montagem.mp3`,
-  `Luana.mp3`,
-  `xonda.mp3`,
-  `tomada.mp3`,
-  `speedphonk.mp3`,
-  `sempero.mp3`,
-  `robbery.mp3`,
-  `heatwaves.mp3`,
-  `batido.mp3`,
+  'passobem.mp3','dirtyshoes.mp3','tiktiki.mp3','montagem.mp3','Luana.mp3',
+  'xonda.mp3','tomada.mp3','speedphonk.mp3','sempero.mp3','robbery.mp3',
+  'heatwaves.mp3','batido.mp3',
 ];
 
 let _musicQueue   = [];
@@ -372,7 +362,6 @@ function _showTrackInfo(name) {
 
 function _loadTrack(idx, autoplay) {
   if (!_musicQueue.length) return;
-  // Fully tear down old audio first
   if (_musicAudio) {
     _musicAudio.onended = null;
     _musicAudio.onerror = null;
@@ -393,9 +382,7 @@ function _loadTrack(idx, autoplay) {
   };
   _musicAudio = audio;
   _showTrackInfo(_trackName(file));
-  if (autoplay) {
-    audio.play().catch(() => {});
-  }
+  if (autoplay) audio.play().catch(() => {});
 }
 
 function _updatePlayBtn() {
@@ -406,10 +393,7 @@ function _updatePlayBtn() {
 }
 
 function musicToggle() {
-  if (!MUSIC_FILES.length) {
-    showToast('No tracks configured', 3000);
-    return;
-  }
+  if (!MUSIC_FILES.length) { showToast('No tracks configured', 3000); return; }
   if (!_musicQueue.length) {
     _musicQueue = _shuffleArr(MUSIC_FILES);
     _musicIdx = 0;
@@ -442,31 +426,39 @@ function musicSetVolume(val) {
 
 // ══════════════════════════════════════════════════════════════
 //  PIECE IMAGES
+//  FIX: Use jsDelivr CDN instead of raw.githubusercontent.com
+//  jsDelivr serves SVGs with correct image/svg+xml content-type
+//  and proper CORS headers, which Safari/iPad requires.
+//  crossOrigin attribute removed — not needed for <img> display.
 // ══════════════════════════════════════════════════════════════
-const PIECE_REPO = 'https://raw.githubusercontent.com/blueberryggames-a11y/chess/main/icons';
+const PIECE_REPO = 'https://cdn.jsdelivr.net/gh/blueberryggames-a11y/chess@main/icons';
 const PIECE_FILES = {
   K:'wK.svg',Q:'wQ.svg',R:'wR.svg',B:'wB.svg',N:'wN.svg',P:'wP.svg',
   k:'bK.svg',q:'bQ.svg',r:'bR.svg',b:'bB.svg',n:'bN.svg',p:'bP.svg'
 };
 
-const PIECE_CACHE = {};
 function preloadPieces() {
   Object.entries(PIECE_FILES).forEach(([key, file]) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = `${PIECE_REPO}/${file}?v=1`;
-    PIECE_CACHE[key] = img;
+    // No crossOrigin — not needed for <img> and causes Safari CORS issues with SVG
+    img.src = `${PIECE_REPO}/${file}`;
   });
 }
 preloadPieces();
 
-function pieceUrl(p){ return `${PIECE_REPO}/${PIECE_FILES[p]}?v=1`; }
-function makePieceEl(p){
-  const w=document.createElement('div'); w.className='piece-wrap';
-  const img=document.createElement('img'); img.className='piece-img';
-  img.crossOrigin='anonymous';
-  img.src=pieceUrl(p); img.alt=p; img.draggable=false;
-  w.appendChild(img); return w;
+function pieceUrl(p) { return `${PIECE_REPO}/${PIECE_FILES[p]}`; }
+
+function makePieceEl(p) {
+  const w = document.createElement('div');
+  w.className = 'piece-wrap';
+  const img = document.createElement('img');
+  img.className = 'piece-img';
+  // No crossOrigin attribute — Safari/iPad is strict about CORS + SVG
+  img.src = pieceUrl(p);
+  img.alt = p;
+  img.draggable = false;
+  w.appendChild(img);
+  return w;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -892,13 +884,13 @@ function triggerGameEnd(type,winner,reason){
 function handleRemoteEnd(winner,reason){
   if(gameEnded) return;
   let type='draw';
-  if(reason?.includes('resigned'))        type='resign';
+  if(reason?.includes('resigned'))          type='resign';
   else if(reason?.includes('disconnected')) type='disconnect';
-  else if(reason?.toLowerCase().includes('checkmate'))   type='checkmate';
-  else if(reason?.toLowerCase().includes('stalemate'))   type='stalemate';
-  else if(reason?.toLowerCase().includes('insufficient'))type='insufficient';
-  else if(reason?.toLowerCase().includes('fifty'))       type='fifty';
-  else if(reason?.toLowerCase().includes('repetition'))  type='repetition';
+  else if(reason?.toLowerCase().includes('checkmate'))    type='checkmate';
+  else if(reason?.toLowerCase().includes('stalemate'))    type='stalemate';
+  else if(reason?.toLowerCase().includes('insufficient')) type='insufficient';
+  else if(reason?.toLowerCase().includes('fifty'))        type='fifty';
+  else if(reason?.toLowerCase().includes('repetition'))   type='repetition';
   triggerGameEnd(type,winner,reason);
 }
 
@@ -1016,8 +1008,10 @@ function showPromoModal(){
   const box=document.getElementById('promo-choices'); box.innerHTML='';
   pieces.forEach(pc=>{
     const div=document.createElement('div'); div.className='promo-piece';
-    const img=document.createElement('img'); img.src=pieceUrl(pc); img.alt=pc;
-    img.crossOrigin='anonymous';
+    const img=document.createElement('img');
+    img.src=pieceUrl(pc);
+    img.alt=pc;
+    // No crossOrigin — not needed for display and causes Safari CORS issues
     div.appendChild(img);
     div.onclick=()=>{
       document.getElementById('promo-modal').classList.remove('show');
