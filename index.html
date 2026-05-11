@@ -172,8 +172,47 @@
   }
   #music-controls {
     display: flex;
+    align-items: center;
     gap: 6px;
     pointer-events: auto;
+  }
+  #music-vol-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0 10px;
+    height: 44px;
+    gap: 6px;
+  }
+  #music-vol-icon { font-size: 0.75rem; color: var(--muted); user-select: none; }
+  #music-vol {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 64px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    accent-color: var(--gold);
+  }
+  #music-vol::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+  }
+  #music-vol::-moz-range-thumb {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: none;
+    cursor: pointer;
   }
   .music-btn {
     width: 44px;
@@ -271,6 +310,10 @@
 <div id="music-player">
   <div id="music-info"></div>
   <div id="music-controls">
+    <div id="music-vol-wrap">
+      <span id="music-vol-icon">♪</span>
+      <input type="range" id="music-vol" min="0" max="1" step="0.01" value="0.5" oninput="musicSetVolume(this.value)" title="Volume">
+    </div>
     <button class="music-btn" id="music-btn-skip" onclick="musicSkip()" title="Next track" style="font-size:0.85rem;">&#9654;&#9654;</button>
     <button class="music-btn" id="music-btn-play" onclick="musicToggle()" title="Play / Pause">♪</button>
   </div>
@@ -281,19 +324,19 @@
 
 // ══════════════════════════════════════════════════════════════
 //  MUSIC PLAYER
-//  Drop .mp3 files into a "music/" folder next to this HTML file.
-//  List their filenames below — add or remove as needed.
+//  Files served from the same GitHub raw URL as the icons.
 // ══════════════════════════════════════════════════════════════
-const MUSIC_FOLDER = 'music/';
+const MUSIC_BASE = 'https://raw.githubusercontent.com/blueberryggames-a11y/chess/main/music/';
 const MUSIC_FILES = [
-     'passobem.mp3',
-     'dirtyshoes.mp3',
+  'passobem.mp3',
+  'dirtyshoes.mp3',
 ];
 
 let _musicQueue   = [];
 let _musicIdx     = 0;
 let _musicPlaying = false;
 let _musicAudio   = null;
+let _musicVol     = 0.5;
 let _musicInfoTimer = null;
 
 function _shuffleArr(arr) {
@@ -317,24 +360,32 @@ function _showTrackInfo(name) {
   _musicInfoTimer = setTimeout(() => el.classList.remove('visible'), 4000);
 }
 
-function _loadTrack(idx) {
+function _loadTrack(idx, autoplay) {
   if (!_musicQueue.length) return;
-  if (_musicAudio) { _musicAudio.pause(); _musicAudio.src = ''; }
+  // Fully tear down old audio first
+  if (_musicAudio) {
+    _musicAudio.onended = null;
+    _musicAudio.onerror = null;
+    _musicAudio.pause();
+    _musicAudio.src = '';
+    _musicAudio = null;
+  }
   const file = _musicQueue[idx];
-  _musicAudio = new Audio(MUSIC_FOLDER + file);
-  _musicAudio.volume = 0.45;
-  _musicAudio.addEventListener('ended', () => {
+  const audio = new Audio(MUSIC_BASE + file);
+  audio.volume = _musicVol;
+  audio.onended = () => {
     _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-    _loadTrack(_musicIdx);
-    if (_musicPlaying) _musicAudio.play().catch(() => {});
-  });
-  _musicAudio.addEventListener('error', () => {
-    // Skip broken track silently
+    _loadTrack(_musicIdx, true);
+  };
+  audio.onerror = () => {
     _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-    _loadTrack(_musicIdx);
-    if (_musicPlaying) _musicAudio.play().catch(() => {});
-  });
+    _loadTrack(_musicIdx, _musicPlaying);
+  };
+  _musicAudio = audio;
   _showTrackInfo(_trackName(file));
+  if (autoplay) {
+    audio.play().catch(() => {});
+  }
 }
 
 function _updatePlayBtn() {
@@ -346,20 +397,20 @@ function _updatePlayBtn() {
 
 function musicToggle() {
   if (!MUSIC_FILES.length) {
-    showToast('Add mp3s to the music/ folder', 3000);
+    showToast('No tracks configured', 3000);
     return;
   }
   if (!_musicQueue.length) {
     _musicQueue = _shuffleArr(MUSIC_FILES);
     _musicIdx = 0;
-    _loadTrack(_musicIdx);
+    _loadTrack(_musicIdx, false);
   }
   if (_musicPlaying) {
     _musicAudio && _musicAudio.pause();
     _musicPlaying = false;
   } else {
-    if (!_musicAudio) _loadTrack(_musicIdx);
-    _musicAudio && _musicAudio.play().catch(() => showToast('Cannot autoplay — click again', 2500));
+    if (!_musicAudio) _loadTrack(_musicIdx, false);
+    _musicAudio && _musicAudio.play().catch(() => showToast('Click again to play', 2500));
     _musicPlaying = true;
     _showTrackInfo(_trackName(_musicQueue[_musicIdx]));
   }
@@ -367,12 +418,16 @@ function musicToggle() {
 }
 
 function musicSkip() {
-  if (!MUSIC_FILES.length) { showToast('Add mp3s to the music/ folder', 3000); return; }
+  if (!MUSIC_FILES.length) return;
   if (!_musicQueue.length) { _musicQueue = _shuffleArr(MUSIC_FILES); }
   _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-  _loadTrack(_musicIdx);
-  if (_musicPlaying) _musicAudio && _musicAudio.play().catch(() => {});
+  _loadTrack(_musicIdx, _musicPlaying);
   _updatePlayBtn();
+}
+
+function musicSetVolume(val) {
+  _musicVol = parseFloat(val);
+  if (_musicAudio) _musicAudio.volume = _musicVol;
 }
 
 // ══════════════════════════════════════════════════════════════
