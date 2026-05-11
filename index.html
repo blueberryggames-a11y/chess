@@ -135,6 +135,74 @@
   #toast.show { transform:translateX(-50%) translateY(0); }
   .hidden { display:none !important; }
   ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+  /* ── MUSIC PLAYER ── */
+  #music-player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+  }
+  #music-info {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 13px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: var(--gold);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  #music-info.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #music-controls {
+    display: flex;
+    gap: 6px;
+    pointer-events: auto;
+  }
+  .music-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    padding: 0;
+    letter-spacing: 0;
+    font-family: serif;
+  }
+  .music-btn:hover {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+  }
+  .music-btn:active { transform: scale(0.95); }
+  .music-btn.playing {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(201,168,76,0.25);
+  }
+  #music-btn-play { font-size: 1.2rem; }
 </style>
 </head>
 <body>
@@ -199,8 +267,115 @@
 </div>
 <div id="toast"></div>
 
+<!-- ══ MUSIC PLAYER ══ -->
+<div id="music-player">
+  <div id="music-info"></div>
+  <div id="music-controls">
+    <button class="music-btn" id="music-btn-skip" onclick="musicSkip()" title="Next track" style="font-size:0.85rem;">&#9654;&#9654;</button>
+    <button class="music-btn" id="music-btn-play" onclick="musicToggle()" title="Play / Pause">♪</button>
+  </div>
+</div>
+
 <script>
 'use strict';
+
+// ══════════════════════════════════════════════════════════════
+//  MUSIC PLAYER
+//  Drop .mp3 files into a "music/" folder next to this HTML file.
+//  List their filenames below — add or remove as needed.
+// ══════════════════════════════════════════════════════════════
+const MUSIC_FOLDER = 'music/';
+const MUSIC_FILES = [
+  // Add your mp3 filenames here, e.g.:
+     'ATLXS-PASSO_BEM_SOLTO.mp3',
+  // 'track2.mp3',
+  // 'ambient_chess.mp3',
+];
+
+let _musicQueue   = [];
+let _musicIdx     = 0;
+let _musicPlaying = false;
+let _musicAudio   = null;
+let _musicInfoTimer = null;
+
+function _shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function _trackName(filename) {
+  return filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+}
+
+function _showTrackInfo(name) {
+  const el = document.getElementById('music-info');
+  el.textContent = name;
+  el.classList.add('visible');
+  clearTimeout(_musicInfoTimer);
+  _musicInfoTimer = setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+function _loadTrack(idx) {
+  if (!_musicQueue.length) return;
+  if (_musicAudio) { _musicAudio.pause(); _musicAudio.src = ''; }
+  const file = _musicQueue[idx];
+  _musicAudio = new Audio(MUSIC_FOLDER + file);
+  _musicAudio.volume = 0.45;
+  _musicAudio.addEventListener('ended', () => {
+    _musicIdx = (_musicIdx + 1) % _musicQueue.length;
+    _loadTrack(_musicIdx);
+    if (_musicPlaying) _musicAudio.play().catch(() => {});
+  });
+  _musicAudio.addEventListener('error', () => {
+    // Skip broken track silently
+    _musicIdx = (_musicIdx + 1) % _musicQueue.length;
+    _loadTrack(_musicIdx);
+    if (_musicPlaying) _musicAudio.play().catch(() => {});
+  });
+  _showTrackInfo(_trackName(file));
+}
+
+function _updatePlayBtn() {
+  const btn = document.getElementById('music-btn-play');
+  btn.classList.toggle('playing', _musicPlaying);
+  btn.title = _musicPlaying ? 'Pause' : 'Play music';
+  btn.innerHTML = _musicPlaying ? '&#9646;&#9646;' : '&#9834;';
+}
+
+function musicToggle() {
+  if (!MUSIC_FILES.length) {
+    showToast('Add mp3s to the music/ folder', 3000);
+    return;
+  }
+  if (!_musicQueue.length) {
+    _musicQueue = _shuffleArr(MUSIC_FILES);
+    _musicIdx = 0;
+    _loadTrack(_musicIdx);
+  }
+  if (_musicPlaying) {
+    _musicAudio && _musicAudio.pause();
+    _musicPlaying = false;
+  } else {
+    if (!_musicAudio) _loadTrack(_musicIdx);
+    _musicAudio && _musicAudio.play().catch(() => showToast('Cannot autoplay — click again', 2500));
+    _musicPlaying = true;
+    _showTrackInfo(_trackName(_musicQueue[_musicIdx]));
+  }
+  _updatePlayBtn();
+}
+
+function musicSkip() {
+  if (!MUSIC_FILES.length) { showToast('Add mp3s to the music/ folder', 3000); return; }
+  if (!_musicQueue.length) { _musicQueue = _shuffleArr(MUSIC_FILES); }
+  _musicIdx = (_musicIdx + 1) % _musicQueue.length;
+  _loadTrack(_musicIdx);
+  if (_musicPlaying) _musicAudio && _musicAudio.play().catch(() => {});
+  _updatePlayBtn();
+}
 
 // ══════════════════════════════════════════════════════════════
 //  PIECE IMAGES
@@ -211,7 +386,6 @@ const PIECE_FILES = {
   k:'bK.svg',q:'bQ.svg',r:'bR.svg',b:'bB.svg',n:'bN.svg',p:'bP.svg'
 };
 
-// Pre-load all piece images once at startup so both players have them cached
 const PIECE_CACHE = {};
 function preloadPieces() {
   Object.entries(PIECE_FILES).forEach(([key, file]) => {
@@ -233,9 +407,7 @@ function makePieceEl(p){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  CHESS ENGINE  — fully rules-compliant
-//  Internal colors: 'w' / 'b'
-//  Pieces: uppercase=white (K Q R B N P), lowercase=black (k q r b n p)
+//  CHESS ENGINE
 // ══════════════════════════════════════════════════════════════
 
 const FILES_STR = 'abcdefgh';
@@ -250,10 +422,8 @@ function findKing(board, color){
   return null;
 }
 
-// Is square [r,c] attacked by byColor?
 function isAttacked(board, r, c, byColor){
-  // Pawn attacks
-  const pDir = byColor==='w' ? 1 : -1; // attacker pawn stands pDir ranks away
+  const pDir = byColor==='w' ? 1 : -1;
   for(const dc of[-1,1]){
     const pr=r+pDir, pc=c+dc;
     if(inBounds(pr,pc)){
@@ -261,12 +431,10 @@ function isAttacked(board, r, c, byColor){
       if(p && colorOf(p)===byColor && p.toLowerCase()==='p') return true;
     }
   }
-  // Knight
   for(const [dr,dc] of[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
     const nr=r+dr,nc=c+dc;
     if(inBounds(nr,nc)){const p=board[nr][nc]; if(p&&colorOf(p)===byColor&&p.toLowerCase()==='n') return true;}
   }
-  // Diagonals — bishop / queen
   for(const [dr,dc] of[[-1,-1],[-1,1],[1,-1],[1,1]]){
     let nr=r+dr,nc=c+dc;
     while(inBounds(nr,nc)){
@@ -275,7 +443,6 @@ function isAttacked(board, r, c, byColor){
       nr+=dr; nc+=dc;
     }
   }
-  // Straights — rook / queen
   for(const [dr,dc] of[[-1,0],[1,0],[0,-1],[0,1]]){
     let nr=r+dr,nc=c+dc;
     while(inBounds(nr,nc)){
@@ -284,7 +451,6 @@ function isAttacked(board, r, c, byColor){
       nr+=dr; nc+=dc;
     }
   }
-  // King
   for(const [dr,dc] of[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
     const nr=r+dr,nc=c+dc;
     if(inBounds(nr,nc)){const p=board[nr][nc]; if(p&&colorOf(p)===byColor&&p.toLowerCase()==='k') return true;}
@@ -297,8 +463,6 @@ function kingInCheck(board, color){
   return isAttacked(board,kp[0],kp[1],opp(color));
 }
 
-// Apply a move — returns {board, castling, enPassant}
-// move = {fr,fc,tr,tc, promo?, castleSide?('K'|'Q'), isEnPassant?}
 function doMove(board, move, castling, enPassant){
   const nb=copyBoard(board), nc={...castling}; let nep=null;
   const p=nb[move.fr][move.fc];
@@ -309,36 +473,30 @@ function doMove(board, move, castling, enPassant){
     : p;
   nb[move.fr][move.fc]=null;
 
-  // En passant: remove captured pawn (it sits on same rank as moving pawn, file of destination)
   if(move.isEnPassant) nb[move.fr][move.tc]=null;
 
-  // Castling: move rook
   if(move.castleSide){
     if(move.castleSide==='K'){ nb[move.tr][5]=nb[move.tr][7]; nb[move.tr][7]=null; }
     else                      { nb[move.tr][3]=nb[move.tr][0]; nb[move.tr][0]=null; }
   }
 
-  // Update castling rights
   if(p==='K'){ nc.wK=false; nc.wKR=false; nc.wQR=false; }
   if(p==='k'){ nc.bK=false; nc.bKR=false; nc.bQR=false; }
   if(p==='R'&&move.fr===7&&move.fc===0) nc.wQR=false;
   if(p==='R'&&move.fr===7&&move.fc===7) nc.wKR=false;
   if(p==='r'&&move.fr===0&&move.fc===0) nc.bQR=false;
   if(p==='r'&&move.fr===0&&move.fc===7) nc.bKR=false;
-  // If a rook is captured on its home square, remove rights
   if(move.tr===7&&move.tc===0) nc.wQR=false;
   if(move.tr===7&&move.tc===7) nc.wKR=false;
   if(move.tr===0&&move.tc===0) nc.bQR=false;
   if(move.tr===0&&move.tc===7) nc.bKR=false;
 
-  // En passant target for next move (double pawn push)
   if(pt==='p' && Math.abs(move.tr-move.fr)===2)
     nep=[(move.fr+move.tr)/2, move.fc];
 
   return {board:nb, castling:nc, enPassant:nep};
 }
 
-// Pseudo-legal move generation (no self-check filtering)
 function pseudoMoves(board, color, castling, enPassant){
   const moves=[];
   for(let r=0;r<8;r++) for(let c=0;c<8;c++){
@@ -348,13 +506,11 @@ function pseudoMoves(board, color, castling, enPassant){
     if(pt==='p'){
       const dir=color==='w'?-1:1;
       const start=color==='w'?6:1, promoRank=color==='w'?0:7;
-      // Forward
       if(inBounds(r+dir,c)&&!board[r+dir][c]){
         if(r+dir===promoRank){ for(const pr of['q','r','b','n']) moves.push({fr:r,fc:c,tr:r+dir,tc:c,promo:pr}); }
         else { moves.push({fr:r,fc:c,tr:r+dir,tc:c}); }
         if(r===start&&!board[r+2*dir][c]) moves.push({fr:r,fc:c,tr:r+2*dir,tc:c});
       }
-      // Captures
       for(const dc of[-1,1]){
         const nr=r+dir,nc=c+dc; if(!inBounds(nr,nc)) continue;
         const tgt=board[nr][nc];
@@ -377,7 +533,6 @@ function pseudoMoves(board, color, castling, enPassant){
         const nr=r+dr,nc=c+dc;
         if(inBounds(nr,nc)&&colorOf(board[nr][nc])!==color) moves.push({fr:r,fc:c,tr:nr,tc:nc});
       }
-      // Castling
       if(color==='w'&&r===7&&c===4){
         if(castling.wK&&castling.wKR&&!board[7][5]&&!board[7][6]) moves.push({fr:7,fc:4,tr:7,tc:6,castleSide:'K'});
         if(castling.wK&&castling.wQR&&!board[7][3]&&!board[7][2]&&!board[7][1]) moves.push({fr:7,fc:4,tr:7,tc:2,castleSide:'Q'});
@@ -402,15 +557,12 @@ function pseudoMoves(board, color, castling, enPassant){
   return moves;
 }
 
-// Fully LEGAL moves (removes any move leaving own king in check; castling checks)
 function legalMoves(board, color, castling, enPassant){
   const pseudo=pseudoMoves(board,color,castling,enPassant);
   const legal=[];
   for(const m of pseudo){
-    // Castling extra legality:
     if(m.castleSide){
-      if(kingInCheck(board,color)) continue; // cannot castle while in check
-      // King must not pass through attacked square
+      if(kingInCheck(board,color)) continue;
       const passTc = m.castleSide==='K' ? 5 : 3;
       const mid=copyBoard(board);
       mid[m.fr][passTc]=mid[m.fr][m.fc]; mid[m.fr][m.fc]=null;
@@ -422,7 +574,6 @@ function legalMoves(board, color, castling, enPassant){
   return legal;
 }
 
-// Insufficient material check
 function insufficientMaterial(board){
   const wp=[],bp=[];
   for(let r=0;r<8;r++) for(let c=0;c<8;c++){
@@ -437,7 +588,6 @@ function insufficientMaterial(board){
   return false;
 }
 
-// Position key for 3-fold repetition
 function posKey(board,color,castling,enPassant){
   return board.map(r=>r.map(p=>p||'.').join('')).join('|')+'|'+color
     +'|'+(castling.wK?1:0)+(castling.wKR?1:0)+(castling.wQR?1:0)
@@ -445,8 +595,6 @@ function posKey(board,color,castling,enPassant){
     +'|'+(enPassant?enPassant.join(','):'-');
 }
 
-// Evaluate position status after a move
-// Returns: 'playing'|'check'|'checkmate'|'stalemate'|'insufficient'|'fifty'|'repetition'
 function evalStatus(board,color,castling,enPassant,halfClock,posHist){
   const moves=legalMoves(board,color,castling,enPassant);
   if(moves.length===0) return kingInCheck(board,color)?'checkmate':'stalemate';
@@ -460,7 +608,6 @@ function evalStatus(board,color,castling,enPassant,halfClock,posHist){
   return 'playing';
 }
 
-// Standard algebraic notation
 function toSAN(board, move, color, castling, enPassant){
   if(move.castleSide==='K') return 'O-O';
   if(move.castleSide==='Q') return 'O-O-O';
@@ -474,7 +621,6 @@ function toSAN(board, move, color, castling, enPassant){
     if(move.promo) n+='='+move.promo.toUpperCase();
     return n;
   }
-  // Piece moves — disambiguation
   const all=legalMoves(board,color,castling,enPassant);
   const amb=all.filter(m=>m!==move&&board[m.fr][m.fc]&&board[m.fr][m.fc].toLowerCase()===pt&&m.tr===move.tr&&m.tc===move.tc);
   let prefix=pt.toUpperCase();
@@ -748,7 +894,6 @@ function executeMove(move, local){
   const status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
   G.status=status;
 
-  // Append check/checkmate symbol
   if(status==='checkmate') G.log[G.log.length-1].note+='#';
   else if(status==='check') G.log[G.log.length-1].note+='+';
 
@@ -781,10 +926,8 @@ function handleSquareClick(r,c){
   const p=G.board[r][c];
 
   if(selected){
-    // Find a legal move to this square — prefer non-promo first (promo handled via modal)
     const mv=legalNow.find(m=>m.tr===r&&m.tc===c&&!m.promo) || legalNow.find(m=>m.tr===r&&m.tc===c);
     if(mv){
-      // If promotion move, show modal
       if(G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&(mv.tr===0||mv.tr===7)){
         pendingPromo={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc,isEnPassant:mv.isEnPassant};
         showPromoModal(); return;
@@ -829,7 +972,6 @@ function renderBoard(){
   const boardEl=document.getElementById('board'); boardEl.innerHTML='';
   const flip=myColor==='b';
   const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
-  // Build sets of legal target squares for highlighting
   const legalSet=new Set(legalNow.map(m=>m.tr*8+m.tc));
 
   for(let ri=0;ri<8;ri++) for(let ci=0;ci<8;ci++){
@@ -842,7 +984,6 @@ function renderBoard(){
       sq.classList.add('selected');
     }else if(legalSet.has(r*8+c)){
       sq.classList.add('moveable');
-      // Show ring if capturing (piece present or en passant)
       if(G.board[r][c]||legalNow.some(m=>m.tr===r&&m.tc===c&&m.isEnPassant)) sq.classList.add('occupied');
     }
 
