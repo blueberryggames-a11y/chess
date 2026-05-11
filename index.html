@@ -1092,6 +1092,19 @@ function updateUI(){
 // ══════════════════════════════════════════════════════════════
 initGame();
 checkAutoJoin();
+
+// Auto-play on first user interaction (browsers require this before playing audio)
+(function(){
+  function _startMusic(){
+    document.removeEventListener('click', _startMusic);
+    document.removeEventListener('keydown', _startMusic);
+    document.removeEventListener('touchstart', _startMusic);
+    if (!_musicPlaying) musicToggle();
+  }
+  document.addEventListener('click', _startMusic);
+  document.addEventListener('keydown', _startMusic);
+  document.addEventListener('touchstart', _startMusic);
+})();
 </script>
 </body>
 </html>
