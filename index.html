@@ -2330,6 +2330,7 @@ button.ghost{background:transparent}
 input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
 :root[data-theme="light"] #auth-screen{background:rgba(242,236,223,.97)}
 
+#spectate-board .coord-rank,#spectate-board .coord-file{z-index:2}
 </style>
 </head>
 
@@ -3699,13 +3700,17 @@ async function loadOrCreateProfile(user){
     }
   }
 
+  currentUser = user;
   userProfile = profile;
   myName = profile.name;
   MY_ID = user.uid;
   isGuest = false;
 }
 
+let _authDone=false;
 function finishAuth(){
+  if(_authDone) return;
+  _authDone=true;
   document.getElementById('auth-screen').classList.add('hidden');
   updatePlayerNameDisplay();
   updateAccountButton();
@@ -4214,11 +4219,13 @@ function escapeHtml(s){
   }[c]));
 }
 
+let _toastT=null;
 function showToast(msg,ms=2500){
   const el=document.getElementById('toast');
   el.textContent=msg;
   el.classList.add('show');
-  setTimeout(()=>{ el.classList.remove('show'); },ms);
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>{ el.classList.remove('show'); },ms);
 }
 
 function lobbyStatus(html){ document.getElementById('lobby-status').innerHTML=html; }
@@ -5902,8 +5909,34 @@ initGame();
   document.addEventListener('touchstart',_startMusic);
 })();
 
-/* ===== FIXES ===== */
-…
+
+/* ============================================================
+   SESSION RESTORE + MODAL FIXES
+============================================================ */
+
+let _restoring=false;
+if(auth){
+  auth.onAuthStateChanged(async user=>{
+    const screen=document.getElementById('auth-screen');
+    if(!user||_authDone||_restoring||!screen||screen.classList.contains('hidden')) return;
+    _restoring=true;
+    authStatus('Restoring your session…');
+    try{
+      await loadOrCreateProfile(user);
+      isGuest=false;
+      finishAuth();
+    }catch(e){
+      console.warn('Session restore failed:',e);
+      authStatus('Could not restore session. Sign in again or continue as guest.');
+    }
+    _restoring=false;
+  });
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeCreateType(); });
+document.getElementById('create-type-modal')?.addEventListener('click',e=>{
+  if(e.target.id==='create-type-modal') closeCreateType();
+});
 </script>
 
 </body>
