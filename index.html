@@ -22,6 +22,94 @@
     --dark-sq:#a07850;
   }
 
+  /* ============================================================
+     THEMES
+  ============================================================ */
+
+  :root[data-theme="light"] {
+    --gold:#b8860b;
+    --gold-light:#daa520;
+    --gold-dim:rgba(184,134,11,0.18);
+    --bg:#f2ecdf;
+    --surface:#ffffff;
+    --surface2:#e8dfc9;
+    --border:rgba(184,134,11,0.28);
+    --text:#2a2520;
+    --muted:#8a7e6c;
+    --white-sq:#f7efdc;
+    --dark-sq:#c2a070;
+  }
+
+  :root[data-theme="blue"] {
+    --gold:#5bc0de;
+    --gold-light:#8fd9ef;
+    --gold-dim:rgba(91,192,222,0.22);
+    --bg:#0a1420;
+    --surface:#0f1e2e;
+    --surface2:#152a40;
+    --border:rgba(91,192,222,0.22);
+    --text:#d8eaf5;
+    --muted:#6b8298;
+    --white-sq:#c8dce8;
+    --dark-sq:#5a7a94;
+  }
+
+  :root[data-theme="forest"] {
+    --gold:#7dbf5a;
+    --gold-light:#a3d97e;
+    --gold-dim:rgba(125,191,90,0.22);
+    --bg:#0a1409;
+    --surface:#101f0e;
+    --surface2:#182e15;
+    --border:rgba(125,191,90,0.22);
+    --text:#dcecd0;
+    --muted:#6a8060;
+    --white-sq:#dde8cc;
+    --dark-sq:#6f8c5a;
+  }
+
+  :root[data-theme="crimson"] {
+    --gold:#e05252;
+    --gold-light:#f08080;
+    --gold-dim:rgba(224,82,82,0.22);
+    --bg:#150808;
+    --surface:#1f0d0d;
+    --surface2:#2e1414;
+    --border:rgba(224,82,82,0.22);
+    --text:#f0d8d8;
+    --muted:#8a6a6a;
+    --white-sq:#ecd8cc;
+    --dark-sq:#9a6a5a;
+  }
+
+  :root[data-theme="purple"] {
+    --gold:#b57bff;
+    --gold-light:#d0a8ff;
+    --gold-dim:rgba(181,123,255,0.22);
+    --bg:#0d0814;
+    --surface:#160f20;
+    --surface2:#1e1530;
+    --border:rgba(181,123,255,0.22);
+    --text:#e8dcf5;
+    --muted:#7a6a8a;
+    --white-sq:#e0d0e8;
+    --dark-sq:#7a5a8c;
+  }
+
+  :root[data-theme="sepia"] {
+    --gold:#a67c52;
+    --gold-light:#c9a074;
+    --gold-dim:rgba(166,124,82,0.22);
+    --bg:#1a1410;
+    --surface:#231a13;
+    --surface2:#2e2318;
+    --border:rgba(166,124,82,0.22);
+    --text:#ede0c8;
+    --muted:#8a7a66;
+    --white-sq:#f0e2c8;
+    --dark-sq:#a07850;
+  }
+
   body {
     font-family:'Crimson Pro',Georgia,serif;
     background:var(--bg);
@@ -34,6 +122,7 @@
     padding:20px 12px 40px;
     gap:18px;
     background-image:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,0.06) 0%,transparent 60%);
+    transition:background .3s, color .3s;
   }
 
   h1 {
@@ -65,6 +154,7 @@
     text-align:center;
     position:relative;
     overflow:hidden;
+    transition:background .3s,border-color .3s;
   }
 
   .card::before {
@@ -199,6 +289,7 @@
     text-align:center;
     width:100%;
     font-style:italic;
+    transition:background .3s,border-color .3s;
   }
 
   #status-bar .accent {
@@ -232,6 +323,7 @@
     border-radius:10px;
     padding:8px 6px;
     text-align:center;
+    transition:background .3s,border-color .3s;
   }
 
   .info-box .label {
@@ -402,6 +494,7 @@
     font-size:.82rem;
     color:var(--muted);
     line-height:1.8;
+    transition:background .3s,border-color .3s;
   }
 
   #move-log .mv-num {
@@ -431,6 +524,7 @@
     overflow:hidden;
     display:flex;
     flex-direction:column;
+    transition:background .3s,border-color .3s;
   }
 
   .chat-panel-head {
@@ -480,6 +574,7 @@
     border-radius:8px;
     padding:7px 9px;
     word-break:break-word;
+    transition:background .3s;
   }
 
   .chat-name {
@@ -493,7 +588,6 @@
     line-height:1.4;
   }
 
-  /* red "Player 1"/"Player 2" pill shown next to a player's name */
   .chat-role-tag {
     display:inline-block;
     padding:1px 7px;
@@ -623,6 +717,16 @@
   }
 
   #result-box button { margin:4px; }
+
+  #result-countdown {
+    margin-top:16px;
+    font-family:'Cinzel',serif;
+    font-size:.68rem;
+    letter-spacing:1.5px;
+    color:var(--muted);
+    min-height:18px;
+    font-variant-numeric:tabular-nums;
+  }
 
   #toast {
     position:fixed;
@@ -903,6 +1007,17 @@
 
   #spectate-close { align-self:center; }
 
+  #spectate-countdown {
+    width:100%;
+    text-align:center;
+    font-family:'Cinzel',serif;
+    font-size:.68rem;
+    letter-spacing:1.5px;
+    color:var(--muted);
+    min-height:18px;
+    font-variant-numeric:tabular-nums;
+  }
+
   @media(max-width:760px) {
     .spectate-layout { grid-template-columns:1fr; }
     #spectate-chat { min-height:360px; }
@@ -910,7 +1025,7 @@
   }
 
   /* ============================================================
-     MUSIC PLAYER — glass / pill redesign
+     MUSIC PLAYER
   ============================================================ */
 
   #music-player {
@@ -951,7 +1066,6 @@
     transform:translateY(0);
   }
 
-  /* main glass panel */
   #music-panel {
     pointer-events:auto;
     background:linear-gradient(150deg,rgba(26,26,44,.82) 0%,rgba(19,19,31,.88) 100%);
@@ -1025,7 +1139,6 @@
     user-select:none;
   }
 
-  /* progress slider — custom track with a filled portion */
   #music-progress {
     -webkit-appearance:none;
     appearance:none;
@@ -1086,7 +1199,6 @@
     padding-top:1px;
   }
 
-  /* pill-shaped volume control */
   #music-vol-wrap {
     display:flex;
     align-items:center;
@@ -1153,7 +1265,6 @@
     box-shadow:0 0 6px rgba(201,168,76,.5);
   }
 
-  /* glass circular buttons */
   .music-btn {
     width:42px;
     height:42px;
@@ -1195,7 +1306,6 @@
       0 1px 0 rgba(255,255,255,.08) inset;
   }
 
-  /* primary play button — larger, filled gold, glowing */
   #music-btn-play {
     width:50px;
     height:50px;
@@ -1235,6 +1345,157 @@
 
   #music-btn-skip { font-size:.85rem; }
 
+  /* ============================================================
+     SETTINGS
+  ============================================================ */
+
+  #settings-btn {
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:400;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:linear-gradient(145deg,rgba(201,168,76,.16),rgba(201,168,76,.04));
+    border:1px solid rgba(201,168,76,.3);
+    color:var(--gold);
+    font-size:1.15rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    box-shadow:
+      0 2px 8px rgba(0,0,0,.28),
+      0 1px 0 rgba(255,255,255,.08) inset;
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1),
+               background .2s,
+               border-color .2s;
+  }
+
+  #settings-btn:hover {
+    background:linear-gradient(145deg,rgba(201,168,76,.36),rgba(201,168,76,.14));
+    border-color:var(--gold);
+    transform:translateY(-2px) rotate(45deg);
+  }
+
+  #settings-btn:active { transform:scale(.94); }
+
+  #settings-modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:850;
+    background:rgba(0,0,0,.8);
+    backdrop-filter:blur(5px);
+    -webkit-backdrop-filter:blur(5px);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  #settings-modal.show { display:flex; }
+
+  #settings-box {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:26px 26px 22px;
+    width:min(480px,100%);
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+    text-align:center;
+    position:relative;
+  }
+
+  #settings-box::before {
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-light),transparent);
+    opacity:.5;
+  }
+
+  #settings-box h3 {
+    font-family:'Cinzel',serif;
+    color:var(--gold);
+    letter-spacing:3px;
+    font-size:1rem;
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+
+  #settings-box .settings-sub {
+    color:var(--muted);
+    font-size:.82rem;
+    margin-bottom:20px;
+  }
+
+  .settings-label {
+    font-family:'Cinzel',serif;
+    font-size:.7rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:left;
+    margin:0 4px 10px;
+  }
+
+  #theme-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+    gap:10px;
+    margin-bottom:22px;
+  }
+
+  .theme-card {
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px;
+    cursor:pointer;
+    text-align:center;
+    transition:border-color .18s,transform .15s,background .18s,box-shadow .18s;
+  }
+
+  .theme-card:hover {
+    border-color:var(--gold);
+    transform:translateY(-2px);
+    background:rgba(255,255,255,.05);
+  }
+
+  .theme-card.active {
+    border-color:var(--gold);
+    background:var(--gold-dim);
+    box-shadow:0 0 14px rgba(201,168,76,.28);
+  }
+
+  .theme-preview {
+    width:100%;
+    height:54px;
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.5rem;
+    margin-bottom:7px;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.18);
+    position:relative;
+  }
+
+  .theme-name {
+    font-family:'Cinzel',serif;
+    font-size:.68rem;
+    letter-spacing:1px;
+    color:var(--text);
+    text-transform:uppercase;
+  }
+
   ::-webkit-scrollbar { width:5px; }
   ::-webkit-scrollbar-track { background:transparent; }
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
@@ -1246,6 +1507,8 @@
     #music-player { right:10px; bottom:10px; }
     #music-panel { width:290px; padding:12px 14px; }
     #music-vol-wrap { max-width:108px; }
+    #settings-btn { top:10px; right:10px; width:38px; height:38px; font-size:1rem; }
+    #theme-grid { grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; }
   }
 </style>
 </head>
@@ -1253,6 +1516,8 @@
 <body>
 
 <h1>♟ CHESS <span>/</span> ONLINE</h1>
+
+<button id="settings-btn" onclick="openSettings()" title="Settings" aria-label="Open settings">⚙</button>
 
 <div id="name-screen">
   <div id="name-card" class="card">
@@ -1334,6 +1599,16 @@
       <button onclick="createRoom('public')">Public Lobby</button>
       <button class="ghost" onclick="closeCreateType()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<div id="settings-modal">
+  <div id="settings-box">
+    <h3>Settings</h3>
+    <p class="settings-sub">Customize your board and interface.</p>
+    <div class="settings-label">Theme</div>
+    <div id="theme-grid"></div>
+    <button class="ghost" onclick="closeSettings()">Close</button>
   </div>
 </div>
 
@@ -1438,6 +1713,8 @@
 
       <div id="spectate-move-log" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-height:90px;overflow-y:auto;font-size:.82rem;color:var(--muted);line-height:1.8;"></div>
 
+      <div id="spectate-countdown"></div>
+
       <button id="spectate-close" class="ghost" onclick="leaveSpectator()">Back to Live Games</button>
     </div>
 
@@ -1471,6 +1748,7 @@
     <div id="result-reason">—</div>
     <button onclick="location.href=location.pathname">New Game</button>
     <button class="ghost" onclick="document.getElementById('result-overlay').classList.remove('show')">Close</button>
+    <div id="result-countdown"></div>
   </div>
 </div>
 
@@ -1542,11 +1820,6 @@ let _musicAudio=null;
 let _musicVol=.5;
 let _musicInfoTimer=null;
 
-/*
-  While the user is dragging the seek bar we briefly stop
-  syncing the slider position from the audio element.
-  This avoids the slider jumping back while the user is mid-drag.
-*/
 let _musicSeekingUntil=0;
 
 function _shuffleArr(arr){
@@ -1775,6 +2048,94 @@ function musicSetVolume(val){
   if(_musicAudio){
     _musicAudio.volume=_musicVol;
   }
+}
+
+
+/* ============================================================
+   THEMES
+============================================================ */
+
+const THEMES=[
+  {id:'dark',    name:'Dark',     bg:'#0d0d14', surface:'#1a1a2c', accent:'#c9a84c', light:'#ede0c8', dark:'#a07850'},
+  {id:'light',   name:'Light',    bg:'#f2ecdf', surface:'#e8dfc9', accent:'#b8860b', light:'#f7efdc', dark:'#c2a070'},
+  {id:'blue',    name:'Midnight', bg:'#0a1420', surface:'#152a40', accent:'#5bc0de', light:'#c8dce8', dark:'#5a7a94'},
+  {id:'forest',  name:'Forest',   bg:'#0a1409', surface:'#182e15', accent:'#7dbf5a', light:'#dde8cc', dark:'#6f8c5a'},
+  {id:'crimson', name:'Crimson',  bg:'#150808', surface:'#2e1414', accent:'#e05252', light:'#ecd8cc', dark:'#9a6a5a'},
+  {id:'purple',  name:'Amethyst', bg:'#0d0814', surface:'#1e1530', accent:'#b57bff', light:'#e0d0e8', dark:'#7a5a8c'},
+  {id:'sepia',   name:'Sepia',    bg:'#1a1410', surface:'#2e2318', accent:'#a67c52', light:'#f0e2c8', dark:'#a07850'}
+];
+
+function applyTheme(id){
+  document.documentElement.dataset.theme=id;
+
+  try{
+    localStorage.setItem('chess-theme',id);
+  }catch(e){}
+}
+
+function loadSavedTheme(){
+  let saved='dark';
+
+  try{
+    const s=localStorage.getItem('chess-theme');
+
+    if(s&&THEMES.some(t=>t.id===s)){
+      saved=s;
+    }
+  }catch(e){}
+
+  document.documentElement.dataset.theme=saved;
+}
+
+function buildThemeGrid(){
+  const grid=document.getElementById('theme-grid');
+
+  if(!grid) return;
+
+  grid.innerHTML='';
+
+  const current=document.documentElement.dataset.theme||'dark';
+
+  THEMES.forEach(t=>{
+    const card=document.createElement('div');
+
+    card.className='theme-card'+(t.id===current?' active':'');
+    card.dataset.themeId=t.id;
+
+    const preview=document.createElement('div');
+    preview.className='theme-preview';
+    preview.style.background=`linear-gradient(135deg,${t.light} 0% 50%,${t.dark} 50% 100%)`;
+
+    const piece=document.createElement('span');
+    piece.textContent='♞';
+    piece.style.color=t.accent;
+    piece.style.filter='drop-shadow(0 1px 3px rgba(0,0,0,.55))';
+
+    preview.appendChild(piece);
+
+    const nameEl=document.createElement('div');
+    nameEl.className='theme-name';
+    nameEl.textContent=t.name;
+
+    card.append(preview,nameEl);
+
+    card.onclick=()=>{
+      applyTheme(t.id);
+      grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+    };
+
+    grid.appendChild(card);
+  });
+}
+
+function openSettings(){
+  buildThemeGrid();
+  document.getElementById('settings-modal').classList.add('show');
+}
+
+function closeSettings(){
+  document.getElementById('settings-modal').classList.remove('show');
 }
 
 
@@ -2618,6 +2979,7 @@ const DISCONNECT_GRACE=20000;
 const GAME_START_GRACE=15000;
 const USERNAME_GRACE=15000;
 const PUBLIC_POLL=2500;
+const END_RETURN_SECONDS=30;
 
 const MY_ID=Math.random().toString(36).slice(2,10);
 
@@ -2659,6 +3021,10 @@ let gameStartTime=null;
 let leaveProcessed=false;
 let timeoutProcessed=false;
 let drawOfferPending=false;
+
+let gameEndReturnTimer=null;
+let spectatorEndReturnTimer=null;
+let spectatorEndReturnFired=false;
 
 
 /* ============================================================
@@ -2736,12 +3102,6 @@ async function fbDelete(path,keepalive=false){
 }
 
 
-/*
-  Firebase REST conditional requests.
-
-  This prevents two players from successfully claiming
-  the same empty black-player slot at exactly the same time.
-*/
 async function fbClaimBlack(code){
 
   try{
@@ -2883,10 +3243,63 @@ function nameStatus(html){
 
 
 /* ============================================================
-   CHAT (shared by players + spectators)
-   ------------------------------------------------------------
-   Player messages get a red "Player 1" / "Player 2" tag.
-   Spectator messages just show their name.
+   END-OF-GAME AUTO RETURN
+============================================================ */
+
+function startGameEndReturnCountdown(){
+  if(gameEndReturnTimer) return;
+
+  const cdEl=document.getElementById('result-countdown');
+  let secs=END_RETURN_SECONDS;
+
+  function tick(){
+    if(cdEl){
+      cdEl.textContent=`Returning to lobby in ${secs}s…`;
+    }
+
+    if(secs<=0){
+      clearInterval(gameEndReturnTimer);
+      gameEndReturnTimer=null;
+      location.href=location.pathname;
+      return;
+    }
+
+    secs--;
+  }
+
+  tick();
+  gameEndReturnTimer=setInterval(tick,1000);
+}
+
+function startSpectatorEndReturnCountdown(){
+  if(spectatorEndReturnTimer||spectatorEndReturnFired) return;
+
+  const cdEl=document.getElementById('spectate-countdown');
+  let secs=END_RETURN_SECONDS;
+
+  function tick(){
+    if(cdEl){
+      cdEl.textContent=`Returning to lobby in ${secs}s…`;
+    }
+
+    if(secs<=0){
+      clearInterval(spectatorEndReturnTimer);
+      spectatorEndReturnTimer=null;
+      spectatorEndReturnFired=true;
+      location.href=location.pathname;
+      return;
+    }
+
+    secs--;
+  }
+
+  tick();
+  spectatorEndReturnTimer=setInterval(tick,1000);
+}
+
+
+/* ============================================================
+   CHAT
 ============================================================ */
 
 const _chatSignatures={ game:null, spectate:null };
@@ -2945,7 +3358,6 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
     const row=document.createElement('div');
     row.className='chat-msg';
 
-    /* work out whether the sender is one of the two players */
     let roleTag='';
 
     if(roomContext){
@@ -3823,6 +4235,11 @@ function startGame(){
   timeoutProcessed=false;
   drawOfferPending=false;
 
+  if(gameEndReturnTimer){
+    clearInterval(gameEndReturnTimer);
+    gameEndReturnTimer=null;
+  }
+
   if(publicPollTimer){
     clearInterval(publicPollTimer);
     publicPollTimer=null;
@@ -4139,7 +4556,6 @@ async function pollMoves(){
       return;
     }
 
-    /* keep the in-game chat in sync, and tag player messages */
     renderChatMessages(
       'game-messages',
       room.chat,
@@ -4236,10 +4652,6 @@ async function pollMoves(){
   }catch(e){}
 }
 
-/*
-  Only the data a spectator actually needs is published.
-  The board is sent as 8 strings so Firebase cannot mangle it.
-*/
 function publicState(){
 
   return {
@@ -4490,6 +4902,17 @@ async function openSpectator(code){
   spectateRoomStatus=room.status||'playing';
   _chatSignatures.spectate=null;
 
+  spectatorEndReturnFired=false;
+
+  if(spectatorEndReturnTimer){
+    clearInterval(spectatorEndReturnTimer);
+    spectatorEndReturnTimer=null;
+  }
+
+  const cdEl=document.getElementById('spectate-countdown');
+
+  if(cdEl) cdEl.textContent='';
+
   if(publicPollTimer){
     clearInterval(publicPollTimer);
     publicPollTimer=null;
@@ -4621,8 +5044,6 @@ function renderSpectatorBoard(){
 
   if(!st||!st.board) return;
 
-  /* highlight the king that is in check, mirroring the
-     player board so spectators see the same red square */
   const inCheckStatus=
     st.status==='check'||
     st.status==='checkmate';
@@ -4881,6 +5302,8 @@ async function pollSpectator(){
       (room.event.reason
         ?`<br><small style="color:var(--muted)">${escapeHtml(room.event.reason)}</small>`
         :'');
+
+    startSpectatorEndReturnCountdown();
   }
 }
 
@@ -4888,6 +5311,11 @@ function leaveSpectator(){
 
   clearInterval(spectatorPollTimer);
   clearInterval(spectatorTimerInterval);
+
+  if(spectatorEndReturnTimer){
+    clearInterval(spectatorEndReturnTimer);
+    spectatorEndReturnTimer=null;
+  }
 
   spectatorPollTimer=null;
   spectatorTimerInterval=null;
@@ -5123,6 +5551,8 @@ function triggerGameEnd(
   renderBoard();
   updateUI();
   renderTimers();
+
+  startGameEndReturnCountdown();
 
   setTimeout(
     loadLiveGames,
@@ -6047,12 +6477,9 @@ window.addEventListener(
     clearInterval(heartbeatTimer);
     clearInterval(codeExpireTimer);
     clearInterval(usernameHeartbeatTimer);
+    clearInterval(gameEndReturnTimer);
+    clearInterval(spectatorEndReturnTimer);
 
-    /*
-      Critical cleanup:
-      waiting public/private rooms are deleted immediately.
-      active games publish a loss for the player who leaves.
-    */
     emergencyLeave();
 
     releaseUsername();
@@ -6105,10 +6532,36 @@ document.getElementById(
   }
 );
 
+document.addEventListener(
+  'keydown',
+  e=>{
+    if(e.key==='Escape'){
+      const sm=document.getElementById('settings-modal');
+
+      if(sm&&sm.classList.contains('show')){
+        closeSettings();
+      }
+    }
+  }
+);
+
+document.getElementById(
+  'settings-modal'
+)?.addEventListener(
+  'click',
+  e=>{
+    if(e.target.id==='settings-modal'){
+      closeSettings();
+    }
+  }
+);
+
 
 /* ============================================================
    INITIALIZATION
 ============================================================ */
+
+loadSavedTheme();
 
 initGame();
 
