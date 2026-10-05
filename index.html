@@ -23,7 +23,7 @@
   }
 
   /* ============================================================
-     THEMES
+     COLOR THEMES
   ============================================================ */
 
   :root[data-theme="light"] {
@@ -1402,7 +1402,7 @@
     border:1px solid var(--border);
     border-radius:16px;
     padding:26px 26px 22px;
-    width:min(480px,100%);
+    width:min(520px,100%);
     max-height:calc(100vh - 40px);
     overflow-y:auto;
     text-align:center;
@@ -1445,11 +1445,19 @@
     margin:0 4px 10px;
   }
 
-  #theme-grid {
+  .settings-label:not(:first-of-type) {
+    margin-top:22px;
+  }
+
+  #theme-grid,
+  #ui-grid {
     display:grid;
     grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
     gap:10px;
-    margin-bottom:22px;
+  }
+
+  #ui-grid {
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
   }
 
   .theme-card {
@@ -1488,12 +1496,184 @@
     position:relative;
   }
 
+  .ui-preview {
+    width:100%;
+    height:54px;
+    margin-bottom:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    position:relative;
+    padding:6px;
+  }
+
+  .ui-preview-inner {
+    width:80%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Cinzel',serif;
+    font-size:.6rem;
+    letter-spacing:1px;
+    color:var(--text);
+  }
+
   .theme-name {
     font-family:'Cinzel',serif;
     font-size:.68rem;
     letter-spacing:1px;
     color:var(--text);
     text-transform:uppercase;
+  }
+
+  /* ============================================================
+     INTERFACE STYLE OVERRIDES
+     applied via [data-ui="..."] on <html>
+  ============================================================ */
+
+  /* ---------- ROUNDED ---------- */
+  :root[data-ui="rounded"] .card { border-radius:26px; }
+  :root[data-ui="rounded"] .chat-panel { border-radius:22px; }
+  :root[data-ui="rounded"] .info-box { border-radius:18px; }
+  :root[data-ui="rounded"] .timer-box { border-radius:18px; }
+  :root[data-ui="rounded"] #status-bar { border-radius:18px; }
+  :root[data-ui="rounded"] #move-log { border-radius:18px; }
+  :root[data-ui="rounded"] .live-game,
+  :root[data-ui="rounded"] .public-room { border-radius:18px; }
+  :root[data-ui="rounded"] button { border-radius:14px; }
+  :root[data-ui="rounded"] input { border-radius:14px; }
+  :root[data-ui="rounded"] #board-wrap { border-radius:16px; }
+  :root[data-ui="rounded"] #spectate-board-wrap { border-radius:16px; }
+  :root[data-ui="rounded"] .chat-msg { border-radius:14px; }
+  :root[data-ui="rounded"] #result-box { border-radius:30px; }
+  :root[data-ui="rounded"] #promo-box { border-radius:24px; }
+  :root[data-ui="rounded"] #settings-box { border-radius:24px; }
+  :root[data-ui="rounded"] .chat-role-tag { border-radius:14px; }
+  :root[data-ui="rounded"] #music-panel { border-radius:30px; }
+  :root[data-ui="rounded"] .music-btn { border-radius:50%; }
+  :root[data-ui="rounded"] #music-vol-wrap { border-radius:24px; }
+  :root[data-ui="rounded"] #settings-btn { border-radius:50%; }
+  :root[data-ui="rounded"] #name-card { border-radius:26px; }
+  :root[data-ui="rounded"] #create-type-box { border-radius:26px; }
+
+  /* ---------- SHARP ---------- */
+  :root[data-ui="sharp"] .card,
+  :root[data-ui="sharp"] .chat-panel,
+  :root[data-ui="sharp"] .info-box,
+  :root[data-ui="sharp"] .timer-box,
+  :root[data-ui="sharp"] #status-bar,
+  :root[data-ui="sharp"] #move-log,
+  :root[data-ui="sharp"] .live-game,
+  :root[data-ui="sharp"] .public-room,
+  :root[data-ui="sharp"] button,
+  :root[data-ui="sharp"] input,
+  :root[data-ui="sharp"] #board-wrap,
+  :root[data-ui="sharp"] #spectate-board-wrap,
+  :root[data-ui="sharp"] .chat-msg,
+  :root[data-ui="sharp"] #result-box,
+  :root[data-ui="sharp"] #promo-box,
+  :root[data-ui="sharp"] #settings-box,
+  :root[data-ui="sharp"] .chat-role-tag,
+  :root[data-ui="sharp"] #music-panel,
+  :root[data-ui="sharp"] .music-btn,
+  :root[data-ui="sharp"] #music-vol-wrap,
+  :root[data-ui="sharp"] #settings-btn,
+  :root[data-ui="sharp"] #name-card,
+  :root[data-ui="sharp"] #create-type-box,
+  :root[data-ui="sharp"] .promo-piece {
+    border-radius:0;
+  }
+  :root[data-ui="sharp"] #settings-btn:hover { transform:translateY(-2px); }
+
+  /* ---------- MINIMAL ---------- */
+  :root[data-ui="minimal"] .card::before { display:none; }
+  :root[data-ui="minimal"] .card,
+  :root[data-ui="minimal"] .chat-panel,
+  :root[data-ui="minimal"] .info-box,
+  :root[data-ui="minimal"] .timer-box,
+  :root[data-ui="minimal"] #status-bar,
+  :root[data-ui="minimal"] #move-log,
+  :root[data-ui="minimal"] .live-game,
+  :root[data-ui="minimal"] .public-room {
+    box-shadow:none;
+  }
+  :root[data-ui="minimal"] #board-wrap,
+  :root[data-ui="minimal"] #spectate-board-wrap {
+    box-shadow:none;
+    border-width:1px;
+  }
+  :root[data-ui="minimal"] button:hover { transform:none; background:var(--gold-light); }
+  :root[data-ui="minimal"] .top-tab.active { background:var(--gold); }
+  :root[data-ui="minimal"] #music-panel {
+    background:var(--surface);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+    box-shadow:0 0 0 1px var(--border);
+  }
+  :root[data-ui="minimal"] .music-btn {
+    box-shadow:none;
+    background:transparent;
+    border-color:var(--border);
+  }
+  :root[data-ui="minimal"] .music-btn:hover {
+    transform:none;
+    box-shadow:none;
+    background:var(--gold-dim);
+  }
+  :root[data-ui="minimal"] #music-btn-play {
+    background:var(--gold);
+    color:var(--bg);
+    border-color:var(--gold);
+  }
+  :root[data-ui="minimal"] #music-btn-play.playing { animation:none; }
+  :root[data-ui="minimal"] #settings-btn {
+    box-shadow:none;
+    background:var(--surface);
+  }
+  :root[data-ui="minimal"] #settings-btn:hover {
+    transform:none;
+    background:var(--gold-dim);
+  }
+  :root[data-ui="minimal"] #result-box::before { display:none; }
+  :root[data-ui="minimal"] #settings-box::before { display:none; }
+  :root[data-ui="minimal"] .card,
+  :root[data-ui="minimal"] .chat-panel { border-width:1px; }
+
+  /* ---------- GLASS ---------- */
+  :root[data-ui="glass"] .card,
+  :root[data-ui="glass"] .chat-panel,
+  :root[data-ui="glass"] .info-box,
+  :root[data-ui="glass"] .timer-box,
+  :root[data-ui="glass"] #status-bar,
+  :root[data-ui="glass"] #move-log,
+  :root[data-ui="glass"] .live-game,
+  :root[data-ui="glass"] .public-room,
+  :root[data-ui="glass"] #result-box,
+  :root[data-ui="glass"] #promo-box,
+  :root[data-ui="glass"] #settings-box,
+  :root[data-ui="glass"] #name-card,
+  :root[data-ui="glass"] #create-type-box,
+  :root[data-ui="glass"] .top-tab {
+    background:color-mix(in srgb, var(--surface) 65%, transparent);
+    backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+    border-color:color-mix(in srgb, var(--border) 160%, transparent);
+  }
+  :root[data-ui="glass"] .chat-msg {
+    background:color-mix(in srgb, var(--surface2) 65%, transparent);
+    border-color:color-mix(in srgb, var(--border) 140%, transparent);
+  }
+  :root[data-ui="glass"] #board-wrap,
+  :root[data-ui="glass"] #spectate-board-wrap {
+    box-shadow:0 12px 60px rgba(0,0,0,.55),
+               0 0 0 1px color-mix(in srgb, var(--gold) 20%, transparent);
+  }
+  :root[data-ui="glass"] button.ghost {
+    background:color-mix(in srgb, var(--surface) 50%, transparent);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
   }
 
   ::-webkit-scrollbar { width:5px; }
@@ -1509,6 +1689,7 @@
     #music-vol-wrap { max-width:108px; }
     #settings-btn { top:10px; right:10px; width:38px; height:38px; font-size:1rem; }
     #theme-grid { grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; }
+    #ui-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
   }
 </style>
 </head>
@@ -1606,8 +1787,14 @@
   <div id="settings-box">
     <h3>Settings</h3>
     <p class="settings-sub">Customize your board and interface.</p>
-    <div class="settings-label">Theme</div>
+
+    <div class="settings-label">Color Theme</div>
     <div id="theme-grid"></div>
+
+    <div class="settings-label">Interface Style</div>
+    <div id="ui-grid"></div>
+
+    <br>
     <button class="ghost" onclick="closeSettings()">Close</button>
   </div>
 </div>
@@ -1746,7 +1933,7 @@
     <span id="result-icon">🏆</span>
     <div id="result-title">Game Over</div>
     <div id="result-reason">—</div>
-    <button onclick="location.href=location.pathname">New Game</button>
+    <button onclick="newGameButton()">New Game</button>
     <button class="ghost" onclick="document.getElementById('result-overlay').classList.remove('show')">Close</button>
     <div id="result-countdown"></div>
   </div>
@@ -2052,7 +2239,7 @@ function musicSetVolume(val){
 
 
 /* ============================================================
-   THEMES
+   THEMES & INTERFACE STYLES
 ============================================================ */
 
 const THEMES=[
@@ -2063,6 +2250,34 @@ const THEMES=[
   {id:'crimson', name:'Crimson',  bg:'#150808', surface:'#2e1414', accent:'#e05252', light:'#ecd8cc', dark:'#9a6a5a'},
   {id:'purple',  name:'Amethyst', bg:'#0d0814', surface:'#1e1530', accent:'#b57bff', light:'#e0d0e8', dark:'#7a5a8c'},
   {id:'sepia',   name:'Sepia',    bg:'#1a1410', surface:'#2e2318', accent:'#a67c52', light:'#f0e2c8', dark:'#a07850'}
+];
+
+const UI_STYLES=[
+  {
+    id:'classic',
+    name:'Classic',
+    preview:{radius:'6px', shadow:'0 2px 8px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
+  },
+  {
+    id:'rounded',
+    name:'Rounded',
+    preview:{radius:'18px', shadow:'0 4px 12px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
+  },
+  {
+    id:'sharp',
+    name:'Sharp',
+    preview:{radius:'0px', shadow:'0 2px 4px rgba(0,0,0,.4)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
+  },
+  {
+    id:'minimal',
+    name:'Minimal',
+    preview:{radius:'4px', shadow:'none', border:'1px solid var(--border)', bg:'transparent', backdrop:'none'}
+  },
+  {
+    id:'glass',
+    name:'Glass',
+    preview:{radius:'10px', shadow:'0 4px 14px rgba(0,0,0,.35)', border:'1px solid rgba(255,255,255,.16)', bg:'rgba(255,255,255,.08)', backdrop:'blur(8px)'}
+  }
 ];
 
 function applyTheme(id){
@@ -2085,6 +2300,28 @@ function loadSavedTheme(){
   }catch(e){}
 
   document.documentElement.dataset.theme=saved;
+}
+
+function applyUiStyle(id){
+  document.documentElement.dataset.ui=id;
+
+  try{
+    localStorage.setItem('chess-ui-style',id);
+  }catch(e){}
+}
+
+function loadSavedUiStyle(){
+  let saved='classic';
+
+  try{
+    const s=localStorage.getItem('chess-ui-style');
+
+    if(s&&UI_STYLES.some(t=>t.id===s)){
+      saved=s;
+    }
+  }catch(e){}
+
+  document.documentElement.dataset.ui=saved;
 }
 
 function buildThemeGrid(){
@@ -2129,8 +2366,61 @@ function buildThemeGrid(){
   });
 }
 
+function buildUiGrid(){
+  const grid=document.getElementById('ui-grid');
+
+  if(!grid) return;
+
+  grid.innerHTML='';
+
+  const current=document.documentElement.dataset.ui||'classic';
+
+  UI_STYLES.forEach(t=>{
+    const card=document.createElement('div');
+
+    card.className='theme-card'+(t.id===current?' active':'');
+    card.dataset.uiId=t.id;
+
+    const preview=document.createElement('div');
+    preview.className='ui-preview';
+
+    const inner=document.createElement('div');
+    inner.className='ui-preview-inner';
+    inner.textContent='Aa';
+
+    const p=t.preview;
+
+    inner.style.borderRadius=p.radius;
+    inner.style.boxShadow=p.shadow;
+    inner.style.border=p.border;
+    inner.style.background=p.bg;
+
+    if(p.backdrop!=='none'){
+      inner.style.backdropFilter=p.backdrop;
+      inner.style.webkitBackdropFilter=p.backdrop;
+    }
+
+    preview.appendChild(inner);
+
+    const nameEl=document.createElement('div');
+    nameEl.className='theme-name';
+    nameEl.textContent=t.name;
+
+    card.append(preview,nameEl);
+
+    card.onclick=()=>{
+      applyUiStyle(t.id);
+      grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+    };
+
+    grid.appendChild(card);
+  });
+}
+
 function openSettings(){
   buildThemeGrid();
+  buildUiGrid();
   document.getElementById('settings-modal').classList.add('show');
 }
 
@@ -3025,6 +3315,7 @@ let drawOfferPending=false;
 let gameEndReturnTimer=null;
 let spectatorEndReturnTimer=null;
 let spectatorEndReturnFired=false;
+let roomCleanedUp=false;
 
 
 /* ============================================================
@@ -3243,8 +3534,32 @@ function nameStatus(html){
 
 
 /* ============================================================
-   END-OF-GAME AUTO RETURN
+   END-OF-GAME AUTO RETURN + CLEANUP
 ============================================================ */
+
+async function cleanupRoomAndNavigate(){
+  // Only players delete the room - spectators just leave.
+  // Deleting twice is fine (idempotent), so both players can
+  // safely try without racing.
+  if(roomId && !isSpectator && !roomCleanedUp){
+    roomCleanedUp=true;
+
+    try{
+      await fbDelete(`rooms/${roomId}`);
+    }catch(e){}
+  }
+
+  location.href=location.pathname;
+}
+
+function newGameButton(){
+  if(gameEndReturnTimer){
+    clearInterval(gameEndReturnTimer);
+    gameEndReturnTimer=null;
+  }
+
+  cleanupRoomAndNavigate();
+}
 
 function startGameEndReturnCountdown(){
   if(gameEndReturnTimer) return;
@@ -3260,7 +3575,7 @@ function startGameEndReturnCountdown(){
     if(secs<=0){
       clearInterval(gameEndReturnTimer);
       gameEndReturnTimer=null;
-      location.href=location.pathname;
+      cleanupRoomAndNavigate();
       return;
     }
 
@@ -4234,6 +4549,7 @@ function startGame(){
   leaveProcessed=false;
   timeoutProcessed=false;
   drawOfferPending=false;
+  roomCleanedUp=false;
 
   if(gameEndReturnTimer){
     clearInterval(gameEndReturnTimer);
@@ -4528,17 +4844,16 @@ function renderTimers(){
 
 
 /* ============================================================
-   MOVE POLLING
+   MOVE + CHAT POLLING
+   ------------------------------------------------------------
+   After the game ends we keep this interval running so the
+   chat stays synced between players and spectators.
+   Move processing is skipped once gameEnded is true.
 ============================================================ */
 
 async function pollMoves(){
 
-  if(
-    gameEnded||
-    !roomId
-  ){
-    return;
-  }
+  if(!roomId) return;
 
   try{
 
@@ -4547,15 +4862,19 @@ async function pollMoves(){
     );
 
     if(!room){
-
-      handleRemoteEnd(
-        opp(myColor),
-        'Opponent disconnected'
-      );
+      // Room was deleted (e.g. by the other player's cleanup).
+      // Just stop silently if the game already ended.
+      if(!gameEnded){
+        handleRemoteEnd(
+          opp(myColor),
+          'Opponent disconnected'
+        );
+      }
 
       return;
     }
 
+    /* always keep chat in sync, even after game end */
     renderChatMessages(
       'game-messages',
       room.chat,
@@ -4568,10 +4887,12 @@ async function pollMoves(){
       }
     );
 
+    /* skip move processing if the game is already over locally */
+    if(gameEnded) return;
+
     if(
       room.event&&
-      room.event.type==='end'&&
-      !gameEnded
+      room.event.type==='end'
     ){
 
       handleRemoteEnd(
@@ -5270,6 +5591,12 @@ async function pollSpectator(){
     (!room.spectatorEnabled&&!room.state)
   ){
 
+    // If the game has ended and our countdown is running or done,
+    // stay on this screen - don't interrupt the auto-return.
+    if(spectatorEndReturnFired||spectatorEndReturnTimer){
+      return;
+    }
+
     showToast(
       'Spectating is no longer available.',
       2500
@@ -5473,12 +5800,17 @@ function triggerGameEnd(
   gameEnded=true;
 
   clearInterval(timerInterval);
-  clearInterval(pollTimer);
   clearInterval(heartbeatTimer);
 
   timerInterval=null;
-  pollTimer=null;
   heartbeatTimer=null;
+
+  /* Keep pollTimer running so chat stays synced after game end.
+     Slow it down to reduce network load. */
+  if(pollTimer){
+    clearInterval(pollTimer);
+    pollTimer=setInterval(pollMoves, 2000);
+  }
 
   G.status='ended';
 
@@ -5689,6 +6021,18 @@ function emergencyLeave(){
             'Content-Type':'application/json'
           },
           body,
+          keepalive:true
+        }
+      );
+    }else if(!roomCleanedUp){
+      // Game already ended and player is closing the tab -
+      // delete the room to free up Firebase storage.
+      roomCleanedUp=true;
+
+      fetch(
+        `${FB}/rooms/${roomId}.json`,
+        {
+          method:'DELETE',
           keepalive:true
         }
       );
@@ -6562,6 +6906,7 @@ document.getElementById(
 ============================================================ */
 
 loadSavedTheme();
+loadSavedUiStyle();
 
 initGame();
 
