@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chess Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <style>
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
@@ -752,7 +754,7 @@
 
   #top-tabs {
     width:100%;
-    max-width:700px;
+    max-width:820px;
     display:flex;
     gap:8px;
     justify-content:center;
@@ -761,7 +763,7 @@
 
   .top-tab {
     flex:1;
-    max-width:220px;
+    max-width:180px;
     background:var(--surface);
     color:var(--muted);
     border:1px solid var(--border);
@@ -774,7 +776,8 @@
   }
 
   #public-page,
-  #live-page {
+  #live-page,
+  #shop-page {
     width:100%;
     max-width:900px;
     display:flex;
@@ -831,7 +834,11 @@
     text-align:center;
   }
 
-  #name-screen {
+  /* ============================================================
+     AUTH SCREEN
+  ============================================================ */
+
+  #auth-screen {
     position:fixed;
     inset:0;
     z-index:1000;
@@ -842,180 +849,357 @@
     padding:20px;
   }
 
-  #name-card { max-width:430px; }
-
-  #name-input {
-    width:min(280px,90%);
-    letter-spacing:1px;
-  }
-
-  #name-status {
-    margin-top:12px;
-    min-height:20px;
-    color:var(--muted);
-  }
-
-  #create-type-modal {
-    display:none;
-    position:fixed;
-    inset:0;
-    z-index:900;
-    background:rgba(0,0,0,.8);
-    backdrop-filter:blur(5px);
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-  }
-
-  #create-type-modal.show { display:flex; }
-
-  #create-type-box {
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:28px;
-    width:min(430px,100%);
+  #auth-card {
+    max-width:440px;
     text-align:center;
   }
 
-  #create-type-box h3 {
+  #auth-card h2 {
+    margin-bottom:8px;
+  }
+
+  #auth-card .auth-sub {
+    color:var(--muted);
+    font-size:.88rem;
+    margin-bottom:22px;
+    line-height:1.55;
+  }
+
+  .google-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    width:100%;
+    background:#fff;
+    color:#1f1f1f;
+    padding:12px 20px;
+    font-family:'Crimson Pro',Georgia,serif;
+    font-size:.95rem;
+    font-weight:600;
+    letter-spacing:.5px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    transition:transform .1s, box-shadow .2s, background .15s;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
+  }
+
+  .google-btn:hover {
+    background:#f5f5f5;
+    transform:translateY(-1px);
+    box-shadow:0 6px 18px rgba(0,0,0,.3);
+  }
+
+  .google-btn:active { transform:translateY(0); }
+
+  .google-btn .g-icon {
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+    display:block;
+  }
+
+  .auth-divider {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:18px 0;
+    color:var(--muted);
     font-family:'Cinzel',serif;
+    font-size:.68rem;
+    letter-spacing:2px;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--border);
+  }
+
+  #auth-card .guest-btn {
+    width:100%;
+    background:transparent;
+    color:var(--gold);
+    border:1px solid var(--border);
+    padding:12px 20px;
+    font-size:.8rem;
+    letter-spacing:2px;
+    border-radius:10px;
+    font-family:'Cinzel',serif;
+    cursor:pointer;
+    transition:background .15s;
+  }
+
+  #auth-card .guest-btn:hover { background:var(--gold-dim); }
+
+  #auth-status {
+    margin-top:14px;
+    min-height:20px;
+    color:var(--muted);
+    font-size:.85rem;
+  }
+
+  /* ============================================================
+     SHOP
+  ============================================================ */
+
+  #shop-page {
+    max-width:900px;
+  }
+
+  #shop-page .shop-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  #shop-page .shop-header::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-light),transparent);
+    opacity:.4;
+  }
+
+  #shop-page .shop-balance {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Cinzel',serif;
+  }
+
+  #shop-page .coin-icon {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #f6dc91, #c9a84c 70%);
+    color:#5a4210;
+    font-weight:bold;
+    font-size:1.05rem;
+    box-shadow:0 0 14px rgba(201,168,76,.45), inset 0 -2px 4px rgba(0,0,0,.25);
+    font-family:serif;
+  }
+
+  #shop-page .coin-amount {
+    font-size:1.35rem;
     color:var(--gold);
     letter-spacing:2px;
-    margin-bottom:10px;
   }
 
-  #create-type-box p {
+  #shop-page .shop-tagline {
     color:var(--muted);
-    margin-bottom:18px;
+    font-size:.85rem;
+    text-align:right;
   }
 
-  .create-type-btns {
-    display:flex;
-    gap:10px;
-    justify-content:center;
-    flex-wrap:wrap;
-  }
-
-  .create-type-btns button { min-width:145px; }
-
-  #player-name-display {
-    color:var(--gold);
-    font-family:'Cinzel',serif;
-    font-size:.8rem;
-    letter-spacing:1px;
-    margin-bottom:4px;
-  }
-
-  .spectate-layout {
-    width:100%;
-    max-width:1000px;
+  #shop-grid {
     display:grid;
-    grid-template-columns:minmax(300px,620px) minmax(260px,340px);
+    grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
     gap:14px;
-    align-items:start;
   }
 
-  #spectator-view {
-    width:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
-  }
-
-  #spectate-game {
-    width:100%;
+  .shop-item {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+    text-align:center;
     display:flex;
     flex-direction:column;
     gap:10px;
-  }
-
-  #spectate-board-wrap {
-    width:100%;
-    aspect-ratio:1/1;
-    border:2px solid rgba(201,168,76,.3);
-    border-radius:6px;
-    overflow:hidden;
-    box-shadow:0 12px 60px rgba(0,0,0,.7);
-  }
-
-  #spectate-board {
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    grid-template-rows:repeat(8,1fr);
-    width:100%;
-    height:100%;
-  }
-
-  .spectate-sq {
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    transition:transform .15s, border-color .15s, box-shadow .2s;
     position:relative;
-    aspect-ratio:1/1;
-    user-select:none;
     overflow:hidden;
   }
 
-  .spectate-sq.light { background:var(--white-sq); }
-  .spectate-sq.dark { background:var(--dark-sq); }
+  .shop-item::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-light),transparent);
+    opacity:.25;
+  }
 
-  .spectate-sq.last-from { background:rgba(255,220,50,.35) !important; }
-  .spectate-sq.last-to { background:rgba(255,220,50,.55) !important; }
-  .spectate-sq.in-check { background:#c0392b !important; }
+  .shop-item:hover {
+    transform:translateY(-2px);
+    border-color:var(--gold);
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
 
-  .spectate-piece {
-    width:88%;
-    height:88%;
-    object-fit:contain;
-    display:block;
-    filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+  .shop-item.equipped {
+    border-color:var(--gold);
+    box-shadow:0 0 0 1px var(--gold), 0 0 22px rgba(201,168,76,.28);
+  }
+
+  .shop-item.equipped::after {
+    content:'EQUIPPED';
+    position:absolute;
+    top:10px;
+    right:-32px;
+    background:var(--gold);
+    color:var(--bg);
+    font-family:'Cinzel',serif;
+    font-size:.55rem;
+    font-weight:700;
+    letter-spacing:1.5px;
+    padding:3px 36px;
+    transform:rotate(35deg);
+    transform-origin:center;
     pointer-events:none;
   }
 
-  #spectate-info {
-    display:flex;
-    gap:8px;
+  .shop-preview {
     width:100%;
-  }
-
-  #spectate-timers {
+    aspect-ratio:1/1;
+    max-height:130px;
     display:flex;
-    gap:8px;
-    width:100%;
-  }
-
-  #spectate-chat {
-    min-height:520px;
-  }
-
-  #spectate-messages {
-    flex:1;
-    min-height:420px;
-    max-height:620px;
-  }
-
-  #spectate-status {
-    background:var(--surface);
-    border:1px solid var(--border);
+    align-items:center;
+    justify-content:center;
     border-radius:10px;
-    padding:10px 14px;
-    text-align:center;
-    width:100%;
+    background:linear-gradient(135deg, var(--white-sq) 0% 50%, var(--dark-sq) 50% 100%);
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.18);
   }
 
-  #spectate-close { align-self:center; }
+  .shop-preview img {
+    width:70%;
+    height:70%;
+    object-fit:contain;
+    display:block;
+    pointer-events:none;
+  }
 
-  #spectate-countdown {
-    width:100%;
-    text-align:center;
+  .shop-name {
     font-family:'Cinzel',serif;
-    font-size:.68rem;
+    font-size:.82rem;
     letter-spacing:1.5px;
+    color:var(--text);
+    text-transform:uppercase;
+  }
+
+  .shop-desc {
     color:var(--muted);
-    min-height:18px;
-    font-variant-numeric:tabular-nums;
+    font-size:.75rem;
+    line-height:1.35;
+    min-height:28px;
+  }
+
+  .shop-price {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    font-family:'Cinzel',serif;
+    font-size:.78rem;
+    color:var(--gold);
+    letter-spacing:1px;
+  }
+
+  .shop-price.owned {
+    color:#5ec27a;
+  }
+
+  .shop-price .mini-coin {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #f6dc91, #c9a84c 70%);
+    color:#5a4210;
+    font-size:.55rem;
+    font-weight:bold;
+    font-family:serif;
+    box-shadow:0 0 6px rgba(201,168,76,.5);
+  }
+
+  .shop-item button {
+    width:100%;
+    padding:9px 14px;
+    font-size:.72rem;
+    letter-spacing:2px;
+  }
+
+  .shop-item button.buy { background:var(--gold); }
+
+  .shop-item button.equip {
+    background:transparent;
+    color:var(--gold);
+    border:1px solid var(--border);
+  }
+
+  .shop-item button.equip:hover { background:var(--gold-dim); }
+
+  .shop-item button.owned-btn {
+    background:rgba(94,194,122,.15);
+    color:#5ec27a;
+    border:1px solid rgba(94,194,122,.4);
+    cursor:default;
+  }
+
+  .shop-empty {
+    text-align:center;
+    padding:26px 16px;
+    color:var(--muted);
+    font-size:.9rem;
+    line-height:1.6;
+    grid-column:1/-1;
+  }
+
+  /* player name row with coins */
+  #player-name-display {
+    color:var(--gold);
+    font-family:'Cinzel',serif;
+    font-size:.85rem;
+    letter-spacing:1px;
+    margin-bottom:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  #player-name-display .pnd-coin {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:2px 10px;
+    border-radius:12px;
+    background:rgba(201,168,76,.12);
+    border:1px solid var(--border);
+    font-size:.72rem;
+    color:var(--gold);
+  }
+
+  #player-name-display .pnd-coin .mini-coin {
+    width:13px;
+    height:13px;
+    font-size:.5rem;
+  }
+
+  #player-name-display .pnd-guest {
+    font-size:.6rem;
+    letter-spacing:1px;
+    color:var(--muted);
+    text-transform:uppercase;
   }
 
   @media(max-width:760px) {
@@ -1530,7 +1714,6 @@
 
   /* ============================================================
      INTERFACE STYLE OVERRIDES
-     applied via [data-ui="..."] on <html>
   ============================================================ */
 
   /* ---------- ROUNDED ---------- */
@@ -1555,8 +1738,10 @@
   :root[data-ui="rounded"] .music-btn { border-radius:50%; }
   :root[data-ui="rounded"] #music-vol-wrap { border-radius:24px; }
   :root[data-ui="rounded"] #settings-btn { border-radius:50%; }
-  :root[data-ui="rounded"] #name-card { border-radius:26px; }
   :root[data-ui="rounded"] #create-type-box { border-radius:26px; }
+  :root[data-ui="rounded"] #auth-card { border-radius:26px; }
+  :root[data-ui="rounded"] .shop-item { border-radius:22px; }
+  :root[data-ui="rounded"] .shop-preview { border-radius:16px; }
 
   /* ---------- SHARP ---------- */
   :root[data-ui="sharp"] .card,
@@ -1580,8 +1765,10 @@
   :root[data-ui="sharp"] .music-btn,
   :root[data-ui="sharp"] #music-vol-wrap,
   :root[data-ui="sharp"] #settings-btn,
-  :root[data-ui="sharp"] #name-card,
   :root[data-ui="sharp"] #create-type-box,
+  :root[data-ui="sharp"] #auth-card,
+  :root[data-ui="sharp"] .shop-item,
+  :root[data-ui="sharp"] .shop-preview,
   :root[data-ui="sharp"] .promo-piece {
     border-radius:0;
   }
@@ -1596,7 +1783,9 @@
   :root[data-ui="minimal"] #status-bar,
   :root[data-ui="minimal"] #move-log,
   :root[data-ui="minimal"] .live-game,
-  :root[data-ui="minimal"] .public-room {
+  :root[data-ui="minimal"] .public-room,
+  :root[data-ui="minimal"] .shop-item,
+  :root[data-ui="minimal"] .shop-header {
     box-shadow:none;
   }
   :root[data-ui="minimal"] #board-wrap,
@@ -1653,9 +1842,10 @@
   :root[data-ui="glass"] #result-box,
   :root[data-ui="glass"] #promo-box,
   :root[data-ui="glass"] #settings-box,
-  :root[data-ui="glass"] #name-card,
   :root[data-ui="glass"] #create-type-box,
-  :root[data-ui="glass"] .top-tab {
+  :root[data-ui="glass"] .top-tab,
+  :root[data-ui="glass"] .shop-item,
+  :root[data-ui="glass"] .shop-header {
     background:color-mix(in srgb, var(--surface) 65%, transparent);
     backdrop-filter:blur(14px) saturate(160%);
     -webkit-backdrop-filter:blur(14px) saturate(160%);
@@ -1690,6 +1880,9 @@
     #settings-btn { top:10px; right:10px; width:38px; height:38px; font-size:1rem; }
     #theme-grid { grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; }
     #ui-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+    #shop-grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+    #top-tabs { flex-wrap:wrap; }
+    .top-tab { flex:1 1 45%; max-width:none; font-size:.7rem; padding:8px 6px; }
   }
 </style>
 </head>
@@ -1700,14 +1893,25 @@
 
 <button id="settings-btn" onclick="openSettings()" title="Settings" aria-label="Open settings">⚙</button>
 
-<div id="name-screen">
-  <div id="name-card" class="card">
-    <h2>Choose Your Name</h2>
-    <p>Your name is only active while this page is open. Someone else can use the same name after you leave.</p>
-    <input id="name-input" maxlength="20" placeholder="Enter username" autocomplete="off">
-    <br><br>
-    <button onclick="claimUsername()">Continue</button>
-    <div id="name-status"></div>
+<div id="auth-screen">
+  <div id="auth-card" class="card">
+    <h2>Welcome</h2>
+    <p class="auth-sub">
+      Sign in with Google to earn <strong style="color:var(--gold)">10 coins per win</strong>,
+      buy piece skins, and keep your progress. Guests get a random name and cannot earn coins.
+    </p>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg class="g-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div class="auth-divider">OR</div>
+    <button class="guest-btn" onclick="continueAsGuest()">Continue as Guest</button>
+    <div id="auth-status"></div>
   </div>
 </div>
 
@@ -1715,6 +1919,7 @@
   <button id="tab-lobby" class="top-tab active" onclick="showPage('lobby')">My Lobby</button>
   <button id="tab-public" class="top-tab" onclick="showPage('public')">Public Lobbies</button>
   <button id="tab-live" class="top-tab" onclick="showPage('live')">Live Games</button>
+  <button id="tab-shop" class="top-tab" onclick="showPage('shop')">Shop</button>
 </div>
 
 <div id="lobby">
@@ -1765,6 +1970,22 @@
   </div>
 </div>
 
+<div id="shop-page" class="hidden">
+  <div class="shop-header">
+    <div class="shop-balance">
+      <span class="coin-icon">$</span>
+      <span class="coin-amount" id="shop-coin-amount">0</span>
+    </div>
+    <div class="shop-tagline" id="shop-tagline">Sign in to buy skins</div>
+  </div>
+
+  <div class="card" style="padding:18px 20px;">
+    <h2>Skins For Your Pieces</h2>
+    <p>Each skin only applies to <strong>your own pieces</strong>. Your opponent and spectators see your skinned pieces — and you'll see theirs. Win a game to earn 10 coins.</p>
+    <div id="shop-grid"></div>
+  </div>
+</div>
+
 <div id="create-type-modal">
   <div id="create-type-box">
     <h3>Choose Lobby Type</h3>
@@ -1793,6 +2014,10 @@
 
     <div class="settings-label">Interface Style</div>
     <div id="ui-grid"></div>
+
+    <div class="settings-label">Account</div>
+    <div id="account-info" style="color:var(--muted);font-size:.85rem;margin-bottom:12px;text-align:center;"></div>
+    <button class="ghost" id="signout-btn" onclick="signOutUser()" style="display:none;">Sign Out</button>
 
     <br>
     <button class="ghost" onclick="closeSettings()">Close</button>
@@ -1972,6 +2197,101 @@
 'use strict';
 
 /* ============================================================
+   FIREBASE INIT
+   ------------------------------------------------------------
+   Replace the apiKey with the Web API key from:
+   Firebase Console → Project Settings → Your apps → Web app config.
+   Everything else matches the existing project.
+============================================================ */
+
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBqR7xRj9y1y0K-FNwFuP7oM4nBfKdL4v0", // <-- replace with your real Web API key
+  authDomain:        "chest-188bb.firebaseapp.com",
+  databaseURL:       "https://chest-188bb-default-rtdb.firebaseio.com",
+  projectId:         "chest-188bb",
+  storageBucket:     "chest-188bb.appspot.com",
+  messagingSenderId: "000000000000"
+};
+
+let firebaseApp = null;
+let auth = null;
+let googleProvider = null;
+
+try{
+  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  googleProvider = new firebase.auth.GoogleAuthProvider();
+}catch(e){
+  console.warn('Firebase init error:',e);
+}
+
+/* ============================================================
+   SHOP — SKINS
+   ------------------------------------------------------------
+   Each skin uses a CSS filter applied to the piece <img>.
+   Filters work especially well on white pieces (which have
+   colour) and add a coloured glow on top of dark pieces too.
+============================================================ */
+
+const SKINS = [
+  {
+    id:'classic', name:'Classic', price:0,
+    desc:'Standard chess pieces',
+    filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'forest', name:'Forest', price:10,
+    desc:'Verdant woodland army',
+    filter:'sepia(1) hue-rotate(65deg) saturate(4) brightness(0.9) drop-shadow(0 0 5px rgba(74,222,128,.65)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'duck', name:'Duckling', price:10,
+    desc:'Quack! Yellow troops',
+    filter:'sepia(1) hue-rotate(15deg) saturate(5) brightness(1.12) drop-shadow(0 0 5px rgba(251,191,36,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'ocean', name:'Ocean', price:10,
+    desc:'Deep sea blue fighters',
+    filter:'sepia(1) hue-rotate(165deg) saturate(4) brightness(0.95) drop-shadow(0 0 5px rgba(59,130,246,.65)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'royal', name:'Royal', price:10,
+    desc:'Regal purple court',
+    filter:'sepia(1) hue-rotate(230deg) saturate(4) brightness(0.95) drop-shadow(0 0 5px rgba(168,85,247,.65)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'crimson', name:'Crimson', price:10,
+    desc:'Blood red warriors',
+    filter:'sepia(1) hue-rotate(-25deg) saturate(6) brightness(0.95) drop-shadow(0 0 5px rgba(239,68,68,.65)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'gold', name:'Gold', price:10,
+    desc:'Precious metal elite',
+    filter:'sepia(1) hue-rotate(20deg) saturate(5) brightness(1.06) drop-shadow(0 0 5px rgba(234,179,8,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'frost', name:'Frost', price:10,
+    desc:'Frozen northern army',
+    filter:'sepia(1) hue-rotate(170deg) saturate(2) brightness(1.28) drop-shadow(0 0 6px rgba(147,197,253,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'shadow', name:'Shadow', price:10,
+    desc:'Silent assassins',
+    filter:'brightness(0.35) contrast(1.4) drop-shadow(0 0 5px rgba(80,80,80,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  },
+  {
+    id:'neon', name:'Neon', price:10,
+    desc:'Glowing cyber army',
+    filter:'sepia(1) hue-rotate(280deg) saturate(6) brightness(1.15) drop-shadow(0 0 7px rgba(236,72,153,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))'
+  }
+];
+
+function findSkin(id){
+  return SKINS.find(s => s.id === id) || SKINS[0];
+}
+
+
+/* ============================================================
    MUSIC
 ============================================================ */
 
@@ -2006,17 +2326,14 @@ let _musicPlaying=false;
 let _musicAudio=null;
 let _musicVol=.5;
 let _musicInfoTimer=null;
-
 let _musicSeekingUntil=0;
 
 function _shuffleArr(arr){
   const a=arr.slice();
-
   for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
     [a[i],a[j]]=[a[j],a[i]];
   }
-
   return a;
 }
 
@@ -2029,37 +2346,25 @@ function _trackName(filename){
 function _showTrackInfo(name){
   const el=document.getElementById('music-info');
   const nameEl=document.getElementById('music-track-name');
-
   if(nameEl) nameEl.textContent=name;
-
   if(!el) return;
-
   el.textContent=name;
   el.classList.add('visible');
-
   clearTimeout(_musicInfoTimer);
-
-  _musicInfoTimer=setTimeout(()=>{
-    el.classList.remove('visible');
-  },4000);
+  _musicInfoTimer=setTimeout(()=>{ el.classList.remove('visible'); },4000);
 }
 
 function _formatTime(s){
   if(!isFinite(s)||s<0) s=0;
-
   s=Math.floor(s);
-
   const m=Math.floor(s/60);
   const sec=s%60;
-
   return `${m}:${String(sec).padStart(2,'0')}`;
 }
 
 function _setProgressFill(slider,pct){
   if(!slider) return;
-
   const clamped=Math.max(0,Math.min(100,pct));
-
   slider.style.setProperty('--music-fill',clamped+'%');
 }
 
@@ -2067,11 +2372,8 @@ function _updateMusicProgress(){
   const slider=document.getElementById('music-progress');
   const cur=document.getElementById('music-time-current');
   const tot=document.getElementById('music-time-total');
-
   if(!slider||!cur||!tot) return;
-
   const a=_musicAudio;
-
   if(!a){
     slider.value=0;
     _setProgressFill(slider,0);
@@ -2079,13 +2381,10 @@ function _updateMusicProgress(){
     tot.textContent='0:00';
     return;
   }
-
   const d=a.duration;
   const t=a.currentTime;
-
   if(isFinite(d)&&d>0){
     const pct=(t/d)*100;
-
     slider.value=pct*10;
     _setProgressFill(slider,pct);
     cur.textContent=_formatTime(t);
@@ -2100,25 +2399,15 @@ function _updateMusicProgress(){
 
 function musicSeek(val){
   const a=_musicAudio;
-
   if(!a) return;
-
   const d=a.duration;
-
   if(!isFinite(d)||d<=0) return;
-
   const pct=Math.max(0,Math.min(1000,parseFloat(val)||0))/10;
   const t=(pct/100)*d;
-
   _musicSeekingUntil=Date.now()+150;
-
-  try{
-    a.currentTime=t;
-  }catch(e){}
-
+  try{ a.currentTime=t; }catch(e){}
   const cur=document.getElementById('music-time-current');
   const slider=document.getElementById('music-progress');
-
   if(cur) cur.textContent=_formatTime(t);
   _setProgressFill(slider,pct);
 }
@@ -2139,91 +2428,58 @@ function _loadTrack(idx,autoplay){
 
   const file=_musicQueue[idx];
   const audio=new Audio(MUSIC_BASE+file);
-
   audio.volume=_musicVol;
 
   audio.onended=()=>{
     _musicIdx=(_musicIdx+1)%_musicQueue.length;
     _loadTrack(_musicIdx,true);
   };
-
   audio.onerror=()=>{
     _musicIdx=(_musicIdx+1)%_musicQueue.length;
     _loadTrack(_musicIdx,_musicPlaying);
   };
-
   audio.ontimeupdate=()=>{
     if(Date.now()<_musicSeekingUntil) return;
     _updateMusicProgress();
   };
-
-  audio.onloadedmetadata=()=>{
-    _updateMusicProgress();
-  };
-
-  audio.ondurationchange=()=>{
-    _updateMusicProgress();
-  };
+  audio.onloadedmetadata=()=>{ _updateMusicProgress(); };
+  audio.ondurationchange=()=>{ _updateMusicProgress(); };
 
   _musicAudio=audio;
   _musicSeekingUntil=0;
-
   _showTrackInfo(_trackName(file));
   _updateMusicProgress();
-
-  if(autoplay){
-    audio.play().catch(()=>{});
-  }
+  if(autoplay){ audio.play().catch(()=>{}); }
 }
 
 function _updatePlayBtn(){
   const btn=document.getElementById('music-btn-play');
-
   if(!btn) return;
-
   btn.classList.toggle('playing',_musicPlaying);
   btn.title=_musicPlaying?'Pause':'Play music';
   btn.innerHTML=_musicPlaying?'&#9646;&#9646;':'&#9834;';
 }
 
 function musicToggle(){
-  if(!MUSIC_FILES.length){
-    showToast('No tracks configured',3000);
-    return;
-  }
-
-  if(!_musicQueue.length){
-    _musicQueue=_shuffleArr(MUSIC_FILES);
-    _musicIdx=0;
-    _loadTrack(_musicIdx,false);
-  }
-
+  if(!MUSIC_FILES.length){ showToast('No tracks configured',3000); return; }
+  if(!_musicQueue.length){ _musicQueue=_shuffleArr(MUSIC_FILES); _musicIdx=0; _loadTrack(_musicIdx,false); }
   if(_musicPlaying){
     if(_musicAudio) _musicAudio.pause();
     _musicPlaying=false;
   }else{
     if(!_musicAudio) _loadTrack(_musicIdx,false);
-
     if(_musicAudio){
-      _musicAudio.play().catch(()=>{
-        showToast('Click again to play',2500);
-      });
+      _musicAudio.play().catch(()=>{ showToast('Click again to play',2500); });
     }
-
     _musicPlaying=true;
     _showTrackInfo(_trackName(_musicQueue[_musicIdx]));
   }
-
   _updatePlayBtn();
 }
 
 function musicSkip(){
   if(!MUSIC_FILES.length) return;
-
-  if(!_musicQueue.length){
-    _musicQueue=_shuffleArr(MUSIC_FILES);
-  }
-
+  if(!_musicQueue.length){ _musicQueue=_shuffleArr(MUSIC_FILES); }
   _musicIdx=(_musicIdx+1)%_musicQueue.length;
   _loadTrack(_musicIdx,_musicPlaying);
   _updatePlayBtn();
@@ -2231,10 +2487,7 @@ function musicSkip(){
 
 function musicSetVolume(val){
   _musicVol=parseFloat(val);
-
-  if(_musicAudio){
-    _musicAudio.volume=_musicVol;
-  }
+  if(_musicAudio){ _musicAudio.volume=_musicVol; }
 }
 
 
@@ -2253,174 +2506,132 @@ const THEMES=[
 ];
 
 const UI_STYLES=[
-  {
-    id:'classic',
-    name:'Classic',
-    preview:{radius:'6px', shadow:'0 2px 8px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
-  },
-  {
-    id:'rounded',
-    name:'Rounded',
-    preview:{radius:'18px', shadow:'0 4px 12px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
-  },
-  {
-    id:'sharp',
-    name:'Sharp',
-    preview:{radius:'0px', shadow:'0 2px 4px rgba(0,0,0,.4)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}
-  },
-  {
-    id:'minimal',
-    name:'Minimal',
-    preview:{radius:'4px', shadow:'none', border:'1px solid var(--border)', bg:'transparent', backdrop:'none'}
-  },
-  {
-    id:'glass',
-    name:'Glass',
-    preview:{radius:'10px', shadow:'0 4px 14px rgba(0,0,0,.35)', border:'1px solid rgba(255,255,255,.16)', bg:'rgba(255,255,255,.08)', backdrop:'blur(8px)'}
-  }
+  {id:'classic', name:'Classic',
+    preview:{radius:'6px', shadow:'0 2px 8px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}},
+  {id:'rounded', name:'Rounded',
+    preview:{radius:'18px', shadow:'0 4px 12px rgba(0,0,0,.35)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}},
+  {id:'sharp', name:'Sharp',
+    preview:{radius:'0px', shadow:'0 2px 4px rgba(0,0,0,.4)', border:'1px solid var(--border)', bg:'var(--surface)', backdrop:'none'}},
+  {id:'minimal', name:'Minimal',
+    preview:{radius:'4px', shadow:'none', border:'1px solid var(--border)', bg:'transparent', backdrop:'none'}},
+  {id:'glass', name:'Glass',
+    preview:{radius:'10px', shadow:'0 4px 14px rgba(0,0,0,.35)', border:'1px solid rgba(255,255,255,.16)', bg:'rgba(255,255,255,.08)', backdrop:'blur(8px)'}}
 ];
 
 function applyTheme(id){
   document.documentElement.dataset.theme=id;
-
-  try{
-    localStorage.setItem('chess-theme',id);
-  }catch(e){}
+  try{ localStorage.setItem('chess-theme',id); }catch(e){}
 }
 
 function loadSavedTheme(){
   let saved='dark';
-
   try{
     const s=localStorage.getItem('chess-theme');
-
-    if(s&&THEMES.some(t=>t.id===s)){
-      saved=s;
-    }
+    if(s&&THEMES.some(t=>t.id===s)) saved=s;
   }catch(e){}
-
   document.documentElement.dataset.theme=saved;
 }
 
 function applyUiStyle(id){
   document.documentElement.dataset.ui=id;
-
-  try{
-    localStorage.setItem('chess-ui-style',id);
-  }catch(e){}
+  try{ localStorage.setItem('chess-ui-style',id); }catch(e){}
 }
 
 function loadSavedUiStyle(){
   let saved='classic';
-
   try{
     const s=localStorage.getItem('chess-ui-style');
-
-    if(s&&UI_STYLES.some(t=>t.id===s)){
-      saved=s;
-    }
+    if(s&&UI_STYLES.some(t=>t.id===s)) saved=s;
   }catch(e){}
-
   document.documentElement.dataset.ui=saved;
 }
 
 function buildThemeGrid(){
   const grid=document.getElementById('theme-grid');
-
   if(!grid) return;
-
   grid.innerHTML='';
-
   const current=document.documentElement.dataset.theme||'dark';
 
   THEMES.forEach(t=>{
     const card=document.createElement('div');
-
     card.className='theme-card'+(t.id===current?' active':'');
-    card.dataset.themeId=t.id;
-
     const preview=document.createElement('div');
     preview.className='theme-preview';
     preview.style.background=`linear-gradient(135deg,${t.light} 0% 50%,${t.dark} 50% 100%)`;
-
     const piece=document.createElement('span');
     piece.textContent='♞';
     piece.style.color=t.accent;
     piece.style.filter='drop-shadow(0 1px 3px rgba(0,0,0,.55))';
-
     preview.appendChild(piece);
-
     const nameEl=document.createElement('div');
     nameEl.className='theme-name';
     nameEl.textContent=t.name;
-
     card.append(preview,nameEl);
-
     card.onclick=()=>{
       applyTheme(t.id);
       grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
       card.classList.add('active');
     };
-
     grid.appendChild(card);
   });
 }
 
 function buildUiGrid(){
   const grid=document.getElementById('ui-grid');
-
   if(!grid) return;
-
   grid.innerHTML='';
-
   const current=document.documentElement.dataset.ui||'classic';
 
   UI_STYLES.forEach(t=>{
     const card=document.createElement('div');
-
     card.className='theme-card'+(t.id===current?' active':'');
-    card.dataset.uiId=t.id;
-
     const preview=document.createElement('div');
     preview.className='ui-preview';
-
     const inner=document.createElement('div');
     inner.className='ui-preview-inner';
     inner.textContent='Aa';
-
     const p=t.preview;
-
     inner.style.borderRadius=p.radius;
     inner.style.boxShadow=p.shadow;
     inner.style.border=p.border;
     inner.style.background=p.bg;
-
     if(p.backdrop!=='none'){
       inner.style.backdropFilter=p.backdrop;
       inner.style.webkitBackdropFilter=p.backdrop;
     }
-
     preview.appendChild(inner);
-
     const nameEl=document.createElement('div');
     nameEl.className='theme-name';
     nameEl.textContent=t.name;
-
     card.append(preview,nameEl);
-
     card.onclick=()=>{
       applyUiStyle(t.id);
       grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
       card.classList.add('active');
     };
-
     grid.appendChild(card);
   });
+}
+
+function renderAccountInfo(){
+  const box=document.getElementById('account-info');
+  const out=document.getElementById('signout-btn');
+  if(!box) return;
+  if(currentUser){
+    const coins = userProfile ? (userProfile.coins||0) : 0;
+    const owned = userProfile ? Object.keys(userProfile.ownedSkins||{}).length : 1;
+    box.innerHTML=`Signed in as <strong style="color:var(--gold)">${escapeHtml(myName)}</strong><br>${coins} coins · ${owned}/${SKINS.length} skins owned`;
+    if(out) out.style.display='inline-block';
+  }else{
+    box.innerHTML=`Playing as guest <strong style="color:var(--gold)">${escapeHtml(myName)}</strong><br>Guests cannot earn coins or buy skins.`;
+    if(out) out.style.display='none';
+  }
 }
 
 function openSettings(){
   buildThemeGrid();
   buildUiGrid();
+  renderAccountInfo();
   document.getElementById('settings-modal').classList.add('show');
 }
 
@@ -2436,18 +2647,8 @@ function closeSettings(){
 const PIECE_REPO='https://cdn.jsdelivr.net/gh/blueberryggames-a11y/chess@main/icons';
 
 const PIECE_FILES={
-  K:'wK.svg',
-  Q:'wQ.svg',
-  R:'wR.svg',
-  B:'wB.svg',
-  N:'wN.svg',
-  P:'wP.svg',
-  k:'bK.svg',
-  q:'bQ.svg',
-  r:'bR.svg',
-  b:'bB.svg',
-  n:'bN.svg',
-  p:'bP.svg'
+  K:'wK.svg', Q:'wQ.svg', R:'wR.svg', B:'wB.svg', N:'wN.svg', P:'wP.svg',
+  k:'bK.svg', q:'bQ.svg', r:'bR.svg', b:'bB.svg', n:'bN.svg', p:'bP.svg'
 };
 
 function preloadPieces(){
@@ -2463,16 +2664,17 @@ function pieceUrl(p){
   return `${PIECE_REPO}/${PIECE_FILES[p]}`;
 }
 
-function makePieceEl(p){
+function makePieceEl(p,filter){
   const w=document.createElement('div');
   w.className='piece-wrap';
-
   const img=document.createElement('img');
   img.className='piece-img';
   img.src=pieceUrl(p);
   img.alt=p;
   img.draggable=false;
-
+  if(filter && filter!=='none'){
+    img.style.filter=filter;
+  }
   w.appendChild(img);
   return w;
 }
@@ -2488,28 +2690,21 @@ function serializeBoard(board){
 
 function deserializeBoard(rows){
   const out=[];
-
   for(let r=0;r<8;r++){
     const raw=rows?rows[r]:null;
-
     let line='';
-
     if(Array.isArray(raw)){
       line=raw.map(p=>p||'.').join('');
     }else if(typeof raw==='string'){
       line=raw;
     }
-
     const arr=[];
-
     for(let c=0;c<8;c++){
       const ch=line[c];
       arr.push(!ch||ch==='.'?null:ch);
     }
-
     out.push(arr);
   }
-
   return out;
 }
 
@@ -2520,182 +2715,91 @@ function deserializeBoard(rows){
 
 const FILES_STR='abcdefgh';
 
-const colorOf=p=>{
-  if(!p) return null;
-  return p===p.toUpperCase()?'w':'b';
-};
-
+const colorOf=p=>{ if(!p) return null; return p===p.toUpperCase()?'w':'b'; };
 const opp=c=>c==='w'?'b':'w';
-
 const inBounds=(r,c)=>r>=0&&r<8&&c>=0&&c<8;
-
 const copyBoard=b=>b.map(r=>r.slice());
 
 function findKing(board,color){
   const k=color==='w'?'K':'k';
-
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-      if(board[r][c]===k) return [r,c];
-    }
-  }
-
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(board[r][c]===k) return [r,c];
   return null;
 }
 
 function isAttacked(board,r,c,byColor){
-
   const pDir=byColor==='w'?1:-1;
-
   for(const dc of [-1,1]){
-    const pr=r+pDir;
-    const pc=c+dc;
-
+    const pr=r+pDir, pc=c+dc;
     if(inBounds(pr,pc)){
       const p=board[pr][pc];
-
-      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='p'){
-        return true;
-      }
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='p') return true;
     }
   }
-
-  for(const [dr,dc] of [
-    [-2,-1],[-2,1],[-1,-2],[-1,2],
-    [1,-2],[1,2],[2,-1],[2,1]
-  ]){
-    const nr=r+dr;
-    const nc=c+dc;
-
+  for(const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
+    const nr=r+dr, nc=c+dc;
     if(inBounds(nr,nc)){
       const p=board[nr][nc];
-
-      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='n'){
-        return true;
-      }
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='n') return true;
     }
   }
-
-  for(const [dr,dc] of [
-    [-1,-1],[-1,1],[1,-1],[1,1]
-  ]){
-    let nr=r+dr;
-    let nc=c+dc;
-
+  for(const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]){
+    let nr=r+dr, nc=c+dc;
     while(inBounds(nr,nc)){
       const p=board[nr][nc];
-
       if(p){
-        if(colorOf(p)===byColor&&(p.toLowerCase()==='b'||p.toLowerCase()==='q')){
-          return true;
-        }
-
+        if(colorOf(p)===byColor&&(p.toLowerCase()==='b'||p.toLowerCase()==='q')) return true;
         break;
       }
-
-      nr+=dr;
-      nc+=dc;
+      nr+=dr; nc+=dc;
     }
   }
-
-  for(const [dr,dc] of [
-    [-1,0],[1,0],[0,-1],[0,1]
-  ]){
-    let nr=r+dr;
-    let nc=c+dc;
-
+  for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+    let nr=r+dr, nc=c+dc;
     while(inBounds(nr,nc)){
       const p=board[nr][nc];
-
       if(p){
-        if(colorOf(p)===byColor&&(p.toLowerCase()==='r'||p.toLowerCase()==='q')){
-          return true;
-        }
-
+        if(colorOf(p)===byColor&&(p.toLowerCase()==='r'||p.toLowerCase()==='q')) return true;
         break;
       }
-
-      nr+=dr;
-      nc+=dc;
+      nr+=dr; nc+=dc;
     }
   }
-
-  for(const [dr,dc] of [
-    [-1,-1],[-1,0],[-1,1],
-    [0,-1],[0,1],
-    [1,-1],[1,0],[1,1]
-  ]){
-    const nr=r+dr;
-    const nc=c+dc;
-
+  for(const [dr,dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
+    const nr=r+dr, nc=c+dc;
     if(inBounds(nr,nc)){
       const p=board[nr][nc];
-
-      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='k'){
-        return true;
-      }
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='k') return true;
     }
   }
-
   return false;
 }
 
 function kingInCheck(board,color){
   const kp=findKing(board,color);
-
   if(!kp) return true;
-
   return isAttacked(board,kp[0],kp[1],opp(color));
 }
 
 function doMove(board,move,castling,enPassant){
-
   const nb=copyBoard(board);
   const nc={...castling};
   let nep=null;
-
   const p=nb[move.fr][move.fc];
-
-  if(!p) return {
-    board:nb,
-    castling:nc,
-    enPassant:nep
-  };
-
+  if(!p) return {board:nb,castling:nc,enPassant:nep};
   const pt=p.toLowerCase();
   const color=colorOf(p);
 
   nb[move.tr][move.tc]=move.promo
     ? (color==='w'?move.promo.toUpperCase():move.promo.toLowerCase())
     : p;
-
   nb[move.fr][move.fc]=null;
 
-  if(move.isEnPassant){
-    nb[move.fr][move.tc]=null;
-  }
+  if(move.isEnPassant) nb[move.fr][move.tc]=null;
+  if(move.castleSide==='K'){ nb[move.tr][5]=nb[move.tr][7]; nb[move.tr][7]=null; }
+  if(move.castleSide==='Q'){ nb[move.tr][3]=nb[move.tr][0]; nb[move.tr][0]=null; }
 
-  if(move.castleSide==='K'){
-    nb[move.tr][5]=nb[move.tr][7];
-    nb[move.tr][7]=null;
-  }
-
-  if(move.castleSide==='Q'){
-    nb[move.tr][3]=nb[move.tr][0];
-    nb[move.tr][0]=null;
-  }
-
-  if(p==='K'){
-    nc.wK=false;
-    nc.wKR=false;
-    nc.wQR=false;
-  }
-
-  if(p==='k'){
-    nc.bK=false;
-    nc.bKR=false;
-    nc.bQR=false;
-  }
+  if(p==='K'){ nc.wK=false; nc.wKR=false; nc.wQR=false; }
+  if(p==='k'){ nc.bK=false; nc.bKR=false; nc.bQR=false; }
 
   if(p==='R'&&move.fr===7&&move.fc===0) nc.wQR=false;
   if(p==='R'&&move.fr===7&&move.fc===7) nc.wKR=false;
@@ -2711,521 +2815,201 @@ function doMove(board,move,castling,enPassant){
     nep=[(move.fr+move.tr)/2,move.fc];
   }
 
-  return {
-    board:nb,
-    castling:nc,
-    enPassant:nep
-  };
+  return {board:nb,castling:nc,enPassant:nep};
 }
 
 function pseudoMoves(board,color,castling,enPassant){
-
   const moves=[];
-
   for(let r=0;r<8;r++){
     for(let c=0;c<8;c++){
-
       const p=board[r][c];
-
       if(!p||colorOf(p)!==color) continue;
-
       const pt=p.toLowerCase();
 
       if(pt==='p'){
-
         const dir=color==='w'?-1:1;
         const start=color==='w'?6:1;
         const promoRank=color==='w'?0:7;
-
         if(inBounds(r+dir,c)&&!board[r+dir][c]){
-
           if(r+dir===promoRank){
-            for(const pr of ['q','r','b','n']){
-              moves.push({
-                fr:r,fc:c,
-                tr:r+dir,tc:c,
-                promo:pr
-              });
-            }
+            for(const pr of ['q','r','b','n']) moves.push({fr:r,fc:c,tr:r+dir,tc:c,promo:pr});
           }else{
-            moves.push({
-              fr:r,fc:c,
-              tr:r+dir,tc:c
-            });
+            moves.push({fr:r,fc:c,tr:r+dir,tc:c});
           }
-
           if(r===start&&!board[r+2*dir][c]){
-            moves.push({
-              fr:r,fc:c,
-              tr:r+2*dir,tc:c
-            });
+            moves.push({fr:r,fc:c,tr:r+2*dir,tc:c});
           }
         }
-
         for(const dc of [-1,1]){
-
-          const nr=r+dir;
-          const nc=c+dc;
-
+          const nr=r+dir, nc=c+dc;
           if(!inBounds(nr,nc)) continue;
-
           const tgt=board[nr][nc];
-
           if(tgt&&colorOf(tgt)!==color){
-
             if(nr===promoRank){
-              for(const pr of ['q','r','b','n']){
-                moves.push({
-                  fr:r,fc:c,
-                  tr:nr,tc:nc,
-                  promo:pr
-                });
-              }
+              for(const pr of ['q','r','b','n']) moves.push({fr:r,fc:c,tr:nr,tc:nc,promo:pr});
             }else{
-              moves.push({
-                fr:r,fc:c,
-                tr:nr,tc:nc
-              });
+              moves.push({fr:r,fc:c,tr:nr,tc:nc});
             }
           }
-
           if(enPassant&&enPassant[0]===nr&&enPassant[1]===nc){
             const adjacent=board[r][nc];
-
             if(adjacent&&colorOf(adjacent)!==color&&adjacent.toLowerCase()==='p'){
-              moves.push({
-                fr:r,
-                fc:c,
-                tr:nr,
-                tc:nc,
-                isEnPassant:true
-              });
+              moves.push({fr:r,fc:c,tr:nr,tc:nc,isEnPassant:true});
             }
           }
         }
       }
-
       else if(pt==='n'){
-
-        for(const [dr,dc] of [
-          [-2,-1],[-2,1],[-1,-2],[-1,2],
-          [1,-2],[1,2],[2,-1],[2,1]
-        ]){
-          const nr=r+dr;
-          const nc=c+dc;
-
-          if(
-            inBounds(nr,nc)&&
-            colorOf(board[nr][nc])!==color
-          ){
-            moves.push({
-              fr:r,fc:c,
-              tr:nr,tc:nc
-            });
+        for(const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
+          const nr=r+dr, nc=c+dc;
+          if(inBounds(nr,nc)&&colorOf(board[nr][nc])!==color){
+            moves.push({fr:r,fc:c,tr:nr,tc:nc});
           }
         }
       }
-
       else if(pt==='k'){
-
-        for(const [dr,dc] of [
-          [-1,-1],[-1,0],[-1,1],
-          [0,-1],[0,1],
-          [1,-1],[1,0],[1,1]
-        ]){
-          const nr=r+dr;
-          const nc=c+dc;
-
-          if(
-            inBounds(nr,nc)&&
-            colorOf(board[nr][nc])!==color
-          ){
-            moves.push({
-              fr:r,fc:c,
-              tr:nr,tc:nc
-            });
+        for(const [dr,dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
+          const nr=r+dr, nc=c+dc;
+          if(inBounds(nr,nc)&&colorOf(board[nr][nc])!==color){
+            moves.push({fr:r,fc:c,tr:nr,tc:nc});
           }
         }
-
         if(color==='w'&&r===7&&c===4){
-
-          if(
-            castling.wK&&
-            castling.wKR&&
-            board[7][7]==='R'&&
-            !board[7][5]&&
-            !board[7][6]
-          ){
-            moves.push({
-              fr:7,fc:4,
-              tr:7,tc:6,
-              castleSide:'K'
-            });
+          if(castling.wK&&castling.wKR&&board[7][7]==='R'&&!board[7][5]&&!board[7][6]){
+            moves.push({fr:7,fc:4,tr:7,tc:6,castleSide:'K'});
           }
-
-          if(
-            castling.wK&&
-            castling.wQR&&
-            board[7][0]==='R'&&
-            !board[7][3]&&
-            !board[7][2]&&
-            !board[7][1]
-          ){
-            moves.push({
-              fr:7,fc:4,
-              tr:7,tc:2,
-              castleSide:'Q'
-            });
+          if(castling.wK&&castling.wQR&&board[7][0]==='R'&&!board[7][3]&&!board[7][2]&&!board[7][1]){
+            moves.push({fr:7,fc:4,tr:7,tc:2,castleSide:'Q'});
           }
         }
-
         if(color==='b'&&r===0&&c===4){
-
-          if(
-            castling.bK&&
-            castling.bKR&&
-            board[0][7]==='r'&&
-            !board[0][5]&&
-            !board[0][6]
-          ){
-            moves.push({
-              fr:0,fc:4,
-              tr:0,tc:6,
-              castleSide:'K'
-            });
+          if(castling.bK&&castling.bKR&&board[0][7]==='r'&&!board[0][5]&&!board[0][6]){
+            moves.push({fr:0,fc:4,tr:0,tc:6,castleSide:'K'});
           }
-
-          if(
-            castling.bK&&
-            castling.bQR&&
-            board[0][0]==='r'&&
-            !board[0][3]&&
-            !board[0][2]&&
-            !board[0][1]
-          ){
-            moves.push({
-              fr:0,fc:4,
-              tr:0,tc:2,
-              castleSide:'Q'
-            });
+          if(castling.bK&&castling.bQR&&board[0][0]==='r'&&!board[0][3]&&!board[0][2]&&!board[0][1]){
+            moves.push({fr:0,fc:4,tr:0,tc:2,castleSide:'Q'});
           }
         }
       }
-
       else{
-
-        const dirs={
-          b:[
-            [-1,-1],[-1,1],
-            [1,-1],[1,1]
-          ],
-          r:[
-            [-1,0],[1,0],
-            [0,-1],[0,1]
-          ],
-          q:[
-            [-1,-1],[-1,1],
-            [1,-1],[1,1],
-            [-1,0],[1,0],
-            [0,-1],[0,1]
-          ]
-        }[pt];
-
+        const dirs={b:[[-1,-1],[-1,1],[1,-1],[1,1]],r:[[-1,0],[1,0],[0,-1],[0,1]],q:[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]}[pt];
         if(!dirs) continue;
-
         for(const [dr,dc] of dirs){
-
-          let nr=r+dr;
-          let nc=c+dc;
-
+          let nr=r+dr, nc=c+dc;
           while(inBounds(nr,nc)){
-
             const tgt=board[nr][nc];
-
             if(tgt){
-
-              if(colorOf(tgt)!==color){
-                moves.push({
-                  fr:r,fc:c,
-                  tr:nr,tc:nc
-                });
-              }
-
+              if(colorOf(tgt)!==color) moves.push({fr:r,fc:c,tr:nr,tc:nc});
               break;
             }
-
-            moves.push({
-              fr:r,fc:c,
-              tr:nr,tc:nc
-            });
-
-            nr+=dr;
-            nc+=dc;
+            moves.push({fr:r,fc:c,tr:nr,tc:nc});
+            nr+=dr; nc+=dc;
           }
         }
       }
     }
   }
-
   return moves;
 }
 
 function legalMoves(board,color,castling,enPassant){
-
-  const pseudo=pseudoMoves(
-    board,
-    color,
-    castling,
-    enPassant
-  );
-
+  const pseudo=pseudoMoves(board,color,castling,enPassant);
   const legal=[];
-
   for(const m of pseudo){
-
     if(m.castleSide){
-
       if(kingInCheck(board,color)) continue;
-
       const passTc=m.castleSide==='K'?5:3;
-
       const mid=copyBoard(board);
-
       mid[m.fr][passTc]=mid[m.fr][m.fc];
       mid[m.fr][m.fc]=null;
-
-      if(isAttacked(mid,m.fr,passTc,opp(color))){
-        continue;
-      }
+      if(isAttacked(mid,m.fr,passTc,opp(color))) continue;
     }
-
-    const result=doMove(
-      board,
-      m,
-      castling,
-      enPassant
-    );
-
-    if(!kingInCheck(result.board,color)){
-      legal.push(m);
-    }
+    const result=doMove(board,m,castling,enPassant);
+    if(!kingInCheck(result.board,color)) legal.push(m);
   }
-
   return legal;
 }
 
 function insufficientMaterial(board){
-
   const pieces=[];
-
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-
-      const p=board[r][c];
-
-      if(!p||p.toLowerCase()==='k') continue;
-
-      pieces.push({
-        t:p.toLowerCase(),
-        r,
-        c,
-        color:colorOf(p)
-      });
-    }
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    const p=board[r][c];
+    if(!p||p.toLowerCase()==='k') continue;
+    pieces.push({t:p.toLowerCase(),r,c,color:colorOf(p)});
   }
-
   if(pieces.length===0) return true;
-
-  if(
-    pieces.length===1&&
-    (pieces[0].t==='b'||pieces[0].t==='n')
-  ){
-    return true;
-  }
-
-  if(
-    pieces.length===2&&
-    pieces.every(p=>p.t==='b')&&
-    (pieces[0].r+pieces[0].c)%2===
-    (pieces[1].r+pieces[1].c)%2
-  ){
-    return true;
-  }
-
+  if(pieces.length===1&&(pieces[0].t==='b'||pieces[0].t==='n')) return true;
+  if(pieces.length===2&&pieces.every(p=>p.t==='b')&&
+    (pieces[0].r+pieces[0].c)%2===(pieces[1].r+pieces[1].c)%2) return true;
   return false;
 }
 
 function effectiveEnPassant(board,color,enPassant,castling){
-
   if(!enPassant) return null;
-
-  const moves=legalMovesWithoutEpRecursion(
-    board,
-    color,
-    castling,
-    enPassant
-  );
-
+  const moves=legalMovesWithoutEpRecursion(board,color,castling,enPassant);
   const exists=moves.some(m=>m.isEnPassant);
-
   return exists?enPassant:null;
 }
 
 function legalMovesWithoutEpRecursion(board,color,castling,enPassant){
-
-  const pseudo=pseudoMoves(
-    board,
-    color,
-    castling,
-    enPassant
-  );
-
+  const pseudo=pseudoMoves(board,color,castling,enPassant);
   const legal=[];
-
   for(const m of pseudo){
-
     if(m.castleSide){
-
       if(kingInCheck(board,color)) continue;
-
       const passTc=m.castleSide==='K'?5:3;
-
       const mid=copyBoard(board);
-
       mid[m.fr][passTc]=mid[m.fr][m.fc];
       mid[m.fr][m.fc]=null;
-
       if(isAttacked(mid,m.fr,passTc,opp(color))) continue;
     }
-
-    const result=doMove(
-      board,
-      m,
-      castling,
-      enPassant
-    );
-
-    if(!kingInCheck(result.board,color)){
-      legal.push(m);
-    }
+    const result=doMove(board,m,castling,enPassant);
+    if(!kingInCheck(result.board,color)) legal.push(m);
   }
-
   return legal;
 }
 
 function posKey(board,color,castling,enPassant){
-
-  const ep=effectiveEnPassant(
-    board,
-    color,
-    enPassant,
-    castling
-  );
-
+  const ep=effectiveEnPassant(board,color,enPassant,castling);
   return board.map(r=>r.map(p=>p||'.').join('')).join('|')
     +'|'+color
     +'|'+
-    (castling.wK?1:0)+
-    (castling.wKR?1:0)+
-    (castling.wQR?1:0)+
-    (castling.bK?1:0)+
-    (castling.bKR?1:0)+
-    (castling.bQR?1:0)
-    +'|'+
-    (ep?ep.join(','):'-');
+    (castling.wK?1:0)+(castling.wKR?1:0)+(castling.wQR?1:0)+
+    (castling.bK?1:0)+(castling.bKR?1:0)+(castling.bQR?1:0)
+    +'|'+(ep?ep.join(','):'-');
 }
 
-function evalStatus(
-  board,
-  color,
-  castling,
-  enPassant,
-  halfClock,
-  posHist
-){
-
-  const moves=legalMoves(
-    board,
-    color,
-    castling,
-    enPassant
-  );
-
-  if(moves.length===0){
-    return kingInCheck(board,color)
-      ?'checkmate'
-      :'stalemate';
-  }
-
+function evalStatus(board,color,castling,enPassant,halfClock,posHist){
+  const moves=legalMoves(board,color,castling,enPassant);
+  if(moves.length===0) return kingInCheck(board,color)?'checkmate':'stalemate';
   if(kingInCheck(board,color)) return 'check';
-
   if(halfClock>=100) return 'fifty';
-
   if(insufficientMaterial(board)) return 'insufficient';
-
   if(posHist){
-
-    const key=posKey(
-      board,
-      color,
-      castling,
-      enPassant
-    );
-
-    if(posHist.filter(k=>k===key).length>=3){
-      return 'repetition';
-    }
+    const key=posKey(board,color,castling,enPassant);
+    if(posHist.filter(k=>k===key).length>=3) return 'repetition';
   }
-
   return 'playing';
 }
 
-function toSAN(
-  board,
-  move,
-  color,
-  castling,
-  enPassant
-){
-
+function toSAN(board,move,color,castling,enPassant){
   if(move.castleSide==='K') return 'O-O';
   if(move.castleSide==='Q') return 'O-O-O';
-
   const p=board[move.fr][move.fc];
-
   if(!p) return '?';
-
   const pt=p.toLowerCase();
-
-  const isCapture=
-    !!board[move.tr][move.tc]||
-    move.isEnPassant;
-
+  const isCapture=!!board[move.tr][move.tc]||move.isEnPassant;
   const df=FILES_STR[move.tc];
   const dr=String(8-move.tr);
 
   if(pt==='p'){
-
-    let n=isCapture
-      ?FILES_STR[move.fc]+'x'
-      :'';
-
+    let n=isCapture?FILES_STR[move.fc]+'x':'';
     n+=df+dr;
-
-    if(move.promo){
-      n+='='+move.promo.toUpperCase();
-    }
-
+    if(move.promo) n+='='+move.promo.toUpperCase();
     return n;
   }
 
-  const all=legalMoves(
-    board,
-    color,
-    castling,
-    enPassant
-  );
-
+  const all=legalMoves(board,color,castling,enPassant);
   const amb=all.filter(m=>
     m!==move&&
     board[m.fr][m.fc]&&
@@ -3235,25 +3019,14 @@ function toSAN(
   );
 
   let prefix=pt.toUpperCase();
-
   if(amb.length){
-
     const sameFile=amb.some(m=>m.fc===move.fc);
     const sameRank=amb.some(m=>m.fr===move.fr);
-
-    if(!sameFile){
-      prefix+=FILES_STR[move.fc];
-    }else if(!sameRank){
-      prefix+=String(8-move.fr);
-    }else{
-      prefix+=FILES_STR[move.fc]+String(8-move.fr);
-    }
+    if(!sameFile) prefix+=FILES_STR[move.fc];
+    else if(!sameRank) prefix+=String(8-move.fr);
+    else prefix+=FILES_STR[move.fc]+String(8-move.fr);
   }
-
-  return prefix+
-    (isCapture?'x':'')+
-    df+
-    dr;
+  return prefix+(isCapture?'x':'')+df+dr;
 }
 
 
@@ -3267,11 +3040,14 @@ const MOVE_TIME=30;
 const CODE_EXPIRE=300;
 const DISCONNECT_GRACE=20000;
 const GAME_START_GRACE=15000;
-const USERNAME_GRACE=15000;
 const PUBLIC_POLL=2500;
 const END_RETURN_SECONDS=30;
+const WIN_REWARD=10;
 
-const MY_ID=Math.random().toString(36).slice(2,10);
+let MY_ID=Math.random().toString(36).slice(2,10);
+let currentUser=null;         // Firebase user or null
+let userProfile=null;         // { name, coins, ownedSkins, equippedSkin } or null
+let isGuest=true;
 
 let roomId=null;
 let myColor=null;
@@ -3296,11 +3072,7 @@ let publicPollTimer=null;
 let usernameHeartbeatTimer=null;
 let usernameKey=null;
 
-let moveTimeLeft={
-  w:MOVE_TIME,
-  b:MOVE_TIME
-};
-
+let moveTimeLeft={ w:MOVE_TIME, b:MOVE_TIME };
 let turnStartedAt=Date.now();
 
 let gameEnded=false;
@@ -3316,6 +3088,287 @@ let gameEndReturnTimer=null;
 let spectatorEndReturnTimer=null;
 let spectatorEndReturnFired=false;
 let roomCleanedUp=false;
+let coinsAwardedThisGame=false;
+
+/* current room's skin IDs, updated when we read room data */
+let currentRoomSkins = { w:'classic', b:'classic' };
+
+
+/* ============================================================
+   AUTH
+============================================================ */
+
+function authStatus(html){
+  const el=document.getElementById('auth-status');
+  if(el) el.innerHTML=html;
+}
+
+async function signInWithGoogle(){
+  if(!auth){
+    authStatus('<span class="warn">Firebase not initialised. Check the config.</span>');
+    return;
+  }
+  authStatus('Opening Google sign-in…');
+  try{
+    await auth.signInWithPopup(googleProvider);
+  }catch(e){
+    console.warn('Sign-in error:',e);
+    authStatus('<span class="warn">'+(e.message||'Sign-in failed')+'</span>');
+  }
+}
+
+function continueAsGuest(){
+  // Assign a random guest name
+  const adjectives=['Swift','Brave','Clever','Silent','Bold','Sharp','Quick','Calm','Bright','Fierce'];
+  const animals=['Fox','Lion','Wolf','Hawk','Bear','Tiger','Falcon','Eagle','Otter','Panther'];
+  const adj=adjectives[Math.floor(Math.random()*adjectives.length)];
+  const an=animals[Math.floor(Math.random()*animals.length)];
+  const num=Math.floor(Math.random()*9000+1000);
+
+  isGuest=true;
+  currentUser=null;
+  userProfile=null;
+  myName=`Guest_${adj}${an}${num}`;
+  MY_ID=Math.random().toString(36).slice(2,10);
+
+  finishAuth();
+}
+
+async function loadOrCreateProfile(user){
+  const path=`users/${user.uid}`;
+  let profile=await fbGet(path);
+
+  if(!profile || typeof profile!=='object'){
+    profile={
+      name: user.displayName || (user.email ? user.email.split('@')[0] : 'Player'),
+      coins: 10,
+      ownedSkins: { classic:true },
+      equippedSkin: 'classic',
+      created: Date.now()
+    };
+    await fbSet(path, profile);
+    showToast('Welcome! +10 starting coins', 3500);
+  }else{
+    // Ensure the fields exist
+    let changed=false;
+    if(typeof profile.coins!=='number'){ profile.coins=0; changed=true; }
+    if(!profile.ownedSkins || typeof profile.ownedSkins!=='object'){
+      profile.ownedSkins={classic:true}; changed=true;
+    }
+    if(!profile.ownedSkins.classic){ profile.ownedSkins.classic=true; changed=true; }
+    if(!profile.equippedSkin){ profile.equippedSkin='classic'; changed=true; }
+    if(!profile.name){ profile.name=user.displayName||'Player'; changed=true; }
+    if(changed){ await fbPatch(path, profile); }
+  }
+
+  userProfile=profile;
+  myName=profile.name;
+  MY_ID=user.uid;
+  isGuest=false;
+}
+
+function finishAuth(){
+  document.getElementById('auth-screen').classList.add('hidden');
+  updatePlayerNameDisplay();
+  renderAccountInfo();
+  checkAutoJoin();
+  loadPublicRooms();
+}
+
+function updatePlayerNameDisplay(){
+  const el=document.getElementById('player-name-display');
+  if(!el) return;
+
+  let html=`Playing as <strong>${escapeHtml(myName)}</strong>`;
+
+  if(!isGuest && userProfile){
+    html += ` <span class="pnd-coin"><span class="mini-coin" style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #f6dc91, #c9a84c 70%);color:#5a4210;font-size:.5rem;font-weight:bold;font-family:serif;">$</span>${userProfile.coins||0}</span>`;
+  }else{
+    html += ` <span class="pnd-guest">Guest</span>`;
+  }
+
+  el.innerHTML=html;
+}
+
+async function signOutUser(){
+  if(!auth) return;
+  if(!confirm('Sign out? You will continue as a guest.')) return;
+  try{
+    await auth.signOut();
+    location.reload();
+  }catch(e){
+    showToast('Sign-out failed');
+  }
+}
+
+if(auth){
+  auth.onAuthStateChanged(async user=>{
+    if(user){
+      try{
+        await loadOrCreateProfile(user);
+        finishAuth();
+      }catch(e){
+        console.warn('Profile error:',e);
+        authStatus('<span class="warn">Could not load profile</span>');
+      }
+    }
+    // If no user, the auth screen remains visible and the guest button works.
+  });
+}
+
+
+/* ============================================================
+   SHOP
+============================================================ */
+
+function renderShop(){
+  const grid=document.getElementById('shop-grid');
+  const coinEl=document.getElementById('shop-coin-amount');
+  const tag=document.getElementById('shop-tagline');
+  if(!grid) return;
+
+  const coins = userProfile ? (userProfile.coins||0) : 0;
+  if(coinEl) coinEl.textContent = isGuest ? '—' : coins;
+
+  if(tag){
+    tag.textContent = isGuest
+      ? 'Sign in to buy skins'
+      : `Owned: ${Object.keys(userProfile?.ownedSkins||{}).length} / ${SKINS.length}`;
+  }
+
+  grid.innerHTML='';
+
+  if(isGuest){
+    const empty=document.createElement('div');
+    empty.className='shop-empty';
+    empty.innerHTML='🎨 <strong style="color:var(--gold)">Sign in with Google</strong> to unlock skins.<br>Guests cannot earn coins or buy skins.';
+    grid.appendChild(empty);
+    // Still show the skins as previews
+    SKINS.forEach(skin=> grid.appendChild(buildShopItem(skin, false)));
+    return;
+  }
+
+  SKINS.forEach(skin=> grid.appendChild(buildShopItem(skin, true)));
+}
+
+function buildShopItem(skin, interactive){
+  const owned = !!(userProfile && userProfile.ownedSkins && userProfile.ownedSkins[skin.id]);
+  const equipped = !!(userProfile && userProfile.equippedSkin === skin.id);
+
+  const item=document.createElement('div');
+  item.className='shop-item'+(equipped?' equipped':'');
+
+  const preview=document.createElement('div');
+  preview.className='shop-preview';
+  const img=document.createElement('img');
+  img.src=pieceUrl('N'); // white knight for preview
+  img.alt=skin.name;
+  img.style.filter=skin.filter;
+  preview.appendChild(img);
+
+  const nameEl=document.createElement('div');
+  nameEl.className='shop-name';
+  nameEl.textContent=skin.name;
+
+  const descEl=document.createElement('div');
+  descEl.className='shop-desc';
+  descEl.textContent=skin.desc;
+
+  const priceEl=document.createElement('div');
+  priceEl.className='shop-price'+(owned?' owned':'');
+  if(skin.price===0 || owned){
+    priceEl.innerHTML = owned ? '✓ Owned' : 'Free';
+  }else{
+    priceEl.innerHTML = `<span class="mini-coin">$</span>${skin.price} coins`;
+  }
+
+  const btn=document.createElement('button');
+  if(equipped){
+    btn.className='owned-btn';
+    btn.textContent='EQUIPPED';
+    btn.disabled=true;
+  }else if(owned){
+    btn.className='equip';
+    btn.textContent='EQUIP';
+    btn.onclick = ()=> equipSkin(skin.id);
+  }else if(skin.price===0){
+    btn.className='equip';
+    btn.textContent='GET';
+    btn.onclick = ()=> buySkin(skin.id);
+  }else{
+    btn.className='buy';
+    btn.textContent = `BUY · ${skin.price}`;
+    btn.onclick = ()=> buySkin(skin.id);
+    if(!interactive || !userProfile || userProfile.coins < skin.price){
+      btn.disabled = true;
+      if(!interactive) btn.textContent='SIGN IN';
+    }
+  }
+
+  item.append(preview, nameEl, descEl, priceEl, btn);
+  return item;
+}
+
+async function buySkin(skinId){
+  if(isGuest || !currentUser || !userProfile){
+    showToast('Sign in to buy skins');
+    return;
+  }
+  const skin=findSkin(skinId);
+  if(!skin) return;
+
+  if(userProfile.ownedSkins[skinId]){
+    equipSkin(skinId);
+    return;
+  }
+  if(userProfile.coins < skin.price){
+    showToast('Not enough coins');
+    return;
+  }
+
+  userProfile.coins -= skin.price;
+  userProfile.ownedSkins[skinId]=true;
+
+  await fbPatch(`users/${currentUser.uid}`, {
+    coins: userProfile.coins,
+    ownedSkins: userProfile.ownedSkins
+  });
+
+  showToast(`Purchased ${skin.name}!`);
+  updatePlayerNameDisplay();
+  renderShop();
+}
+
+async function equipSkin(skinId){
+  if(isGuest || !currentUser || !userProfile){
+    showToast('Sign in to equip skins');
+    return;
+  }
+  if(!userProfile.ownedSkins[skinId]) return;
+
+  userProfile.equippedSkin=skinId;
+
+  await fbPatch(`users/${currentUser.uid}`, {
+    equippedSkin: skinId
+  });
+
+  // If in an active game, publish to room
+  if(roomId && myColor && gameStarted && !isSpectator){
+    await fbPatch(`rooms/${roomId}/skins`, {
+      [myColor]: skinId
+    });
+    currentRoomSkins[myColor]=skinId;
+    renderBoard();
+  }
+
+  showToast(`Equipped ${findSkin(skinId).name}`);
+  renderShop();
+}
+
+function getMyEquippedSkin(){
+  if(isGuest || !userProfile) return 'classic';
+  return userProfile.equippedSkin || 'classic';
+}
 
 
 /* ============================================================
@@ -3324,119 +3377,55 @@ let roomCleanedUp=false;
 
 async function fbSet(path,data){
   try{
-    const r=await fetch(
-      `${FB}/${path}.json`,
-      {
-        method:'PUT',
-        headers:{
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify(data)
-      }
-    );
-
+    const r=await fetch(`${FB}/${path}.json`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
     return r.ok;
-  }catch(e){
-    return false;
-  }
+  }catch(e){ return false; }
 }
 
 async function fbPatch(path,data,keepalive=false){
   try{
-    const r=await fetch(
-      `${FB}/${path}.json`,
-      {
-        method:'PATCH',
-        headers:{
-          'Content-Type':'application/json'
-        },
-        body:JSON.stringify(data),
-        keepalive
-      }
-    );
-
+    const r=await fetch(`${FB}/${path}.json`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data),
+      keepalive
+    });
     return r.ok;
-  }catch(e){
-    return false;
-  }
+  }catch(e){ return false; }
 }
 
 async function fbGet(path){
   try{
-    const r=await fetch(
-      `${FB}/${path}.json`,
-      {
-        cache:'no-store'
-      }
-    );
-
+    const r=await fetch(`${FB}/${path}.json`,{ cache:'no-store' });
     return r.ok?r.json():null;
-  }catch(e){
-    return null;
-  }
+  }catch(e){ return null; }
 }
 
 async function fbDelete(path,keepalive=false){
   try{
-    const r=await fetch(
-      `${FB}/${path}.json`,
-      {
-        method:'DELETE',
-        keepalive
-      }
-    );
-
+    const r=await fetch(`${FB}/${path}.json`,{ method:'DELETE', keepalive });
     return r.ok;
-  }catch(e){
-    return false;
-  }
+  }catch(e){ return false; }
 }
 
 
 async function fbClaimBlack(code){
-
   try{
-
-    const read=await fetch(
-      `${FB}/rooms/${code}.json`,
-      {
-        headers:{
-          'X-Firebase-ETag':'true'
-        },
-        cache:'no-store'
-      }
-    );
-
-    if(!read.ok){
-      return {
-        ok:false,
-        reason:'not-found'
-      };
-    }
+    const read=await fetch(`${FB}/rooms/${code}.json`,{
+      headers:{ 'X-Firebase-ETag':'true' },
+      cache:'no-store'
+    });
+    if(!read.ok) return {ok:false,reason:'not-found'};
 
     const room=await read.json();
     const etag=read.headers.get('ETag');
-
-    if(!room||!etag){
-      return {
-        ok:false,
-        reason:'unavailable'
-      };
-    }
-
-    if(room.black){
-      return {
-        ok:false,
-        reason:'full'
-      };
-    }
-
-    if(room.expires&&Date.now()>room.expires){
-      return {
-        ok:false,
-        reason:'expired'
-      };
-    }
+    if(!room||!etag) return {ok:false,reason:'unavailable'};
+    if(room.black) return {ok:false,reason:'full'};
+    if(room.expires&&Date.now()>room.expires) return {ok:false,reason:'expired'};
 
     const next={
       ...room,
@@ -3446,91 +3435,37 @@ async function fbClaimBlack(code){
       status:'playing'
     };
 
-    const write=await fetch(
-      `${FB}/rooms/${code}.json`,
-      {
-        method:'PUT',
-        headers:{
-          'Content-Type':'application/json',
-          'if-match':etag
-        },
-        body:JSON.stringify(next)
-      }
-    );
+    const write=await fetch(`${FB}/rooms/${code}.json`,{
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json', 'if-match':etag },
+      body:JSON.stringify(next)
+    });
 
-    if(write.status===412){
-      return {
-        ok:false,
-        reason:'race'
-      };
-    }
-
-    if(!write.ok){
-      return {
-        ok:false,
-        reason:'write'
-      };
-    }
-
-    return {
-      ok:true,
-      room:next
-    };
-
+    if(write.status===412) return {ok:false,reason:'race'};
+    if(!write.ok) return {ok:false,reason:'write'};
+    return {ok:true,room:next};
   }catch(e){
-
-    return {
-      ok:false,
-      reason:'network'
-    };
+    return {ok:false,reason:'network'};
   }
 }
 
-
-function safeKey(s){
-  return encodeURIComponent(
-    s.trim().toLowerCase()
-  ).replace(/\./g,'%2E');
-}
-
-function cleanName(s){
-  return s
-    .replace(/[^a-zA-Z0-9 _-]/g,'')
-    .trim()
-    .replace(/\s+/g,' ');
-}
+function safeKey(s){ return encodeURIComponent(s.trim().toLowerCase()).replace(/\./g,'%2E'); }
+function cleanName(s){ return s.replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,' '); }
 
 function escapeHtml(s){
-  return String(s).replace(
-    /[&<>"']/g,
-    c=>({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    }[c])
-  );
+  return String(s).replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 }
 
 function showToast(msg,ms=2500){
   const el=document.getElementById('toast');
-
   el.textContent=msg;
   el.classList.add('show');
-
-  setTimeout(()=>{
-    el.classList.remove('show');
-  },ms);
+  setTimeout(()=>{ el.classList.remove('show'); },ms);
 }
 
-function lobbyStatus(html){
-  document.getElementById('lobby-status').innerHTML=html;
-}
-
-function nameStatus(html){
-  document.getElementById('name-status').innerHTML=html;
-}
+function lobbyStatus(html){ document.getElementById('lobby-status').innerHTML=html; }
 
 
 /* ============================================================
@@ -3538,47 +3473,31 @@ function nameStatus(html){
 ============================================================ */
 
 async function cleanupRoomAndNavigate(){
-  // Only players delete the room - spectators just leave.
-  // Deleting twice is fine (idempotent), so both players can
-  // safely try without racing.
   if(roomId && !isSpectator && !roomCleanedUp){
     roomCleanedUp=true;
-
-    try{
-      await fbDelete(`rooms/${roomId}`);
-    }catch(e){}
+    try{ await fbDelete(`rooms/${roomId}`); }catch(e){}
   }
-
   location.href=location.pathname;
 }
 
 function newGameButton(){
-  if(gameEndReturnTimer){
-    clearInterval(gameEndReturnTimer);
-    gameEndReturnTimer=null;
-  }
-
+  if(gameEndReturnTimer){ clearInterval(gameEndReturnTimer); gameEndReturnTimer=null; }
   cleanupRoomAndNavigate();
 }
 
 function startGameEndReturnCountdown(){
   if(gameEndReturnTimer) return;
-
   const cdEl=document.getElementById('result-countdown');
   let secs=END_RETURN_SECONDS;
 
   function tick(){
-    if(cdEl){
-      cdEl.textContent=`Returning to lobby in ${secs}s…`;
-    }
-
+    if(cdEl) cdEl.textContent=`Returning to lobby in ${secs}s…`;
     if(secs<=0){
       clearInterval(gameEndReturnTimer);
       gameEndReturnTimer=null;
       cleanupRoomAndNavigate();
       return;
     }
-
     secs--;
   }
 
@@ -3588,15 +3507,11 @@ function startGameEndReturnCountdown(){
 
 function startSpectatorEndReturnCountdown(){
   if(spectatorEndReturnTimer||spectatorEndReturnFired) return;
-
   const cdEl=document.getElementById('spectate-countdown');
   let secs=END_RETURN_SECONDS;
 
   function tick(){
-    if(cdEl){
-      cdEl.textContent=`Returning to lobby in ${secs}s…`;
-    }
-
+    if(cdEl) cdEl.textContent=`Returning to lobby in ${secs}s…`;
     if(secs<=0){
       clearInterval(spectatorEndReturnTimer);
       spectatorEndReturnTimer=null;
@@ -3604,7 +3519,6 @@ function startSpectatorEndReturnCountdown(){
       location.href=location.pathname;
       return;
     }
-
     secs--;
   }
 
@@ -3621,11 +3535,9 @@ const _chatSignatures={ game:null, spectate:null };
 
 function renderChatMessages(containerId,chatData,cacheKey,roomContext){
   const box=document.getElementById(containerId);
-
   if(!box) return;
 
   const msgs=[];
-
   if(chatData&&typeof chatData==='object'){
     Object.keys(chatData).forEach(key=>{
       const m=chatData[key];
@@ -3641,24 +3553,14 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
     });
   }
 
-  msgs.sort((a,b)=>
-    (a.created-b.created)||
-    String(a.key).localeCompare(String(b.key))
-  );
-
+  msgs.sort((a,b)=>(a.created-b.created)||String(a.key).localeCompare(String(b.key)));
   const shown=msgs.slice(-80);
 
-  const sig=shown
-    .map(m=>`${m.key}\u0001${m.name}\u0001${m.text}\u0001${m.senderId}`)
-    .join('\u0002');
-
+  const sig=shown.map(m=>`${m.key}\u0001${m.name}\u0001${m.text}\u0001${m.senderId}`).join('\u0002');
   if(sig===_chatSignatures[cacheKey]) return;
-
   _chatSignatures[cacheKey]=sig;
 
-  const atBottom=
-    box.scrollHeight-box.scrollTop-box.clientHeight<40;
-
+  const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<40;
   box.innerHTML='';
 
   if(!shown.length){
@@ -3674,25 +3576,12 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
     row.className='chat-msg';
 
     let roleTag='';
-
     if(roomContext){
       const sid=m.senderId;
-
-      if(sid&&roomContext.whiteId&&sid===roomContext.whiteId){
-        roleTag='Player 1';
-      }else if(sid&&roomContext.blackId&&sid===roomContext.blackId){
-        roleTag='Player 2';
-      }else if(
-        roomContext.whiteName&&
-        roomContext.whiteName===m.name
-      ){
-        roleTag='Player 1';
-      }else if(
-        roomContext.blackName&&
-        roomContext.blackName===m.name
-      ){
-        roleTag='Player 2';
-      }
+      if(sid&&roomContext.whiteId&&sid===roomContext.whiteId) roleTag='Player 1';
+      else if(sid&&roomContext.blackId&&sid===roomContext.blackId) roleTag='Player 2';
+      else if(roomContext.whiteName&&roomContext.whiteName===m.name) roleTag='Player 1';
+      else if(roomContext.blackName&&roomContext.blackName===m.name) roleTag='Player 2';
     }
 
     const nameEl=document.createElement('div');
@@ -3719,158 +3608,30 @@ function renderChatMessages(containerId,chatData,cacheKey,roomContext){
 
 async function pushChatMessage(code,inputEl){
   if(!code||!inputEl) return;
-
   const text=inputEl.value.trim().slice(0,180);
-
   if(!text) return;
-
   inputEl.value='';
 
   const id=Math.random().toString(36).slice(2,10);
   const created=Date.now();
-
   const clean=text.replace(/[<>]/g,'');
 
-  await fbSet(
-    `rooms/${code}/chat/${created}_${id}`,
-    {
-      name:myName||'Player',
-      text:clean,
-      created,
-      senderId:MY_ID
-    }
-  );
+  await fbSet(`rooms/${code}/chat/${created}_${id}`,{
+    name:myName||'Player',
+    text:clean,
+    created,
+    senderId:MY_ID
+  });
 }
 
 function sendGameChat(){
   if(!roomId) return;
-  pushChatMessage(
-    roomId,
-    document.getElementById('game-chat-input')
-  );
+  pushChatMessage(roomId,document.getElementById('game-chat-input'));
 }
 
 function sendSpectatorChat(){
   if(!spectatorRoomId) return;
-  pushChatMessage(
-    spectatorRoomId,
-    document.getElementById('spectate-chat-input')
-  );
-}
-
-
-/* ============================================================
-   USERNAME
-============================================================ */
-
-async function claimUsername(){
-
-  const input=document.getElementById('name-input');
-
-  const name=cleanName(input.value);
-
-  if(name.length<2||name.length>20){
-
-    nameStatus(
-      '<span class="warn">Use 2–20 letters, numbers, spaces, _ or -.</span>'
-    );
-
-    return;
-  }
-
-  const key=safeKey(name);
-
-  nameStatus('Checking name…');
-
-  const existing=await fbGet(`activeUsers/${key}`);
-
-  if(
-    existing&&
-    existing.id!==MY_ID&&
-    existing.heartbeat&&
-    Date.now()-existing.heartbeat<USERNAME_GRACE
-  ){
-
-    nameStatus(
-      '<span class="warn">That username is currently in use.</span>'
-    );
-
-    return;
-  }
-
-  myName=name;
-  usernameKey=key;
-
-  const ok=await fbSet(
-    `activeUsers/${key}`,
-    {
-      id:MY_ID,
-      name:myName,
-      heartbeat:Date.now()
-    }
-  );
-
-  if(!ok){
-
-    nameStatus(
-      '<span class="warn">Could not claim the username. Try again.</span>'
-    );
-
-    return;
-  }
-
-  document.getElementById('name-screen')
-    .classList.add('hidden');
-
-  document.getElementById('player-name-display')
-    .textContent=`Playing as ${myName}`;
-
-  startUsernamePresence();
-
-  nameStatus('');
-
-  checkAutoJoin();
-
-  loadPublicRooms();
-}
-
-function startUsernamePresence(){
-
-  if(usernameHeartbeatTimer){
-    clearInterval(usernameHeartbeatTimer);
-  }
-
-  usernameHeartbeatTimer=setInterval(async()=>{
-
-    if(!usernameKey) return;
-
-    await fbPatch(
-      `activeUsers/${usernameKey}`,
-      {
-        id:MY_ID,
-        name:myName,
-        heartbeat:Date.now()
-      }
-    );
-
-  },5000);
-}
-
-function releaseUsername(){
-
-  if(!usernameKey) return;
-
-  try{
-
-    fetch(
-      `${FB}/activeUsers/${usernameKey}.json`,
-      {
-        method:'DELETE',
-        keepalive:true
-      }
-    );
-
-  }catch(e){}
+  pushChatMessage(spectatorRoomId,document.getElementById('spectate-chat-input'));
 }
 
 
@@ -3879,77 +3640,43 @@ function releaseUsername(){
 ============================================================ */
 
 function showPage(page){
-
   if(isSpectator) return;
 
   const lobby=document.getElementById('lobby');
   const pub=document.getElementById('public-page');
   const live=document.getElementById('live-page');
+  const shop=document.getElementById('shop-page');
 
   const a=document.getElementById('tab-lobby');
   const b=document.getElementById('tab-public');
   const c=document.getElementById('tab-live');
+  const d=document.getElementById('tab-shop');
 
   const isPub=page==='public';
   const isLive=page==='live';
+  const isShop=page==='shop';
 
-  lobby.classList.toggle(
-    'hidden',
-    isPub||isLive
-  );
+  lobby.classList.toggle('hidden', isPub||isLive||isShop);
+  pub.classList.toggle('hidden', !isPub);
+  live.classList.toggle('hidden', !isLive);
+  shop.classList.toggle('hidden', !isShop);
 
-  pub.classList.toggle(
-    'hidden',
-    !isPub
-  );
+  a.classList.toggle('active', !isPub&&!isLive&&!isShop);
+  b.classList.toggle('active', isPub);
+  c.classList.toggle('active', isLive);
+  d.classList.toggle('active', isShop);
 
-  live.classList.toggle(
-    'hidden',
-    !isLive
-  );
-
-  a.classList.toggle(
-    'active',
-    !isPub&&!isLive
-  );
-
-  b.classList.toggle(
-    'active',
-    isPub
-  );
-
-  c.classList.toggle(
-    'active',
-    isLive
-  );
-
-  if(publicPollTimer){
-    clearInterval(publicPollTimer);
-    publicPollTimer=null;
-  }
-
-  if(livePollTimer){
-    clearInterval(livePollTimer);
-    livePollTimer=null;
-  }
+  if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
+  if(livePollTimer){ clearInterval(livePollTimer); livePollTimer=null; }
 
   if(isPub){
-
     loadPublicRooms();
-
-    publicPollTimer=setInterval(
-      loadPublicRooms,
-      PUBLIC_POLL
-    );
-
+    publicPollTimer=setInterval(loadPublicRooms,PUBLIC_POLL);
   }else if(isLive){
-
     loadLiveGames();
-
-    livePollTimer=setInterval(
-      loadLiveGames,
-      PUBLIC_POLL
-    );
+    livePollTimer=setInterval(loadLiveGames,PUBLIC_POLL);
+  }else if(isShop){
+    renderShop();
   }
 }
 
@@ -3958,301 +3685,154 @@ function showPage(page){
    ROOM CREATION
 ============================================================ */
 
-function openCreateType(){
-  document
-    .getElementById('create-type-modal')
-    .classList.add('show');
-}
-
-function closeCreateType(){
-  document
-    .getElementById('create-type-modal')
-    .classList.remove('show');
-}
+function openCreateType(){ document.getElementById('create-type-modal').classList.add('show'); }
+function closeCreateType(){ document.getElementById('create-type-modal').classList.remove('show'); }
 
 function genCode(){
-
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-  return Array.from(
-    {length:6},
-    ()=>chars[Math.random()*chars.length|0]
-  ).join('');
+  return Array.from({length:6},()=>chars[Math.random()*chars.length|0]).join('');
 }
 
 function getRoomLink(code){
-
   const u=new URL(location.href);
-
   u.search='';
-
-  u.searchParams.set(
-    'join',
-    code
-  );
-
+  u.searchParams.set('join',code);
   return u.toString();
 }
 
 function copyRoomLink(){
-
-  if(!roomId){
-    showToast('Create a room first');
-    return;
-  }
-
-  navigator.clipboard
-    .writeText(getRoomLink(roomId))
-    .then(()=>{
-      showToast('Link copied!');
-    })
-    .catch(()=>{
-      showToast('Could not copy link');
-    });
+  if(!roomId){ showToast('Create a room first'); return; }
+  navigator.clipboard.writeText(getRoomLink(roomId))
+    .then(()=>showToast('Link copied!'))
+    .catch(()=>showToast('Could not copy link'));
 }
 
 function emailInvite(){
-
-  if(!roomId){
-    showToast('Create a room first');
-    return;
-  }
-
+  if(!roomId){ showToast('Create a room first'); return; }
   const link=getRoomLink(roomId);
-
-  const subj=encodeURIComponent(
-    'Join my Chess game!'
-  );
-
+  const subj=encodeURIComponent('Join my Chess game!');
   const body=encodeURIComponent(
-    `I challenge you to chess!\n\n`+
-    `Join instantly:\n${link}\n\n`+
-    `Or enter code: ${roomId}\n\n`+
-    `See you on the board! ♟`
+    `I challenge you to chess!\n\nJoin instantly:\n${link}\n\nOr enter code: ${roomId}\n\nSee you on the board! ♟`
   );
-
-  window.location.href=
-    `mailto:?subject=${subj}&body=${body}`;
+  window.location.href=`mailto:?subject=${subj}&body=${body}`;
 }
 
 function checkAutoJoin(){
-
-  const p=new URLSearchParams(
-    location.search
-  );
-
+  const p=new URLSearchParams(location.search);
   const code=p.get('join');
-
   if(code&&code.length===6){
-
-    document.getElementById('join-id')
-      .value=code.toUpperCase();
-
+    document.getElementById('join-id').value=code.toUpperCase();
     const u=new URL(location.href);
-
     u.searchParams.delete('join');
-
-    history.replaceState(
-      {},
-      '',
-      u.toString()
-    );
-
-    setTimeout(
-      joinRoom,
-      300
-    );
+    history.replaceState({},'',u.toString());
+    setTimeout(joinRoom,300);
   }
 }
 
 async function createRoom(type='private'){
-
   closeCreateType();
 
-  if(!myName){
-    showToast('Choose a username first');
-    return;
-  }
-
-  if(roomId){
-    showToast('You already have a room open.');
-    return;
-  }
+  if(!myName){ showToast('Not signed in'); return; }
+  if(roomId){ showToast('You already have a room open.'); return; }
 
   lobbyStatus('Creating room…');
-
   roomType=type;
-
-  spectatorEnabled=!!document
-    .getElementById('spectators-toggle')
-    ?.checked;
+  spectatorEnabled=!!document.getElementById('spectators-toggle')?.checked;
 
   const code=genCode();
-
   roomId=code;
   myColor='w';
 
   const now=Date.now();
+  const mySkin=getMyEquippedSkin();
 
   const createdRoom={
     white:MY_ID,
     whiteName:myName,
-
     black:null,
     blackName:null,
-
     seq:0,
     move:null,
-
     created:now,
     expires:now+CODE_EXPIRE*1000,
-
     event:null,
-
     type:type,
     status:'waiting',
-
     hostName:myName,
-
     spectatorEnabled:spectatorEnabled,
-
     heartbeat_white:now,
     heartbeat_black:null,
-
     state:null,
-    chat:null
+    chat:null,
+    skins:{ w:mySkin, b:'classic' }
   };
 
-  const ok=await fbSet(
-    `rooms/${code}`,
-    createdRoom
-  );
-
+  const ok=await fbSet(`rooms/${code}`,createdRoom);
   if(!ok){
-
     roomId=null;
     myColor=null;
-
-    lobbyStatus(
-      '<span class="warn">Could not create the room.</span>'
-    );
-
+    lobbyStatus('<span class="warn">Could not create the room.</span>');
     return;
   }
 
-  document.getElementById('room-actions')
-    .classList.remove('hidden');
+  document.getElementById('room-actions').classList.remove('hidden');
 
   let secs=CODE_EXPIRE;
-
   function tick(){
-
     if(gameStarted||!roomId){
       clearInterval(codeExpireTimer);
       codeExpireTimer=null;
       return;
     }
-
     secs--;
-
     if(secs<=0){
-
       clearInterval(codeExpireTimer);
       codeExpireTimer=null;
-
       fbDelete(`rooms/${code}`);
-
-      lobbyStatus(
-        '<span class="warn">Room expired.</span>'
-      );
-
-      document.getElementById('room-actions')
-        .classList.add('hidden');
-
+      lobbyStatus('<span class="warn">Room expired.</span>');
+      document.getElementById('room-actions').classList.add('hidden');
       roomId=null;
       myColor=null;
-
       return;
     }
-
     const m=Math.floor(secs/60);
     const s=secs%60;
-
     lobbyStatus(
       `${type==='public'?'Public':'Private'} Room Code:`+
       `<div class="code">${code}</div>`+
-      `${type==='public'
-        ?'Visible in Public Lobbies.'
-        :'Share with your opponent.'}`+
-      `<br><small style="color:var(--muted)">`+
-      `Expires in ${m}:${String(s).padStart(2,'0')}`+
-      `</small>`
+      `${type==='public'?'Visible in Public Lobbies.':'Share with your opponent.'}`+
+      `<br><small style="color:var(--muted)">Expires in ${m}:${String(s).padStart(2,'0')}</small>`
     );
   }
-
   tick();
+  codeExpireTimer=setInterval(tick,1000);
 
-  codeExpireTimer=setInterval(
-    tick,
-    1000
-  );
+  if(type==='public') loadPublicRooms();
+  if(pollTimer) clearInterval(pollTimer);
 
-  if(type==='public'){
-    loadPublicRooms();
-  }
-
-  if(pollTimer){
-    clearInterval(pollTimer);
-  }
-
-  pollTimer=setInterval(
-    async()=>{
-
-      if(!roomId||roomId!==code||gameStarted){
-        clearInterval(pollTimer);
-        pollTimer=null;
-        return;
-      }
-
-      const room=await fbGet(
-        `rooms/${code}`
-      );
-
-      if(!room){
-
-        clearInterval(pollTimer);
-        pollTimer=null;
-
-        lobbyStatus(
-          '<span class="warn">Room closed.</span>'
-        );
-
-        return;
-      }
-
-      if(room.black){
-
-        clearInterval(pollTimer);
-        pollTimer=null;
-
-        clearInterval(codeExpireTimer);
-        codeExpireTimer=null;
-
-        gameStarted=true;
-
-        await fbPatch(
-          `rooms/${code}`,
-          {
-            status:'playing'
-          }
-        );
-
-        startGame();
-      }
-
-    },
-    1000
-  );
+  pollTimer=setInterval(async()=>{
+    if(!roomId||roomId!==code||gameStarted){
+      clearInterval(pollTimer);
+      pollTimer=null;
+      return;
+    }
+    const room=await fbGet(`rooms/${code}`);
+    if(!room){
+      clearInterval(pollTimer);
+      pollTimer=null;
+      lobbyStatus('<span class="warn">Room closed.</span>');
+      return;
+    }
+    if(room.black){
+      clearInterval(pollTimer);
+      pollTimer=null;
+      clearInterval(codeExpireTimer);
+      codeExpireTimer=null;
+      gameStarted=true;
+      await fbPatch(`rooms/${code}`,{status:'playing'});
+      startGame();
+    }
+  },1000);
 }
 
 
@@ -4261,119 +3841,48 @@ async function createRoom(type='private'){
 ============================================================ */
 
 async function loadPublicRooms(){
-
-  const list=document.getElementById(
-    'public-list'
-  );
-
+  const list=document.getElementById('public-list');
   if(!list||isSpectator) return;
-
   const rooms=await fbGet('rooms');
-
   const now=Date.now();
   const arr=[];
 
   if(rooms){
-
     for(const [code,r] of Object.entries(rooms)){
-
-      if(
-        !r||
-        r.type!=='public'||
-        r.status!=='waiting'||
-        r.black||
-        !r.white
-      ){
-        continue;
-      }
-
-      if(
-        r.expires&&
-        now>r.expires
-      ){
-        fbDelete(`rooms/${code}`);
-        continue;
-      }
-
-      if(
-        r.heartbeat_white&&
-        now-r.heartbeat_white>
-        DISCONNECT_GRACE
-      ){
-        fbDelete(`rooms/${code}`);
-        continue;
-      }
-
-      arr.push({
-        code,
-        ...r
-      });
+      if(!r||r.type!=='public'||r.status!=='waiting'||r.black||!r.white) continue;
+      if(r.expires&&now>r.expires){ fbDelete(`rooms/${code}`); continue; }
+      if(r.heartbeat_white&&now-r.heartbeat_white>DISCONNECT_GRACE){ fbDelete(`rooms/${code}`); continue; }
+      arr.push({code,...r});
     }
   }
 
-  arr.sort(
-    (a,b)=>
-      (a.created||0)-
-      (b.created||0)
-  );
+  arr.sort((a,b)=>(a.created||0)-(b.created||0));
 
   if(!arr.length){
-
-    list.innerHTML=
-      '<div class="public-empty">'+
-      'No public lobbies are open right now.'+
-      '</div>';
-
+    list.innerHTML='<div class="public-empty">No public lobbies are open right now.</div>';
     return;
   }
 
   list.innerHTML='';
-
   arr.forEach(r=>{
-
     const row=document.createElement('div');
-
     row.className='public-room';
-
     const info=document.createElement('div');
-
     info.innerHTML=
-      `<div class="room-name">`+
-      `${escapeHtml(r.hostName||'Player')}'s Lobby`+
-      `</div>`+
-      `<div class="room-host">`+
-      `Open game • ${escapeHtml(r.code)}`+
-      `</div>`;
-
+      `<div class="room-name">${escapeHtml(r.hostName||'Player')}'s Lobby</div>`+
+      `<div class="room-host">Open game • ${escapeHtml(r.code)}</div>`;
     const btn=document.createElement('button');
-
     btn.textContent='Join';
-
-    btn.onclick=()=>{
-      joinSpecificRoom(r.code);
-    };
-
-    row.append(
-      info,
-      btn
-    );
-
+    btn.onclick=()=>joinSpecificRoom(r.code);
+    row.append(info,btn);
     list.appendChild(row);
   });
 }
 
 async function joinSpecificRoom(code){
-
-  if(!myName){
-    showToast('Choose a username first');
-    return;
-  }
-
-  document.getElementById('join-id')
-    .value=code;
-
+  if(!myName){ showToast('Not signed in'); return; }
+  document.getElementById('join-id').value=code;
   showPage('lobby');
-
   await joinRoom();
 }
 
@@ -4383,129 +3892,32 @@ async function joinSpecificRoom(code){
 ============================================================ */
 
 async function joinRoom(){
+  if(!myName){ showToast('Not signed in'); return; }
+  if(roomId&&gameStarted){ showToast('You are already in a game.'); return; }
 
-  if(!myName){
-    showToast('Choose a username first');
-    return;
-  }
-
-  if(roomId&&gameStarted){
-    showToast('You are already in a game.');
-    return;
-  }
-
-  const raw=document
-    .getElementById('join-id')
-    .value
-    .trim()
-    .toUpperCase();
-
-  if(raw.length!==6){
-
-    lobbyStatus(
-      'Enter the 6-digit room code.'
-    );
-
-    return;
-  }
+  const raw=document.getElementById('join-id').value.trim().toUpperCase();
+  if(raw.length!==6){ lobbyStatus('Enter the 6-digit room code.'); return; }
 
   lobbyStatus('Looking up room…');
+  const room=await fbGet(`rooms/${raw}`);
 
-  const room=await fbGet(
-    `rooms/${raw}`
-  );
-
-  if(!room||!room.white){
-
-    lobbyStatus(
-      'Room not found.'
-    );
-
-    return;
-  }
-
-  if(room.status!=='waiting'){
-
-    lobbyStatus(
-      'That room is no longer accepting players.'
-    );
-
-    return;
-  }
-
-  if(room.black){
-
-    lobbyStatus(
-      'Room is already full.'
-    );
-
-    return;
-  }
-
-  if(
-    room.expires&&
-    Date.now()>room.expires
-  ){
-
-    lobbyStatus(
-      '<span class="warn">Room code expired.</span>'
-    );
-
-    return;
-  }
-
-  if(
-    room.heartbeat_white&&
-    Date.now()-room.heartbeat_white>
-    DISCONNECT_GRACE
-  ){
-
-    await fbDelete(
-      `rooms/${raw}`
-    );
-
-    lobbyStatus(
-      '<span class="warn">The host is no longer available.</span>'
-    );
-
+  if(!room||!room.white){ lobbyStatus('Room not found.'); return; }
+  if(room.status!=='waiting'){ lobbyStatus('That room is no longer accepting players.'); return; }
+  if(room.black){ lobbyStatus('Room is already full.'); return; }
+  if(room.expires&&Date.now()>room.expires){ lobbyStatus('<span class="warn">Room code expired.</span>'); return; }
+  if(room.heartbeat_white&&Date.now()-room.heartbeat_white>DISCONNECT_GRACE){
+    await fbDelete(`rooms/${raw}`);
+    lobbyStatus('<span class="warn">The host is no longer available.</span>');
     return;
   }
 
   const result=await fbClaimBlack(raw);
-
   if(!result.ok){
-
-    if(result.reason==='full'){
-
-      lobbyStatus(
-        'Room is already full.'
-      );
-
-    }else if(result.reason==='race'){
-
-      lobbyStatus(
-        'Another player joined first. Try another room.'
-      );
-
-    }else if(result.reason==='expired'){
-
-      lobbyStatus(
-        '<span class="warn">Room code expired.</span>'
-      );
-
-    }else if(result.reason==='not-found'){
-
-      lobbyStatus(
-        'Room not found.'
-      );
-
-    }else{
-
-      lobbyStatus(
-        '<span class="warn">Could not join the room. Try again.</span>'
-      );
-    }
-
+    if(result.reason==='full') lobbyStatus('Room is already full.');
+    else if(result.reason==='race') lobbyStatus('Another player joined first. Try another room.');
+    else if(result.reason==='expired') lobbyStatus('<span class="warn">Room code expired.</span>');
+    else if(result.reason==='not-found') lobbyStatus('Room not found.');
+    else lobbyStatus('<span class="warn">Could not join the room. Try again.</span>');
     return;
   }
 
@@ -4515,17 +3927,12 @@ async function joinRoom(){
   spectatorEnabled=!!room.spectatorEnabled;
   gameStarted=true;
 
-  lobbyStatus(
-    'Joined! Starting…'
-  );
+  lobbyStatus('Joined! Starting…');
 
   clearInterval(codeExpireTimer);
   codeExpireTimer=null;
 
-  setTimeout(
-    startGame,
-    300
-  );
+  setTimeout(startGame,300);
 }
 
 
@@ -4534,15 +3941,8 @@ async function joinRoom(){
 ============================================================ */
 
 function startGame(){
-
-  if(!roomId||!myColor){
-    return;
-  }
-
-  if(pollTimer){
-    clearInterval(pollTimer);
-    pollTimer=null;
-  }
+  if(!roomId||!myColor) return;
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
 
   gameStarted=true;
   gameEnded=false;
@@ -4550,45 +3950,24 @@ function startGame(){
   timeoutProcessed=false;
   drawOfferPending=false;
   roomCleanedUp=false;
+  coinsAwardedThisGame=false;
 
-  if(gameEndReturnTimer){
-    clearInterval(gameEndReturnTimer);
-    gameEndReturnTimer=null;
-  }
+  if(gameEndReturnTimer){ clearInterval(gameEndReturnTimer); gameEndReturnTimer=null; }
+  if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
 
-  if(publicPollTimer){
-    clearInterval(publicPollTimer);
-    publicPollTimer=null;
-  }
+  document.getElementById('top-tabs').classList.add('hidden');
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('public-page').classList.add('hidden');
+  document.getElementById('live-page').classList.add('hidden');
+  document.getElementById('shop-page').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
 
-  document.getElementById('top-tabs')
-    .classList.add('hidden');
-
-  document.getElementById('lobby')
-    .classList.add('hidden');
-
-  document.getElementById('public-page')
-    .classList.add('hidden');
-
-  document.getElementById('live-page')
-    .classList.add('hidden');
-
-  document.getElementById('game')
-    .classList.remove('hidden');
-
-  document.getElementById('my-color')
-    .textContent=
-    myColor==='w'
-      ?'♔ White'
-      :'♚ Black';
-
-  document.getElementById('room-disp')
-    .textContent=roomId;
+  document.getElementById('my-color').textContent = myColor==='w'?'♔ White':'♚ Black';
+  document.getElementById('room-disp').textContent = roomId;
 
   _chatSignatures.game=null;
 
   initGame();
-
   renderBoard();
   updateUI();
   renderTimers();
@@ -4599,10 +3978,7 @@ function startGame(){
 
   publishInitialState();
 
-  pollTimer=setInterval(
-    pollMoves,
-    700
-  );
+  pollTimer=setInterval(pollMoves,700);
 
   startMoveTimer();
   startHeartbeat();
@@ -4614,105 +3990,40 @@ function startGame(){
 ============================================================ */
 
 function startHeartbeat(){
+  if(heartbeatTimer){ clearInterval(heartbeatTimer); }
 
-  if(heartbeatTimer){
-    clearInterval(heartbeatTimer);
-  }
+  heartbeatTimer=setInterval(async()=>{
+    if(gameEnded||!roomId||!gameStarted){
+      clearInterval(heartbeatTimer);
+      heartbeatTimer=null;
+      return;
+    }
 
-  heartbeatTimer=setInterval(
-    async()=>{
+    const field=myColor==='w'?'heartbeat_white':'heartbeat_black';
+    await fbPatch(`rooms/${roomId}`,{[field]:Date.now()});
 
-      if(
-        gameEnded||
-        !roomId||
-        !gameStarted
-      ){
-        clearInterval(heartbeatTimer);
-        heartbeatTimer=null;
-        return;
+    if(Date.now()-gameStartTime<GAME_START_GRACE) return;
+
+    const room=await fbGet(`rooms/${roomId}`);
+    if(!room||gameEnded) return;
+
+    if(room.status==='ended'&&room.event){
+      handleRemoteEnd(room.event.winner,room.event.reason);
+      return;
+    }
+
+    const oppField=myColor==='w'?'heartbeat_black':'heartbeat_white';
+    const oppHb=room[oppField];
+
+    if(!oppHb||Date.now()-oppHb>DISCONNECT_GRACE){
+      if(room.black&&room.white){
+        const winner=myColor;
+        const reason=myColor==='w'?'Black disconnected':'White disconnected';
+        await broadcastEnd(winner,reason);
+        triggerGameEnd('disconnect',winner,'Opponent disconnected');
       }
-
-      const field=
-        myColor==='w'
-          ?'heartbeat_white'
-          :'heartbeat_black';
-
-      await fbPatch(
-        `rooms/${roomId}`,
-        {
-          [field]:Date.now()
-        }
-      );
-
-      if(
-        Date.now()-gameStartTime<
-        GAME_START_GRACE
-      ){
-        return;
-      }
-
-      const room=await fbGet(
-        `rooms/${roomId}`
-      );
-
-      if(!room||gameEnded){
-        return;
-      }
-
-      if(
-        room.status==='ended'&&
-        room.event
-      ){
-
-        handleRemoteEnd(
-          room.event.winner,
-          room.event.reason
-        );
-
-        return;
-      }
-
-      const oppField=
-        myColor==='w'
-          ?'heartbeat_black'
-          :'heartbeat_white';
-
-      const oppHb=room[oppField];
-
-      if(
-        !oppHb||
-        Date.now()-oppHb>
-        DISCONNECT_GRACE
-      ){
-
-        if(
-          room.black&&
-          room.white
-        ){
-
-          const winner=myColor;
-
-          const reason=
-            myColor==='w'
-              ?'Black disconnected'
-              :'White disconnected';
-
-          await broadcastEnd(
-            winner,
-            reason
-          );
-
-          triggerGameEnd(
-            'disconnect',
-            winner,
-            'Opponent disconnected'
-          );
-        }
-      }
-
-    },
-    4000
-  );
+    }
+  },4000);
 }
 
 
@@ -4721,160 +4032,78 @@ function startHeartbeat(){
 ============================================================ */
 
 function currentRemaining(color){
-
-  let base=
-    Number(moveTimeLeft[color]||MOVE_TIME);
-
-  if(
-    G.status==='playing'&&
-    G.turn===color&&
-    turnStartedAt
-  ){
-
-    const elapsed=
-      Math.floor(
-        (Date.now()-turnStartedAt)/1000
-      );
-
-    base=Math.max(
-      0,
-      base-elapsed
-    );
+  let base=Number(moveTimeLeft[color]||MOVE_TIME);
+  if(G.status==='playing'&&G.turn===color&&turnStartedAt){
+    const elapsed=Math.floor((Date.now()-turnStartedAt)/1000);
+    base=Math.max(0,base-elapsed);
   }
-
-  return Math.max(
-    0,
-    Math.floor(base)
-  );
+  return Math.max(0,Math.floor(base));
 }
 
 function startMoveTimer(){
-
-  if(timerInterval){
-    clearInterval(timerInterval);
-  }
-
+  if(timerInterval){ clearInterval(timerInterval); }
   renderTimers();
-
-  timerInterval=setInterval(
-    checkClock,
-    200
-  );
+  timerInterval=setInterval(checkClock,200);
 }
 
 async function checkClock(){
-
-  if(
-    gameEnded||
-    !G||
-    G.status!=='playing'
-  ){
-    return;
-  }
-
+  if(gameEnded||!G||G.status!=='playing') return;
   const current=G.turn;
   const remaining=currentRemaining(current);
-
   renderTimers();
 
   if(remaining<=0){
-
     if(timeoutProcessed) return;
-
     timeoutProcessed=true;
-
     clearInterval(timerInterval);
     timerInterval=null;
-
     const winner=opp(current);
-
-    await broadcastEnd(
-      winner,
-      `${current==='w'?'White':'Black'} ran out of time`
-    );
-
-    triggerGameEnd(
-      'timeout',
-      winner,
-      `${current==='w'?'White':'Black'} ran out of time`
-    );
+    await broadcastEnd(winner,`${current==='w'?'White':'Black'} ran out of time`);
+    triggerGameEnd('timeout',winner,`${current==='w'?'White':'Black'} ran out of time`);
   }
 }
 
 function renderTimers(){
-
   if(!G) return;
-
   for(const c of ['w','b']){
-
-    const id=c==='w'
-      ?'white'
-      :'black';
-
-    const box=document.getElementById(
-      `timer-${id}`
-    );
-
-    const val=document.getElementById(
-      `tv-${id}`
-    );
-
+    const id=c==='w'?'white':'black';
+    const box=document.getElementById(`timer-${id}`);
+    const val=document.getElementById(`tv-${id}`);
     if(!box||!val) continue;
-
     const s=currentRemaining(c);
-
-    val.textContent=
-      `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-
-    box.classList.toggle(
-      'active',
-      G.turn===c&&
-      G.status==='playing'&&
-      !gameEnded
-    );
-
-    box.classList.toggle(
-      'urgent',
-      s<=8&&
-      G.turn===c&&
-      !gameEnded
-    );
+    val.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    box.classList.toggle('active',G.turn===c&&G.status==='playing'&&!gameEnded);
+    box.classList.toggle('urgent',s<=8&&G.turn===c&&!gameEnded);
   }
 }
 
 
 /* ============================================================
    MOVE + CHAT POLLING
-   ------------------------------------------------------------
-   After the game ends we keep this interval running so the
-   chat stays synced between players and spectators.
-   Move processing is skipped once gameEnded is true.
 ============================================================ */
 
 async function pollMoves(){
-
   if(!roomId) return;
 
   try{
-
-    const room=await fbGet(
-      `rooms/${roomId}`
-    );
+    const room=await fbGet(`rooms/${roomId}`);
 
     if(!room){
-      // Room was deleted (e.g. by the other player's cleanup).
-      // Just stop silently if the game already ended.
       if(!gameEnded){
-        handleRemoteEnd(
-          opp(myColor),
-          'Opponent disconnected'
-        );
+        handleRemoteEnd(opp(myColor),'Opponent disconnected');
       }
-
       return;
     }
 
-    /* always keep chat in sync, even after game end */
+    // Always update skins
+    if(room.skins){
+      currentRoomSkins = {
+        w: room.skins.w || 'classic',
+        b: room.skins.b || 'classic'
+      };
+    }
+
+    // Always keep chat in sync, even after game end
     renderChatMessages(
       'game-messages',
       room.chat,
@@ -4887,86 +4116,38 @@ async function pollMoves(){
       }
     );
 
-    /* skip move processing if the game is already over locally */
+    // Redraw board if skins changed
+    if(room.skins && gameStarted && !gameEnded){
+      renderBoard();
+    }
+
     if(gameEnded) return;
 
-    if(
-      room.event&&
-      room.event.type==='end'
-    ){
-
-      handleRemoteEnd(
-        room.event.winner,
-        room.event.reason
-      );
-
+    if(room.event&&room.event.type==='end'){
+      handleRemoteEnd(room.event.winner,room.event.reason);
+      return;
+    }
+    if(room.status==='ended'&&room.event){
+      handleRemoteEnd(room.event.winner,room.event.reason);
       return;
     }
 
-    if(
-      room.status==='ended'&&
-      room.event
-    ){
-
-      handleRemoteEnd(
-        room.event.winner,
-        room.event.reason
-      );
-
-      return;
-    }
-
-    if(
-      room.seq>lastSeq&&
-      room.move&&
-      room.move.by!==MY_ID
-    ){
-
+    if(room.seq>lastSeq&&room.move&&room.move.by!==MY_ID){
       lastSeq=room.seq;
-
       const md=room.move.data;
 
       if(md&&md.skip){
-
-        processSkip(
-          md.skippedColor
-        );
-
+        processSkip(md.skippedColor);
       }else if(md&&md.drawOffer){
-
         handleDrawOffer();
-
       }else if(md&&md.resign){
-
-        handleRemoteEnd(
-          md.winner,
-          md.reason
-        );
-
+        handleRemoteEnd(md.winner,md.reason);
       }else if(md){
-
-        const remoteColor=
-          myColor==='w'
-            ?'b'
-            :'w';
-
-        if(
-          md.color&&
-          md.color!==remoteColor
-        ){
-          return;
-        }
-
-        executeMove(
-          md,
-          false
-        );
+        const remoteColor=myColor==='w'?'b':'w';
+        if(md.color&&md.color!==remoteColor) return;
+        executeMove(md,false);
       }
-
-    }else if(
-      room.seq>lastSeq
-    ){
-
+    }else if(room.seq>lastSeq){
       lastSeq=room.seq;
     }
 
@@ -4974,7 +4155,6 @@ async function pollMoves(){
 }
 
 function publicState(){
-
   return {
     board:serializeBoard(G.board),
     turn:G.turn,
@@ -4994,97 +4174,47 @@ function publicState(){
 }
 
 async function publishInitialState(){
+  // Publish our own skin for our colour
+  const mySkin=getMyEquippedSkin();
+  await fbPatch(`rooms/${roomId}/skins`, { [myColor]: mySkin });
 
-  await fbPatch(
-    `rooms/${roomId}`,
-    {
-      state:publicState(),
-      status:'playing',
-      spectatorEnabled:spectatorEnabled
-    }
-  );
+  await fbPatch(`rooms/${roomId}`, {
+    state:publicState(),
+    status:'playing',
+    spectatorEnabled:spectatorEnabled
+  });
 }
 
 async function publishGameState(){
-
   if(!roomId||isSpectator) return;
-
-  await fbPatch(
-    `rooms/${roomId}`,
-    {
-      state:publicState()
-    }
-  );
+  await fbPatch(`rooms/${roomId}`,{state:publicState()});
 }
 
 async function sendMoveData(data){
-
   if(gameEnded||!roomId) return;
-
   lastSeq++;
-
-  await fbPatch(
-    `rooms/${roomId}`,
-    {
-      seq:lastSeq,
-      move:{
-        by:MY_ID,
-        data
-      },
-      state:publicState()
-    }
-  );
+  await fbPatch(`rooms/${roomId}`,{
+    seq:lastSeq,
+    move:{ by:MY_ID, data },
+    state:publicState()
+  });
 }
 
 async function skipTurn(sc){
-
-  if(
-    gameEnded||
-    G.status!=='playing'||
-    G.turn!==sc||
-    timeoutProcessed
-  ){
-    return;
-  }
-
+  if(gameEnded||G.status!=='playing'||G.turn!==sc||timeoutProcessed) return;
   timeoutProcessed=true;
-
-  await broadcastEnd(
-    opp(sc),
-    `${sc==='w'?'White':'Black'} ran out of time`
-  );
-
-  triggerGameEnd(
-    'timeout',
-    opp(sc),
-    `${sc==='w'?'White':'Black'} ran out of time`
-  );
+  await broadcastEnd(opp(sc),`${sc==='w'?'White':'Black'} ran out of time`);
+  triggerGameEnd('timeout',opp(sc),`${sc==='w'?'White':'Black'} ran out of time`);
 }
 
 function processSkip(sc){
-
-  if(
-    !sc||
-    G.status!=='playing'||
-    G.turn!==sc
-  ){
-    return;
-  }
-
-  G.log.push({
-    color:sc,
-    note:'(time)'
-  });
-
+  if(!sc||G.status!=='playing'||G.turn!==sc) return;
+  G.log.push({color:sc,note:'(time)'});
   G.turn=opp(sc);
-
   moveTimeLeft[sc]=MOVE_TIME;
-
   turnStartedAt=Date.now();
-
   selected=null;
   legalNow=[];
-
   renderBoard();
   updateUI();
   renderTimers();
@@ -5096,87 +4226,38 @@ function processSkip(sc){
 ============================================================ */
 
 async function loadLiveGames(){
-
-  const list=document.getElementById(
-    'live-list'
-  );
-
+  const list=document.getElementById('live-list');
   if(!list||isSpectator) return;
 
   const rooms=await fbGet('rooms');
-
   const arr=[];
 
   if(rooms){
-
     for(const [code,r] of Object.entries(rooms)){
-
-      if(
-        !r||
-        r.status!=='playing'||
-        !r.spectatorEnabled||
-        !r.white||
-        !r.black
-      ){
-        continue;
-      }
-
-      arr.push({
-        code,
-        ...r
-      });
+      if(!r||r.status!=='playing'||!r.spectatorEnabled||!r.white||!r.black) continue;
+      arr.push({code,...r});
     }
   }
 
-  arr.sort(
-    (a,b)=>
-      (b.created||0)-
-      (a.created||0)
-  );
+  arr.sort((a,b)=>(b.created||0)-(a.created||0));
 
   if(!arr.length){
-
-    list.innerHTML=
-      '<div class="public-empty">'+
-      'No spectatable live games right now.'+
-      '</div>';
-
+    list.innerHTML='<div class="public-empty">No spectatable live games right now.</div>';
     return;
   }
 
   list.innerHTML='';
-
   arr.forEach(r=>{
-
     const row=document.createElement('div');
-
     row.className='live-game';
-
     const info=document.createElement('div');
-
     info.innerHTML=
-      `<div class="game-title">`+
-      `${escapeHtml(r.whiteName||'White')} vs `+
-      `${escapeHtml(r.blackName||'Black')}`+
-      `</div>`+
-      `<div class="game-meta">`+
-      `Room ${escapeHtml(r.code)} · `+
-      `<span class="live-badge">● LIVE</span>`+
-      `</div>`;
-
+      `<div class="game-title">${escapeHtml(r.whiteName||'White')} vs ${escapeHtml(r.blackName||'Black')}</div>`+
+      `<div class="game-meta">Room ${escapeHtml(r.code)} · <span class="live-badge">● LIVE</span></div>`;
     const btn=document.createElement('button');
-
     btn.textContent='Spectate';
-
-    btn.onclick=()=>{
-      openSpectator(r.code);
-    };
-
-    row.append(
-      info,
-      btn
-    );
-
+    btn.onclick=()=>openSpectator(r.code);
+    row.append(info,btn);
     list.appendChild(row);
   });
 }
@@ -5189,28 +4270,14 @@ async function loadLiveGames(){
 let spectatorState=null;
 let spectateSig='';
 let spectateRoomStatus='playing';
+let spectatorSkins={w:'classic',b:'classic'};
 
 async function openSpectator(code){
+  if(!myName){ showToast('Not signed in'); return; }
 
-  if(!myName){
-    showToast('Choose a username first');
-    return;
-  }
-
-  const room=await fbGet(
-    `rooms/${code}`
-  );
-
-  if(
-    !room||
-    room.status!=='playing'||
-    !room.spectatorEnabled
-  ){
-
-    showToast(
-      'That game is not available to spectate.'
-    );
-
+  const room=await fbGet(`rooms/${code}`);
+  if(!room||room.status!=='playing'||!room.spectatorEnabled){
+    showToast('That game is not available to spectate.');
     return;
   }
 
@@ -5222,107 +4289,62 @@ async function openSpectator(code){
   spectateSig='';
   spectateRoomStatus=room.status||'playing';
   _chatSignatures.spectate=null;
-
   spectatorEndReturnFired=false;
 
-  if(spectatorEndReturnTimer){
-    clearInterval(spectatorEndReturnTimer);
-    spectatorEndReturnTimer=null;
-  }
-
+  if(spectatorEndReturnTimer){ clearInterval(spectatorEndReturnTimer); spectatorEndReturnTimer=null; }
   const cdEl=document.getElementById('spectate-countdown');
-
   if(cdEl) cdEl.textContent='';
 
-  if(publicPollTimer){
-    clearInterval(publicPollTimer);
-    publicPollTimer=null;
-  }
+  if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
+  if(livePollTimer){ clearInterval(livePollTimer); livePollTimer=null; }
 
-  if(livePollTimer){
-    clearInterval(livePollTimer);
-    livePollTimer=null;
-  }
-
-  document.getElementById('top-tabs')
-    .classList.add('hidden');
-
-  document.getElementById('lobby')
-    .classList.add('hidden');
-
-  document.getElementById('public-page')
-    .classList.add('hidden');
-
-  document.getElementById('live-page')
-    .classList.add('hidden');
-
-  document.getElementById('game')
-    .classList.add('hidden');
-
-  document.getElementById('spectator-view')
-    .classList.remove('hidden');
+  document.getElementById('top-tabs').classList.add('hidden');
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('public-page').classList.add('hidden');
+  document.getElementById('live-page').classList.add('hidden');
+  document.getElementById('shop-page').classList.add('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('spectator-view').classList.remove('hidden');
 
   renderSpectatorRoom(room);
 
-  spectatorPollTimer=setInterval(
-    pollSpectator,
-    800
-  );
-
-  spectatorTimerInterval=setInterval(
-    renderSpectatorTimers,
-    250
-  );
+  spectatorPollTimer=setInterval(pollSpectator,800);
+  spectatorTimerInterval=setInterval(renderSpectatorTimers,250);
 }
 
 function renderSpectatorRoom(room){
-
   if(!room) return;
 
   spectateRoomStatus=room.status||'playing';
 
-  document.getElementById(
-    'spectate-white'
-  ).textContent=room.whiteName||'White';
+  document.getElementById('spectate-white').textContent=room.whiteName||'White';
+  document.getElementById('spectate-black').textContent=room.blackName||'Black';
 
-  document.getElementById(
-    'spectate-black'
-  ).textContent=room.blackName||'Black';
+  if(room.skins){
+    spectatorSkins={
+      w: room.skins.w || 'classic',
+      b: room.skins.b || 'classic'
+    };
+  }
 
-  renderChatMessages(
-    'spectate-messages',
-    room.chat,
-    'spectate',
-    {
-      whiteId:room.white,
-      blackId:room.black,
-      whiteName:room.whiteName,
-      blackName:room.blackName
-    }
-  );
+  renderChatMessages('spectate-messages',room.chat,'spectate',{
+    whiteId:room.white,
+    blackId:room.black,
+    whiteName:room.whiteName,
+    blackName:room.blackName
+  });
 
   const st=room.state;
-
   if(!st||!st.board||!(st.board.length||Object.keys(st.board).length)){
-
-    document.getElementById(
-      'spectate-status'
-    ).textContent='Waiting for the live board…';
-
+    document.getElementById('spectate-status').textContent='Waiting for the live board…';
     spectatorState=null;
-
     return;
   }
 
   const decodedBoard=deserializeBoard(st.board);
-
   const timeLeft=(st.moveTimeLeft&&typeof st.moveTimeLeft==='object')
-    ? {
-        w:Number(st.moveTimeLeft.w),
-        b:Number(st.moveTimeLeft.b)
-      }
-    : {w:MOVE_TIME,b:MOVE_TIME};
-
+    ? { w:Number(st.moveTimeLeft.w), b:Number(st.moveTimeLeft.b) }
+    : { w:MOVE_TIME, b:MOVE_TIME };
   if(!isFinite(timeLeft.w)) timeLeft.w=MOVE_TIME;
   if(!isFinite(timeLeft.b)) timeLeft.b=MOVE_TIME;
 
@@ -5341,7 +4363,9 @@ function renderSpectatorRoom(room){
     spectatorState.lastMove,
     spectatorState.turn,
     spectatorState.status,
-    spectatorState.log.length
+    spectatorState.log.length,
+    spectatorSkins.w,
+    spectatorSkins.b
   ]);
 
   if(sig!==spectateSig){
@@ -5354,73 +4378,39 @@ function renderSpectatorRoom(room){
 }
 
 function renderSpectatorBoard(){
-
-  const wrap=document.getElementById(
-    'spectate-board'
-  );
-
+  const wrap=document.getElementById('spectate-board');
   if(!wrap) return;
-
   const st=spectatorState;
-
   if(!st||!st.board) return;
 
-  const inCheckStatus=
-    st.status==='check'||
-    st.status==='checkmate';
-
-  const kpos=inCheckStatus
-    ?findKing(st.board,st.turn)
-    :null;
+  const inCheckStatus=st.status==='check'||st.status==='checkmate';
+  const kpos=inCheckStatus?findKing(st.board,st.turn):null;
 
   wrap.innerHTML='';
 
   for(let r=0;r<8;r++){
-
     for(let c=0;c<8;c++){
-
       const sq=document.createElement('div');
+      sq.className='spectate-sq '+((r+c)%2===0?'light':'dark');
 
-      sq.className=
-        'spectate-sq '+
-        ((r+c)%2===0
-          ?'light'
-          :'dark');
-
-      if(
-        st.lastMove&&
-        st.lastMove.fr===r&&
-        st.lastMove.fc===c
-      ){
-        sq.classList.add('last-from');
-      }
-
-      if(
-        st.lastMove&&
-        st.lastMove.tr===r&&
-        st.lastMove.tc===c
-      ){
-        sq.classList.add('last-to');
-      }
-
-      if(
-        kpos&&
-        kpos[0]===r&&
-        kpos[1]===c
-      ){
-        sq.classList.add('in-check');
-      }
+      if(st.lastMove&&st.lastMove.fr===r&&st.lastMove.fc===c) sq.classList.add('last-from');
+      if(st.lastMove&&st.lastMove.tr===r&&st.lastMove.tc===c) sq.classList.add('last-to');
+      if(kpos&&kpos[0]===r&&kpos[1]===c) sq.classList.add('in-check');
 
       const p=st.board[r]?st.board[r][c]:null;
-
       if(p&&PIECE_FILES[p]){
-
         const img=document.createElement('img');
-
         img.className='spectate-piece';
         img.src=pieceUrl(p);
         img.alt=p;
         img.draggable=false;
+
+        const pc=colorOf(p);
+        const skinId=spectatorSkins[pc]||'classic';
+        const skin=findSkin(skinId);
+        if(skin.filter&&skin.filter!=='none'){
+          img.style.filter=skin.filter;
+        }
 
         sq.appendChild(img);
       }
@@ -5431,7 +4421,6 @@ function renderSpectatorBoard(){
         co.textContent=8-r;
         sq.appendChild(co);
       }
-
       if(r===7){
         const co=document.createElement('div');
         co.className='coord-file';
@@ -5445,9 +4434,7 @@ function renderSpectatorBoard(){
 }
 
 function renderSpectatorUI(){
-
   const st=spectatorState;
-
   if(!st) return;
 
   const ended=
@@ -5459,74 +4446,33 @@ function renderSpectatorUI(){
     st.status==='fifty'||
     st.status==='repetition';
 
-  const turnName=
-    st.turn==='w'
-      ?'White'
-      :'Black';
-
-  document.getElementById(
-    'spectate-turn'
-  ).textContent=
-    ended
-      ?'Game Over'
-      :turnName;
+  const turnName=st.turn==='w'?'White':'Black';
+  document.getElementById('spectate-turn').textContent=ended?'Game Over':turnName;
 
   let statusHtml;
+  if(ended) statusHtml='<span class="accent">Game Over</span>';
+  else if(st.status==='check') statusHtml='Watching live · <span class="warn">'+turnName+' in check!</span>';
+  else statusHtml='Watching live · <span class="accent">'+turnName+' to move</span>';
 
-  if(ended){
-
-    statusHtml='<span class="accent">Game Over</span>';
-
-  }else if(st.status==='check'){
-
-    statusHtml=
-      'Watching live · <span class="warn">'+
-      turnName+
-      ' in check!</span>';
-
-  }else{
-
-    statusHtml=
-      'Watching live · <span class="accent">'+
-      turnName+
-      ' to move</span>';
-  }
-
-  document.getElementById(
-    'spectate-status'
-  ).innerHTML=statusHtml;
+  document.getElementById('spectate-status').innerHTML=statusHtml;
 
   const log=st.log||[];
-
   let html='';
-
   for(let i=0;i<log.length;i+=2){
-
     const n=Math.floor(i/2)+1;
-
     const w=log[i]&&log[i].note?log[i].note:'';
     const b=log[i+1]&&log[i+1].note?log[i+1].note:'';
-
     html+=
       `<span class="mv-num">${n}.</span>`+
       `<span class="mv-w">${escapeHtml(w)}</span>`+
-      (b
-        ?`<span class="mv-b">${escapeHtml(b)}</span>`
-        :'')+
+      (b?`<span class="mv-b">${escapeHtml(b)}</span>`:'')+
       ' ';
   }
-
-  document.getElementById(
-    'spectate-move-log'
-  ).innerHTML=
-    html||
-    '<em style="color:#555;font-style:italic">No moves yet</em>';
+  document.getElementById('spectate-move-log').innerHTML=html||'<em style="color:#555;font-style:italic">No moves yet</em>';
 }
 
 function renderSpectatorTimers(){
-
   const st=spectatorState;
-
   if(!st) return;
 
   const running=
@@ -5538,39 +4484,18 @@ function renderSpectatorTimers(){
     st.status!=='fifty'&&
     st.status!=='repetition';
 
-  const elapsed=running
-    ?Math.max(0,(Date.now()-st.updated)/1000)
-    :0;
+  const elapsed=running?Math.max(0,(Date.now()-st.updated)/1000):0;
 
   for(const c of ['w','b']){
-
     let value=Number(st.moveTimeLeft[c]);
-
     if(!isFinite(value)) value=MOVE_TIME;
-
-    if(c===st.turn){
-      value=Math.max(0,value-elapsed);
-    }
-
+    if(c===st.turn) value=Math.max(0,value-elapsed);
     const secs=Math.floor(Math.max(0,value));
 
-    const el=document.getElementById(
-      c==='w'
-        ?'spectate-tv-white'
-        :'spectate-tv-black'
-    );
+    const el=document.getElementById(c==='w'?'spectate-tv-white':'spectate-tv-black');
+    if(el) el.textContent=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
 
-    if(el){
-      el.textContent=
-        `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
-    }
-
-    const box=document.getElementById(
-      c==='w'
-        ?'spectate-timer-white'
-        :'spectate-timer-black'
-    );
-
+    const box=document.getElementById(c==='w'?'spectate-timer-white':'spectate-timer-black');
     if(box){
       box.classList.toggle('active',running&&st.turn===c);
       box.classList.toggle('urgent',running&&st.turn===c&&secs<=8);
@@ -5579,86 +4504,40 @@ function renderSpectatorTimers(){
 }
 
 async function pollSpectator(){
-
   if(!spectatorRoomId) return;
+  const room=await fbGet(`rooms/${spectatorRoomId}`);
 
-  const room=await fbGet(
-    `rooms/${spectatorRoomId}`
-  );
-
-  if(
-    !room||
-    (!room.spectatorEnabled&&!room.state)
-  ){
-
-    // If the game has ended and our countdown is running or done,
-    // stay on this screen - don't interrupt the auto-return.
-    if(spectatorEndReturnFired||spectatorEndReturnTimer){
-      return;
-    }
-
-    showToast(
-      'Spectating is no longer available.',
-      2500
-    );
-
+  if(!room||(!room.spectatorEnabled&&!room.state)){
+    if(spectatorEndReturnFired||spectatorEndReturnTimer) return;
+    showToast('Spectating is no longer available.',2500);
     leaveSpectator();
-
     return;
   }
 
   renderSpectatorRoom(room);
 
-  if(
-    room.status==='ended'&&
-    room.event
-  ){
-
-    const title=
-      room.event.winner==='draw'
-        ?'Draw'
-        :`${room.event.winner==='w'
-            ?'White'
-            :'Black'} wins`;
-
-    document.getElementById(
-      'spectate-status'
-    ).innerHTML=
-      `<span class="accent">Game Over · `+
-      `${escapeHtml(title)}</span>`+
-      (room.event.reason
-        ?`<br><small style="color:var(--muted)">${escapeHtml(room.event.reason)}</small>`
-        :'');
-
+  if(room.status==='ended'&&room.event){
+    const title=room.event.winner==='draw'?'Draw':`${room.event.winner==='w'?'White':'Black'} wins`;
+    document.getElementById('spectate-status').innerHTML=
+      `<span class="accent">Game Over · ${escapeHtml(title)}</span>`+
+      (room.event.reason?`<br><small style="color:var(--muted)">${escapeHtml(room.event.reason)}</small>`:'');
     startSpectatorEndReturnCountdown();
   }
 }
 
 function leaveSpectator(){
-
   clearInterval(spectatorPollTimer);
   clearInterval(spectatorTimerInterval);
-
-  if(spectatorEndReturnTimer){
-    clearInterval(spectatorEndReturnTimer);
-    spectatorEndReturnTimer=null;
-  }
-
+  if(spectatorEndReturnTimer){ clearInterval(spectatorEndReturnTimer); spectatorEndReturnTimer=null; }
   spectatorPollTimer=null;
   spectatorTimerInterval=null;
-
   spectatorRoomId=null;
   spectatorState=null;
   spectateSig='';
   isSpectator=false;
 
-  document.getElementById(
-    'spectator-view'
-  ).classList.add('hidden');
-
-  document.getElementById(
-    'top-tabs'
-  ).classList.remove('hidden');
+  document.getElementById('spectator-view').classList.add('hidden');
+  document.getElementById('top-tabs').classList.remove('hidden');
 
   showPage('live');
 }
@@ -5669,119 +4548,60 @@ function leaveSpectator(){
 ============================================================ */
 
 async function offerDraw(){
-
-  if(
-    gameEnded||
-    G.status!=='playing'
-  ){
-    return;
-  }
-
-  if(drawOfferPending){
-    showToast('Draw offer already sent.');
-    return;
-  }
-
+  if(gameEnded||G.status!=='playing') return;
+  if(drawOfferPending){ showToast('Draw offer already sent.'); return; }
   drawOfferPending=true;
-
-  await sendMoveData({
-    drawOffer:true,
-    color:myColor
-  });
-
-  showToast(
-    'Draw offer sent',
-    3000
-  );
+  await sendMoveData({drawOffer:true,color:myColor});
+  showToast('Draw offer sent',3000);
 }
 
 function handleDrawOffer(){
-
-  if(
-    gameEnded||
-    G.status!=='playing'
-  ){
-    return;
-  }
-
-  if(
-    confirm(
-      'Your opponent offers a draw. Accept?'
-    )
-  ){
-
-    broadcastEnd(
-      'draw',
-      'Draw by agreement'
-    );
-
-    triggerGameEnd(
-      'draw',
-      'draw',
-      'Draw by agreement'
-    );
-
+  if(gameEnded||G.status!=='playing') return;
+  if(confirm('Your opponent offers a draw. Accept?')){
+    broadcastEnd('draw','Draw by agreement');
+    triggerGameEnd('draw','draw','Draw by agreement');
   }else{
-
     drawOfferPending=false;
-    showToast(
-      'Draw offer declined',
-      2000
-    );
+    showToast('Draw offer declined',2000);
   }
 }
 
 async function resignGame(){
-
-  if(
-    gameEnded||
-    G.status!=='playing'
-  ){
-    return;
-  }
-
-  if(
-    !confirm(
-      'Resign this game?'
-    )
-  ){
-    return;
-  }
-
+  if(gameEnded||G.status!=='playing') return;
+  if(!confirm('Resign this game?')) return;
   const winner=opp(myColor);
-
-  await broadcastEnd(
-    winner,
-    `${myColor==='w'?'White':'Black'} resigned`
-  );
-
-  triggerGameEnd(
-    'resign',
-    winner,
-    `${myColor==='w'?'White':'Black'} resigned`
-  );
+  await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} resigned`);
+  triggerGameEnd('resign',winner,`${myColor==='w'?'White':'Black'} resigned`);
 }
 
-async function broadcastEnd(
-  winner,
-  reason
-){
-
+async function broadcastEnd(winner,reason){
   if(!roomId) return;
+  await fbPatch(`rooms/${roomId}`,{
+    event:{type:'end',winner,reason,at:Date.now(),by:MY_ID},
+    status:'ended'
+  });
+}
 
-  await fbPatch(
-    `rooms/${roomId}`,
-    {
-      event:{
-        type:'end',
-        winner,
-        reason,
-        at:Date.now(),
-        by:MY_ID
-      },
-      status:'ended'
-    }
-  );
+
+/* ============================================================
+   COIN REWARD
+============================================================ */
+
+async function awardWinCoins(){
+  if(coinsAwardedThisGame) return;
+  coinsAwardedThisGame=true;
+
+  if(isGuest||!currentUser||!userProfile){
+    return; // guests don't earn coins
+  }
+
+  userProfile.coins=(userProfile.coins||0)+WIN_REWARD;
+
+  try{
+    await fbPatch(`users/${currentUser.uid}`,{ coins: userProfile.coins });
+    updatePlayerNameDisplay();
+    showToast(`🏆 +${WIN_REWARD} coins!`, 3500);
+  }catch(e){}
 }
 
 
@@ -5789,27 +4609,19 @@ async function broadcastEnd(
    GAME END
 ============================================================ */
 
-function triggerGameEnd(
-  type,
-  winner,
-  reason
-){
-
+function triggerGameEnd(type,winner,reason){
   if(gameEnded) return;
-
   gameEnded=true;
 
   clearInterval(timerInterval);
   clearInterval(heartbeatTimer);
-
   timerInterval=null;
   heartbeatTimer=null;
 
-  /* Keep pollTimer running so chat stays synced after game end.
-     Slow it down to reduce network load. */
+  // Slow the poll but keep chat in sync
   if(pollTimer){
     clearInterval(pollTimer);
-    pollTimer=setInterval(pollMoves, 2000);
+    pollTimer=setInterval(pollMoves,2000);
   }
 
   G.status='ended';
@@ -5817,117 +4629,49 @@ function triggerGameEnd(
   const isDraw=winner==='draw';
   const iWin=winner===myColor;
 
-  const icon=
-    isDraw
-      ?'🤝'
-      :iWin
-        ?'🏆'
-        :'💔';
+  if(iWin) awardWinCoins();
 
-  const title=
-    isDraw
-      ?'Draw'
-      :iWin
-        ?'Victory!'
-        :'Defeated';
+  const icon=isDraw?'🤝':iWin?'🏆':'💔';
+  const title=isDraw?'Draw':iWin?'Victory!':'Defeated';
 
   const texts={
-
-    checkmate:
-      `Checkmate — ${winner==='w'?'White':'Black'} wins!`,
-
-    stalemate:
-      'Stalemate — no legal moves',
-
-    resign:
-      reason||'Opponent resigned',
-
-    disconnect:
-      'Opponent disconnected',
-
-    timeout:
-      reason||'Time expired',
-
-    draw:
-      reason||'Draw',
-
-    insufficient:
-      'Draw — insufficient material',
-
-    fifty:
-      'Draw — fifty-move rule',
-
-    repetition:
-      'Draw — threefold repetition'
+    checkmate:`Checkmate — ${winner==='w'?'White':'Black'} wins!`,
+    stalemate:'Stalemate — no legal moves',
+    resign:reason||'Opponent resigned',
+    disconnect:'Opponent disconnected',
+    timeout:reason||'Time expired',
+    draw:reason||'Draw',
+    insufficient:'Draw — insufficient material',
+    fifty:'Draw — fifty-move rule',
+    repetition:'Draw — threefold repetition'
   };
 
-  document.getElementById(
-    'result-icon'
-  ).textContent=icon;
-
-  document.getElementById(
-    'result-title'
-  ).textContent=title;
-
-  document.getElementById(
-    'result-reason'
-  ).textContent=
-    texts[type]||
-    reason||
-    'Game over';
-
-  document.getElementById(
-    'result-overlay'
-  ).classList.add('show');
+  document.getElementById('result-icon').textContent=icon;
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-reason').textContent=texts[type]||reason||'Game over';
+  document.getElementById('result-overlay').classList.add('show');
 
   renderBoard();
   updateUI();
   renderTimers();
 
   startGameEndReturnCountdown();
-
-  setTimeout(
-    loadLiveGames,
-    100
-  );
+  setTimeout(loadLiveGames,100);
 }
 
-function handleRemoteEnd(
-  winner,
-  reason
-){
-
+function handleRemoteEnd(winner,reason){
   if(gameEnded) return;
-
   let type='draw';
-
-  const lower=
-    String(reason||'')
-      .toLowerCase();
-
-  if(lower.includes('resigned')){
-    type='resign';
-  }else if(lower.includes('disconnected')){
-    type='disconnect';
-  }else if(lower.includes('checkmate')){
-    type='checkmate';
-  }else if(lower.includes('stalemate')){
-    type='stalemate';
-  }else if(lower.includes('insufficient')){
-    type='insufficient';
-  }else if(lower.includes('fifty')){
-    type='fifty';
-  }else if(lower.includes('repetition')){
-    type='repetition';
-  }else if(lower.includes('time')||lower.includes('ran out')){
-    type='timeout';
-  }
-
-  triggerGameEnd(
-    type,
-    winner,
-    reason
-  );
+  const lower=String(reason||'').toLowerCase();
+  if(lower.includes('resigned')) type='resign';
+  else if(lower.includes('disconnected')) type='disconnect';
+  else if(lower.includes('checkmate')) type='checkmate';
+  else if(lower.includes('stalemate')) type='stalemate';
+  else if(lower.includes('insufficient')) type='insufficient';
+  else if(lower.includes('fifty')) type='fifty';
+  else if(lower.includes('repetition')) type='repetition';
+  else if(lower.includes('time')||lower.includes('ran out')) type='timeout';
+  triggerGameEnd(type,winner,reason);
 }
 
 
@@ -5936,36 +4680,13 @@ function handleRemoteEnd(
 ============================================================ */
 
 async function leaveGame(){
-
-  if(
-    !roomId||
-    leaveProcessed
-  ){
-    location.href=location.pathname;
-    return;
-  }
-
-  if(gameEnded){
-    location.href=location.pathname;
-    return;
-  }
-
-  if(
-    !confirm(
-      'Leave this game? Leaving counts as a loss.'
-    )
-  ){
-    return;
-  }
+  if(!roomId||leaveProcessed){ location.href=location.pathname; return; }
+  if(gameEnded){ location.href=location.pathname; return; }
+  if(!confirm('Leave this game? Leaving counts as a loss.')) return;
 
   leaveProcessed=true;
-
   const winner=opp(myColor);
-
-  await broadcastEnd(
-    winner,
-    `${myColor==='w'?'White':'Black'} left the game`
-  );
+  await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} left the game`);
 
   clearInterval(timerInterval);
   clearInterval(pollTimer);
@@ -5975,33 +4696,14 @@ async function leaveGame(){
 }
 
 function emergencyLeave(){
-
-  if(
-    !roomId||
-    leaveProcessed||
-    isSpectator
-  ){
-    return;
-  }
-
+  if(!roomId||leaveProcessed||isSpectator) return;
   leaveProcessed=true;
 
   try{
-
     if(!gameStarted){
-
-      fetch(
-        `${FB}/rooms/${roomId}.json`,
-        {
-          method:'DELETE',
-          keepalive:true
-        }
-      );
-
+      fetch(`${FB}/rooms/${roomId}.json`,{method:'DELETE',keepalive:true});
     }else if(!gameEnded){
-
       const winner=opp(myColor);
-
       const body=JSON.stringify({
         event:{
           type:'end',
@@ -6012,32 +4714,16 @@ function emergencyLeave(){
         },
         status:'ended'
       });
-
-      fetch(
-        `${FB}/rooms/${roomId}.json`,
-        {
-          method:'PATCH',
-          headers:{
-            'Content-Type':'application/json'
-          },
-          body,
-          keepalive:true
-        }
-      );
+      fetch(`${FB}/rooms/${roomId}.json`,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body,
+        keepalive:true
+      });
     }else if(!roomCleanedUp){
-      // Game already ended and player is closing the tab -
-      // delete the room to free up Firebase storage.
       roomCleanedUp=true;
-
-      fetch(
-        `${FB}/rooms/${roomId}.json`,
-        {
-          method:'DELETE',
-          keepalive:true
-        }
-      );
+      fetch(`${FB}/rooms/${roomId}.json`,{method:'DELETE',keepalive:true});
     }
-
   }catch(e){}
 }
 
@@ -6047,71 +4733,33 @@ function emergencyLeave(){
 ============================================================ */
 
 const INIT_BOARD=[
-
   ['r','n','b','q','k','b','n','r'],
-
   ['p','p','p','p','p','p','p','p'],
-
   Array(8).fill(null),
   Array(8).fill(null),
   Array(8).fill(null),
   Array(8).fill(null),
-
   ['P','P','P','P','P','P','P','P'],
-
   ['R','N','B','Q','K','B','N','R']
 ];
 
 let G={};
 
 function initGame(){
-
   G={
-
-    board:INIT_BOARD.map(
-      r=>r.slice()
-    ),
-
+    board:INIT_BOARD.map(r=>r.slice()),
     turn:'w',
-
-    castling:{
-      wK:true,
-      wQR:true,
-      wKR:true,
-      bK:true,
-      bQR:true,
-      bKR:true
-    },
-
+    castling:{wK:true,wQR:true,wKR:true,bK:true,bQR:true,bKR:true},
     enPassant:null,
-
     halfClock:0,
-
     posHist:[],
-
     log:[],
-
     lastMove:null,
-
     status:'playing'
   };
-
-  G.posHist.push(
-    posKey(
-      G.board,
-      G.turn,
-      G.castling,
-      G.enPassant
-    )
-  );
-
-  moveTimeLeft={
-    w:MOVE_TIME,
-    b:MOVE_TIME
-  };
-
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME};
   turnStartedAt=Date.now();
-
   gameEnded=false;
   timeoutProcessed=false;
   drawOfferPending=false;
@@ -6127,137 +4775,58 @@ let pendingPromo=null;
 ============================================================ */
 
 function executeMove(move,local){
-
   if(gameEnded) return;
 
-  const p=
-    G.board[move.fr]?.[move.fc];
-
+  const p=G.board[move.fr]?.[move.fc];
   if(!p) return;
+  if(local&&colorOf(p)!==myColor) return;
+  if(local&&G.turn!==myColor) return;
 
-  if(local&&colorOf(p)!==myColor){
-    return;
-  }
-
-  if(
-    local&&
-    G.turn!==myColor
-  ){
-    return;
-  }
-
-  const legalForTurn=legalMoves(
-    G.board,
-    G.turn,
-    G.castling,
-    G.enPassant
-  );
-
+  const legalForTurn=legalMoves(G.board,G.turn,G.castling,G.enPassant);
   const valid=legalForTurn.some(m=>
-    m.fr===move.fr&&
-    m.fc===move.fc&&
-    m.tr===move.tr&&
-    m.tc===move.tc&&
+    m.fr===move.fr&&m.fc===move.fc&&m.tr===move.tr&&m.tc===move.tc&&
     (m.promo||null)===(move.promo||null)&&
     !!m.isEnPassant===!!move.isEnPassant&&
     (m.castleSide||null)===(move.castleSide||null)
   );
+  if(!valid) return;
 
-  if(!valid){
-    return;
-  }
-
-  const note=toSAN(
-    G.board,
-    move,
-    G.turn,
-    G.castling,
-    G.enPassant
-  );
-
-  const isCapture=
-    !!G.board[move.tr][move.tc]||
-    move.isEnPassant;
-
-  const isPawn=
-    p.toLowerCase()==='p';
-
+  const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant);
+  const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
+  const isPawn=p.toLowerCase()==='p';
   const movedColor=G.turn;
 
-  const result=doMove(
-    G.board,
-    move,
-    G.castling,
-    G.enPassant
-  );
+  const result=doMove(G.board,move,G.castling,G.enPassant);
 
-  G.halfClock=
-    (isPawn||isCapture)
-      ?0
-      :G.halfClock+1;
-
+  G.halfClock=(isPawn||isCapture)?0:G.halfClock+1;
   G.board=result.board;
   G.castling=result.castling;
   G.enPassant=result.enPassant;
 
-  G.log.push({
-    color:movedColor,
-    note
-  });
-
-  G.lastMove={
-    fr:move.fr,
-    fc:move.fc,
-    tr:move.tr,
-    tc:move.tc
-  };
-
+  G.log.push({color:movedColor,note});
+  G.lastMove={fr:move.fr,fc:move.fc,tr:move.tr,tc:move.tc};
   G.turn=opp(G.turn);
 
   turnStartedAt=Date.now();
-
   selected=null;
   legalNow=[];
-
   moveTimeLeft[movedColor]=MOVE_TIME;
 
-  G.posHist.push(
-    posKey(
-      G.board,
-      G.turn,
-      G.castling,
-      G.enPassant
-    )
-  );
+  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
 
-  const status=evalStatus(
-    G.board,
-    G.turn,
-    G.castling,
-    G.enPassant,
-    G.halfClock,
-    G.posHist
-  );
-
+  const status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
   G.status=status;
 
-  if(status==='checkmate'){
-    G.log[G.log.length-1].note+='#';
-  }else if(status==='check'){
-    G.log[G.log.length-1].note+='+';
-  }
+  if(status==='checkmate') G.log[G.log.length-1].note+='#';
+  else if(status==='check') G.log[G.log.length-1].note+='+';
 
   renderBoard();
   updateUI();
   renderTimers();
 
   if(local){
-
     sendMoveData({
-      fr:move.fr,
-      fc:move.fc,
-      tr:move.tr,
-      tc:move.tc,
+      fr:move.fr,fc:move.fc,tr:move.tr,tc:move.tc,
       promo:move.promo||null,
       isEnPassant:!!move.isEnPassant,
       castleSide:move.castleSide||null,
@@ -6266,87 +4835,21 @@ function executeMove(move,local){
   }
 
   if(status==='checkmate'){
-
-    if(local){
-
-      broadcastEnd(
-        movedColor,
-        'Checkmate'
-      );
-    }
-
-    triggerGameEnd(
-      'checkmate',
-      movedColor,
-      'Checkmate'
-    );
-
+    if(local) broadcastEnd(movedColor,'Checkmate');
+    triggerGameEnd('checkmate',movedColor,'Checkmate');
   }else if(status==='stalemate'){
-
-    if(local){
-
-      broadcastEnd(
-        'draw',
-        'Stalemate'
-      );
-    }
-
-    triggerGameEnd(
-      'stalemate',
-      'draw',
-      'Stalemate'
-    );
-
+    if(local) broadcastEnd('draw','Stalemate');
+    triggerGameEnd('stalemate','draw','Stalemate');
   }else if(status==='insufficient'){
-
-    if(local){
-
-      broadcastEnd(
-        'draw',
-        'Draw — insufficient material'
-      );
-    }
-
-    triggerGameEnd(
-      'insufficient',
-      'draw',
-      'Draw — insufficient material'
-    );
-
+    if(local) broadcastEnd('draw','Draw — insufficient material');
+    triggerGameEnd('insufficient','draw','Draw — insufficient material');
   }else if(status==='fifty'){
-
-    if(local){
-
-      broadcastEnd(
-        'draw',
-        'Draw — fifty-move rule'
-      );
-    }
-
-    triggerGameEnd(
-      'fifty',
-      'draw',
-      'Draw — fifty-move rule'
-    );
-
+    if(local) broadcastEnd('draw','Draw — fifty-move rule');
+    triggerGameEnd('fifty','draw','Draw — fifty-move rule');
   }else if(status==='repetition'){
-
-    if(local){
-
-      broadcastEnd(
-        'draw',
-        'Draw — threefold repetition'
-      );
-    }
-
-    triggerGameEnd(
-      'repetition',
-      'draw',
-      'Draw — threefold repetition'
-    );
-
+    if(local) broadcastEnd('draw','Draw — threefold repetition');
+    triggerGameEnd('repetition','draw','Draw — threefold repetition');
   }else{
-
     startMoveTimer();
   }
 }
@@ -6357,116 +4860,42 @@ function executeMove(move,local){
 ============================================================ */
 
 function handleSquareClick(r,c){
-
-  if(
-    gameEnded||
-    G.status==='checkmate'||
-    G.status==='stalemate'||
-    G.status==='ended'
-  ){
-    return;
-  }
-
-  if(G.turn!==myColor){
-    return;
-  }
+  if(gameEnded||G.status==='checkmate'||G.status==='stalemate'||G.status==='ended') return;
+  if(G.turn!==myColor) return;
 
   const p=G.board[r][c];
 
   if(selected){
-
     const mv=
-      legalNow.find(
-        m=>
-          m.tr===r&&
-          m.tc===c&&
-          !m.promo
-      )||
-      legalNow.find(
-        m=>
-          m.tr===r&&
-          m.tc===c
-      );
+      legalNow.find(m=>m.tr===r&&m.tc===c&&!m.promo)||
+      legalNow.find(m=>m.tr===r&&m.tc===c);
 
     if(mv){
-
-      if(
-        G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&
-        (mv.tr===0||mv.tr===7)
-      ){
-
-        pendingPromo={
-          fr:mv.fr,
-          fc:mv.fc,
-          tr:mv.tr,
-          tc:mv.tc,
-          isEnPassant:mv.isEnPassant
-        };
-
+      if(G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&(mv.tr===0||mv.tr===7)){
+        pendingPromo={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc,isEnPassant:mv.isEnPassant};
         showPromoModal();
-
         return;
       }
-
-      executeMove(
-        mv,
-        true
-      );
-
+      executeMove(mv,true);
       return;
     }
 
-    if(
-      p&&
-      colorOf(p)===myColor
-    ){
-
+    if(p&&colorOf(p)===myColor){
       selected=[r,c];
-
-      legalNow=
-        legalMoves(
-          G.board,
-          G.turn,
-          G.castling,
-          G.enPassant
-        ).filter(
-          m=>
-            m.fr===r&&
-            m.fc===c
-        );
-
+      legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
       renderBoard();
-
       return;
     }
 
     selected=null;
     legalNow=[];
-
     renderBoard();
-
     return;
   }
 
-  if(
-    p&&
-    colorOf(p)===myColor
-  ){
-
+  if(p&&colorOf(p)===myColor){
     selected=[r,c];
-
-    legalNow=
-      legalMoves(
-        G.board,
-        G.turn,
-        G.castling,
-        G.enPassant
-      ).filter(
-        m=>
-          m.fr===r&&
-          m.fc===c
-      );
-
+    legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
     renderBoard();
   }
 }
@@ -6477,60 +4906,27 @@ function handleSquareClick(r,c){
 ============================================================ */
 
 function showPromoModal(){
-
-  const pieces=
-    myColor==='w'
-      ?['Q','R','B','N']
-      :['q','r','b','n'];
-
-  const box=document.getElementById(
-    'promo-choices'
-  );
-
+  const pieces=myColor==='w'?['Q','R','B','N']:['q','r','b','n'];
+  const box=document.getElementById('promo-choices');
   box.innerHTML='';
 
   pieces.forEach(pc=>{
-
-    const div=document.createElement(
-      'div'
-    );
-
+    const div=document.createElement('div');
     div.className='promo-piece';
-
-    const img=document.createElement(
-      'img'
-    );
-
+    const img=document.createElement('img');
     img.src=pieceUrl(pc);
     img.alt=pc;
-
     div.appendChild(img);
-
     div.onclick=()=>{
-
-      document.getElementById(
-        'promo-modal'
-      ).classList.remove('show');
-
+      document.getElementById('promo-modal').classList.remove('show');
       if(!pendingPromo) return;
-
-      executeMove(
-        {
-          ...pendingPromo,
-          promo:pc.toLowerCase()
-        },
-        true
-      );
-
+      executeMove({...pendingPromo,promo:pc.toLowerCase()},true);
       pendingPromo=null;
     };
-
     box.appendChild(div);
   });
 
-  document.getElementById(
-    'promo-modal'
-  ).classList.add('show');
+  document.getElementById('promo-modal').classList.add('show');
 }
 
 
@@ -6539,160 +4935,61 @@ function showPromoModal(){
 ============================================================ */
 
 function renderBoard(){
-
-  const boardEl=document.getElementById(
-    'board'
-  );
-
+  const boardEl=document.getElementById('board');
   boardEl.innerHTML='';
 
   const flip=myColor==='b';
-
-  const kpos=
-    (G.status==='check'||
-     G.status==='checkmate')
-      ?findKing(G.board,G.turn)
-      :null;
-
-  const legalSet=new Set(
-    legalNow.map(
-      m=>m.tr*8+m.tc
-    )
-  );
+  const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
+  const legalSet=new Set(legalNow.map(m=>m.tr*8+m.tc));
 
   for(let ri=0;ri<8;ri++){
-
     for(let ci=0;ci<8;ci++){
+      const r=flip?7-ri:ri;
+      const c=flip?7-ci:ci;
 
-      const r=
-        flip
-          ?7-ri
-          :ri;
-
-      const c=
-        flip
-          ?7-ci
-          :ci;
-
-      const sq=document.createElement(
-        'div'
-      );
-
-      sq.className=
-        'sq '+
-        ((r+c)%2===0
-          ?'light'
-          :'dark');
-
+      const sq=document.createElement('div');
+      sq.className='sq '+((r+c)%2===0?'light':'dark');
       sq.dataset.r=r;
       sq.dataset.c=c;
 
-      if(
-        selected&&
-        selected[0]===r&&
-        selected[1]===c
-      ){
-
-        sq.classList.add(
-          'selected'
-        );
-
-      }else if(
-        legalSet.has(r*8+c)
-      ){
-
-        sq.classList.add(
-          'moveable'
-        );
-
-        if(
-          G.board[r][c]||
-          legalNow.some(
-            m=>
-              m.tr===r&&
-              m.tc===c&&
-              m.isEnPassant
-          )
-        ){
-          sq.classList.add(
-            'occupied'
-          );
+      if(selected&&selected[0]===r&&selected[1]===c){
+        sq.classList.add('selected');
+      }else if(legalSet.has(r*8+c)){
+        sq.classList.add('moveable');
+        if(G.board[r][c]||legalNow.some(m=>m.tr===r&&m.tc===c&&m.isEnPassant)){
+          sq.classList.add('occupied');
         }
       }
 
       if(G.lastMove){
-
-        if(
-          G.lastMove.fr===r&&
-          G.lastMove.fc===c
-        ){
-          sq.classList.add(
-            'last-from'
-          );
-        }
-
-        if(
-          G.lastMove.tr===r&&
-          G.lastMove.tc===c
-        ){
-          sq.classList.add(
-            'last-to'
-          );
-        }
+        if(G.lastMove.fr===r&&G.lastMove.fc===c) sq.classList.add('last-from');
+        if(G.lastMove.tr===r&&G.lastMove.tc===c) sq.classList.add('last-to');
       }
 
-      if(
-        kpos&&
-        kpos[0]===r&&
-        kpos[1]===c
-      ){
-        sq.classList.add(
-          'in-check'
-        );
-      }
+      if(kpos&&kpos[0]===r&&kpos[1]===c) sq.classList.add('in-check');
 
       const piece=G.board[r][c];
-
-      if(
-        piece&&
-        PIECE_FILES[piece]
-      ){
-        sq.appendChild(
-          makePieceEl(piece)
-        );
+      if(piece&&PIECE_FILES[piece]){
+        const pc=colorOf(piece);
+        const skinId=currentRoomSkins[pc]||'classic';
+        const skin=findSkin(skinId);
+        sq.appendChild(makePieceEl(piece,skin.filter));
       }
 
       if(ci===0){
-
-        const co=document.createElement(
-          'div'
-        );
-
+        const co=document.createElement('div');
         co.className='coord-rank';
         co.textContent=8-r;
-
         sq.appendChild(co);
       }
-
       if(ri===7){
-
-        const co=document.createElement(
-          'div'
-        );
-
+        const co=document.createElement('div');
         co.className='coord-file';
         co.textContent=FILES_STR[c];
-
         sq.appendChild(co);
       }
 
-      sq.onclick=()=>{
-        handleSquareClick(
-          +sq.dataset.r,
-          +sq.dataset.c
-        );
-      };
-
+      sq.onclick=()=>handleSquareClick(+sq.dataset.r,+sq.dataset.c);
       boardEl.appendChild(sq);
     }
   }
@@ -6704,104 +5001,46 @@ function renderBoard(){
 ============================================================ */
 
 function updateUI(){
-
-  const statusEl=document.getElementById(
-    'status-bar'
-  );
-
+  const statusEl=document.getElementById('status-bar');
   const s=G.status;
-
   let txt='';
 
-  if(gameEnded||s==='ended'){
-
-    txt='Game over';
-
-  }else if(s==='checkmate'){
-
+  if(gameEnded||s==='ended') txt='Game over';
+  else if(s==='checkmate'){
     const w=opp(G.turn);
-
-    txt=
-      w===myColor
-        ?'<span class="good">🏆 Checkmate — You win!</span>'
-        :'<span class="warn">💔 Checkmate — You lose!</span>';
-
-  }else if(s==='stalemate'){
-
-    txt=
-      '<span class="accent">🤝 Stalemate — Draw</span>';
-
-  }else if(s==='insufficient'){
-
-    txt=
-      '<span class="accent">🤝 Draw — Insufficient material</span>';
-
-  }else if(s==='fifty'){
-
-    txt=
-      '<span class="accent">🤝 Draw — Fifty-move rule</span>';
-
-  }else if(s==='repetition'){
-
-    txt=
-      '<span class="accent">🤝 Draw — Threefold repetition</span>';
-
-  }else if(s==='check'){
-
-    txt=
-      G.turn===myColor
-        ?'<span class="warn">⚠ Your king is in check!</span>'
-        :'<span class="accent">Check — opponent\'s king is in check</span>';
-
+    txt=w===myColor
+      ?'<span class="good">🏆 Checkmate — You win!</span>'
+      :'<span class="warn">💔 Checkmate — You lose!</span>';
+  }
+  else if(s==='stalemate') txt='<span class="accent">🤝 Stalemate — Draw</span>';
+  else if(s==='insufficient') txt='<span class="accent">🤝 Draw — Insufficient material</span>';
+  else if(s==='fifty') txt='<span class="accent">🤝 Draw — Fifty-move rule</span>';
+  else if(s==='repetition') txt='<span class="accent">🤝 Draw — Threefold repetition</span>';
+  else if(s==='check'){
+    txt=G.turn===myColor
+      ?'<span class="warn">⚠ Your king is in check!</span>'
+      :'<span class="accent">Check — opponent\'s king is in check</span>';
   }else{
-
-    txt=
-      G.turn===myColor
-        ?'<span class="accent">Your turn</span>'
-        :"<em>Opponent's turn…</em>";
+    txt=G.turn===myColor?'<span class="accent">Your turn</span>':"<em>Opponent's turn…</em>";
   }
 
   statusEl.innerHTML=txt;
+  document.getElementById('turn-disp').textContent=G.turn==='w'?'♔ White':'♚ Black';
 
-  document.getElementById(
-    'turn-disp'
-  ).textContent=
-    G.turn==='w'
-      ?'♔ White'
-      :'♚ Black';
-
-  const logEl=document.getElementById(
-    'move-log'
-  );
-
+  const logEl=document.getElementById('move-log');
   let html='';
-
   for(let i=0;i<G.log.length;i+=2){
-
-    const num=
-      Math.floor(i/2)+1;
-
-    const w=
-      G.log[i]?.note||'';
-
-    const b=
-      G.log[i+1]?.note||'';
-
+    const num=Math.floor(i/2)+1;
+    const w=G.log[i]?.note||'';
+    const b=G.log[i+1]?.note||'';
     html+=
       `<span class="mv-num">${num}.</span>`+
       `<span class="mv-w">${escapeHtml(w)}</span>`+
-      (b
-        ?`<span class="mv-b">${escapeHtml(b)}</span>`
-        :'')+
+      (b?`<span class="mv-b">${escapeHtml(b)}</span>`:'')+
       ' ';
   }
-
-  logEl.innerHTML=
-    html||
-    '<em style="color:#555;font-style:italic">No moves yet</em>';
-
-  logEl.scrollTop=
-    logEl.scrollHeight;
+  logEl.innerHTML=html||'<em style="color:#555;font-style:italic">No moves yet</em>';
+  logEl.scrollTop=logEl.scrollHeight;
 }
 
 
@@ -6809,96 +5048,46 @@ function updateUI(){
    CLEANUP
 ============================================================ */
 
-window.addEventListener(
-  'beforeunload',
-  ()=>{
-    clearInterval(spectatorPollTimer);
-    clearInterval(spectatorTimerInterval);
-    clearInterval(publicPollTimer);
-    clearInterval(livePollTimer);
-    clearInterval(pollTimer);
-    clearInterval(timerInterval);
-    clearInterval(heartbeatTimer);
-    clearInterval(codeExpireTimer);
-    clearInterval(usernameHeartbeatTimer);
-    clearInterval(gameEndReturnTimer);
-    clearInterval(spectatorEndReturnTimer);
+window.addEventListener('beforeunload',()=>{
+  clearInterval(spectatorPollTimer);
+  clearInterval(spectatorTimerInterval);
+  clearInterval(publicPollTimer);
+  clearInterval(livePollTimer);
+  clearInterval(pollTimer);
+  clearInterval(timerInterval);
+  clearInterval(heartbeatTimer);
+  clearInterval(codeExpireTimer);
+  clearInterval(usernameHeartbeatTimer);
+  clearInterval(gameEndReturnTimer);
+  clearInterval(spectatorEndReturnTimer);
+  emergencyLeave();
+});
 
-    emergencyLeave();
-
-    releaseUsername();
-  }
-);
-
-window.addEventListener(
-  'pagehide',
-  ()=>{
-    emergencyLeave();
-    releaseUsername();
-  }
-);
+window.addEventListener('pagehide',()=>{ emergencyLeave(); });
 
 
 /* ============================================================
    KEYBOARD
 ============================================================ */
 
-document.getElementById(
-  'name-input'
-)?.addEventListener(
-  'keydown',
-  e=>{
-    if(e.key==='Enter'){
-      claimUsername();
-    }
-  }
-);
+document.getElementById('spectate-chat-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter') sendSpectatorChat();
+});
 
-document.getElementById(
-  'spectate-chat-input'
-)?.addEventListener(
-  'keydown',
-  e=>{
-    if(e.key==='Enter'){
-      sendSpectatorChat();
-    }
-  }
-);
+document.getElementById('game-chat-input')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter') sendGameChat();
+});
 
-document.getElementById(
-  'game-chat-input'
-)?.addEventListener(
-  'keydown',
-  e=>{
-    if(e.key==='Enter'){
-      sendGameChat();
-    }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    const sm=document.getElementById('settings-modal');
+    if(sm&&sm.classList.contains('show')) closeSettings();
   }
-);
+});
 
-document.addEventListener(
-  'keydown',
-  e=>{
-    if(e.key==='Escape'){
-      const sm=document.getElementById('settings-modal');
-
-      if(sm&&sm.classList.contains('show')){
-        closeSettings();
-      }
-    }
-  }
-);
-
-document.getElementById(
-  'settings-modal'
-)?.addEventListener(
-  'click',
-  e=>{
-    if(e.target.id==='settings-modal'){
-      closeSettings();
-    }
-  }
-);
+document.getElementById('settings-modal')?.addEventListener('click',e=>{
+  if(e.target.id==='settings-modal') closeSettings();
+});
 
 
 /* ============================================================
@@ -6907,7 +5096,6 @@ document.getElementById(
 
 loadSavedTheme();
 loadSavedUiStyle();
-
 initGame();
 
 
@@ -6916,22 +5104,15 @@ initGame();
 ============================================================ */
 
 (function(){
-
   function _startMusic(){
-
     document.removeEventListener('click',_startMusic);
     document.removeEventListener('keydown',_startMusic);
     document.removeEventListener('touchstart',_startMusic);
-
-    if(!_musicPlaying){
-      musicToggle();
-    }
+    if(!_musicPlaying) musicToggle();
   }
-
   document.addEventListener('click',_startMusic);
   document.addEventListener('keydown',_startMusic);
   document.addEventListener('touchstart',_startMusic);
-
 })();
 </script>
 
