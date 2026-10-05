@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,6 +135,26 @@
   #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:10px 22px; border-radius:8px; font-family:'Cinzel',serif; font-size:0.75rem; letter-spacing:1px; transition:transform 0.3s; z-index:9999; white-space:nowrap; }
   #toast.show { transform:translateX(-50%) translateY(0); }
   .hidden { display:none !important; }
+  #top-tabs { width:100%; max-width:700px; display:flex; gap:8px; justify-content:center; margin-top:-4px; }
+  .top-tab { flex:1; max-width:220px; background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+  .top-tab.active { background:var(--gold); color:var(--bg); border-color:var(--gold); }
+  #public-page { width:100%; max-width:700px; display:flex; flex-direction:column; gap:14px; }
+  #public-list { display:flex; flex-direction:column; gap:8px; }
+  .public-room { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; text-align:left; }
+  .public-room .room-name { color:var(--text); font-family:'Cinzel',serif; font-size:.9rem; }
+  .public-room .room-host { color:var(--muted); font-size:.8rem; margin-top:3px; }
+  .public-empty { color:var(--muted); padding:22px 10px; text-align:center; }
+  #name-screen { position:fixed; inset:0; z-index:1000; background:rgba(13,13,20,.97); display:flex; align-items:center; justify-content:center; padding:20px; }
+  #name-card { max-width:430px; }
+  #name-input { width:min(280px,90%); letter-spacing:1px; }
+  #create-type-modal { display:none; position:fixed; inset:0; z-index:900; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:20px; }
+  #create-type-modal.show { display:flex; }
+  #create-type-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:min(430px,100%); text-align:center; }
+  #create-type-box h3 { font-family:'Cinzel',serif; color:var(--gold); letter-spacing:2px; margin-bottom:10px; }
+  #create-type-box p { color:var(--muted); margin-bottom:18px; }
+  .create-type-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .create-type-btns button { min-width:145px; }
+  #player-name-display { color:var(--gold); font-family:'Cinzel',serif; font-size:.8rem; letter-spacing:1px; margin-bottom:4px; }
   ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
   /* ── MUSIC PLAYER ── */
@@ -247,23 +268,62 @@
 <body>
 <h1>♟ CHESS <span>/</span> ONLINE</h1>
 
+<div id="name-screen">
+  <div id="name-card" class="card">
+    <h2>Choose Your Name</h2>
+    <p>Your name is only active while this page is open. Someone else can use the same name after you leave.</p>
+    <input id="name-input" maxlength="20" placeholder="Enter username" autocomplete="off">
+    <br><br>
+    <button onclick="claimUsername()">Continue</button>
+    <div id="name-status"></div>
+  </div>
+</div>
+
+<div id="top-tabs">
+  <button id="tab-lobby" class="top-tab active" onclick="showPage('lobby')">My Lobby</button>
+  <button id="tab-public" class="top-tab" onclick="showPage('public')">Public Lobbies</button>
+</div>
+
 <div id="lobby">
+  <div id="player-name-display"></div>
   <div class="card">
     <h2>Create a Room</h2>
-    <p>Start a new game and share the 6-digit code with your opponent.<br>Codes expire in <strong style="color:var(--gold)">5 minutes</strong> if no one joins.</p>
-    <button onclick="createRoom()">Create Room</button>
+    <p>Create a private room for a specific opponent or a public room that other players can see and join.</p>
+    <button onclick="openCreateType()">Create Room</button>
     <div id="room-actions" class="hidden">
       <button class="ghost" onclick="copyRoomLink()">📋 Copy Link</button>
       <button class="ghost" onclick="emailInvite()">✉ Email Invite</button>
     </div>
   </div>
   <div class="card">
-    <h2>Join a Room</h2>
+    <h2>Join a Private Room</h2>
     <input id="join-id" placeholder="Enter code" maxlength="6" oninput="this.value=this.value.toUpperCase()"/>
     <br><br>
     <button onclick="joinRoom()">Join Room</button>
   </div>
   <div id="lobby-status"></div>
+</div>
+
+<div id="public-page" class="hidden">
+  <div class="card">
+    <h2>Public Lobbies</h2>
+    <p>Join an open public game. The list refreshes automatically.</p>
+    <div id="public-list"><div class="public-empty">Loading public lobbies…</div></div>
+    <br>
+    <button class="ghost" onclick="loadPublicRooms()">Refresh</button>
+  </div>
+</div>
+
+<div id="create-type-modal">
+  <div id="create-type-box">
+    <h3>Choose Lobby Type</h3>
+    <p>Private rooms are only joinable with their code. Public rooms appear in the Public Lobbies tab.</p>
+    <div class="create-type-btns">
+      <button onclick="createRoom('private')">Private Lobby</button>
+      <button onclick="createRoom('public')">Public Lobby</button>
+      <button class="ghost" onclick="closeCreateType()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <div id="game" class="hidden">
@@ -694,9 +754,12 @@ function toSAN(board, move, color, castling, enPassant){
 // ══════════════════════════════════════════════════════════════
 const FB='https://chest-188bb-default-rtdb.firebaseio.com';
 const MOVE_TIME=30, CODE_EXPIRE=300, DISCONNECT_GRACE=20000, GAME_START_GRACE=15000;
+const USERNAME_GRACE=15000, PUBLIC_POLL=2500;
 const MY_ID=Math.random().toString(36).slice(2,10);
-let roomId=null, myColor=null;
-let pollTimer=null, lastSeq=-1, timerInterval=null;
+let roomId=null, myColor=null, myName='';
+let roomType='private', gameStarted=false;
+let pollTimer=null, lastSeq=-1, timerInterval=null, publicPollTimer=null;
+let usernameHeartbeatTimer=null, usernameKey=null;
 let moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME};
 let gameEnded=false, heartbeatTimer=null, codeExpireTimer=null, gameStartTime=null;
 
@@ -705,19 +768,76 @@ function showToast(msg,ms=2500){
   setTimeout(()=>el.classList.remove('show'),ms);
 }
 function lobbyStatus(html){ document.getElementById('lobby-status').innerHTML=html; }
+function nameStatus(html){ document.getElementById('name-status').innerHTML=html; }
 
-async function fbSet(p,d)   { await fetch(`${FB}/${p}.json`,{method:'PUT',   headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); }
-async function fbPatch(p,d) { await fetch(`${FB}/${p}.json`,{method:'PATCH', headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); }
-async function fbGet(p)     { return (await fetch(`${FB}/${p}.json`)).json(); }
-async function fbDelete(p)  { await fetch(`${FB}/${p}.json`,{method:'DELETE'}); }
+async function fbSet(p,d){ const r=await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }
+async function fbPatch(p,d){ const r=await fetch(`${FB}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }
+async function fbGet(p){ const r=await fetch(`${FB}/${p}.json`); return r.ok ? r.json() : null; }
+async function fbDelete(p){ try{ await fetch(`${FB}/${p}.json`,{method:'DELETE',keepalive:true}); }catch(e){} }
+
+function safeKey(s){ return encodeURIComponent(s.trim().toLowerCase()).replace(/\./g,'%2E'); }
+function cleanName(s){ return s.replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,' '); }
+
+async function claimUsername(){
+  const input=document.getElementById('name-input');
+  const name=cleanName(input.value);
+  if(name.length<2||name.length>20){ nameStatus('<span class="warn">Use 2–20 letters, numbers, spaces, _ or -.</span>'); return; }
+  const key=safeKey(name);
+  nameStatus('Checking name…');
+  const existing=await fbGet(`activeUsers/${key}`);
+  if(existing && existing.id!==MY_ID && existing.heartbeat && Date.now()-existing.heartbeat<USERNAME_GRACE){
+    nameStatus('<span class="warn">That username is currently in use.</span>');
+    return;
+  }
+  myName=name; usernameKey=key;
+  const ok=await fbSet(`activeUsers/${key}`,{id:MY_ID,name:myName,heartbeat:Date.now()});
+  if(!ok){ nameStatus('<span class="warn">Could not claim the username. Try again.</span>'); return; }
+  document.getElementById('name-screen').classList.add('hidden');
+  document.getElementById('player-name-display').textContent=`Playing as ${myName}`;
+  startUsernamePresence();
+  nameStatus('');
+  checkAutoJoin();
+  loadPublicRooms();
+}
+
+function startUsernamePresence(){
+  if(usernameHeartbeatTimer) clearInterval(usernameHeartbeatTimer);
+  usernameHeartbeatTimer=setInterval(async()=>{
+    if(!usernameKey) return;
+    await fbPatch(`activeUsers/${usernameKey}`,{id:MY_ID,name:myName,heartbeat:Date.now()});
+  },5000);
+}
+
+function releaseUsername(){
+  if(!usernameKey) return;
+  try{
+    fetch(`${FB}/activeUsers/${usernameKey}.json`,{method:'DELETE',keepalive:true});
+  }catch(e){}
+}
+
+function showPage(page){
+  const lobby=document.getElementById('lobby'), pub=document.getElementById('public-page');
+  const a=document.getElementById('tab-lobby'), b=document.getElementById('tab-public');
+  const isPub=page==='public';
+  lobby.classList.toggle('hidden',isPub);
+  pub.classList.toggle('hidden',!isPub);
+  a.classList.toggle('active',!isPub); b.classList.toggle('active',isPub);
+  if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
+  if(isPub){
+    loadPublicRooms();
+    publicPollTimer=setInterval(loadPublicRooms,PUBLIC_POLL);
+  }
+}
+
+function openCreateType(){ document.getElementById('create-type-modal').classList.add('show'); }
+function closeCreateType(){ document.getElementById('create-type-modal').classList.remove('show'); }
 
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.random()*c.length|0]).join(''); }
 function getRoomLink(code){ const u=new URL(location.href); u.search=''; u.searchParams.set('join',code); return u.toString(); }
 function copyRoomLink(){ if(!roomId){showToast('Create a room first');return;} navigator.clipboard.writeText(getRoomLink(roomId)).then(()=>showToast('Link copied!')); }
 function emailInvite(){
   if(!roomId){showToast('Create a room first');return;}
-  const link=getRoomLink(roomId);
-  const subj=encodeURIComponent('Join my Chess game!');
+  const link=getRoomLink(roomId), subj=encodeURIComponent('Join my Chess game!');
   const body=encodeURIComponent(`I challenge you to chess!\n\nJoin instantly:\n${link}\n\nOr enter code: ${roomId}\n\nSee you on the board! ♟`);
   window.location.href=`mailto:?subject=${subj}&body=${body}`;
 }
@@ -727,31 +847,83 @@ function checkAutoJoin(){
   if(code&&code.length===6){
     document.getElementById('join-id').value=code.toUpperCase();
     const u=new URL(location.href); u.searchParams.delete('join'); history.replaceState({},'',u.toString());
-    setTimeout(joinRoom,500);
+    setTimeout(joinRoom,300);
   }
 }
 
-async function createRoom(){
+async function createRoom(type='private'){
+  closeCreateType();
+  if(!myName){showToast('Choose a username first');return;}
   lobbyStatus('Creating room…');
+  roomType=type;
   const code=genCode(); roomId=code; myColor='w';
-  await fbSet(`rooms/${code}`,{white:MY_ID,black:null,seq:0,move:null,created:Date.now(),expires:Date.now()+CODE_EXPIRE*1000,event:null,heartbeat_white:Date.now(),heartbeat_black:null});
+  const now=Date.now();
+  await fbSet(`rooms/${code}`,{
+    white:MY_ID, whiteName:myName, black:null, blackName:null,
+    seq:0, move:null, created:now, expires:now+CODE_EXPIRE*1000,
+    event:null, type:type, status:'waiting', hostName:myName,
+    heartbeat_white:now, heartbeat_black:null
+  });
   document.getElementById('room-actions').classList.remove('hidden');
   let secs=CODE_EXPIRE;
   function tick(){
     secs--;
-    if(secs<=0){clearInterval(codeExpireTimer);fbDelete(`rooms/${code}`);lobbyStatus('<span class="warn">Room expired.</span>');document.getElementById('room-actions').classList.add('hidden');roomId=null;return;}
+    if(secs<=0){
+      clearInterval(codeExpireTimer); codeExpireTimer=null; fbDelete(`rooms/${code}`);
+      lobbyStatus('<span class="warn">Room expired.</span>');
+      document.getElementById('room-actions').classList.add('hidden'); roomId=null; return;
+    }
     const m=Math.floor(secs/60),s=secs%60;
-    lobbyStatus(`Room Code:<div class="code">${code}</div>Share with your opponent.<br><small style="color:var(--muted)">Expires in ${m}:${String(s).padStart(2,'0')}</small>`);
+    lobbyStatus(`${type==='public'?'Public':'Private'} Room Code:<div class="code">${code}</div>Share with your opponent.<br><small style="color:var(--muted)">Expires in ${m}:${String(s).padStart(2,'0')}</small>`);
   }
-  lobbyStatus(`Room Code:<div class="code">${code}</div>Share with your opponent.<br><small style="color:var(--muted)">Expires in 5:00</small>`);
+  lobbyStatus(`${type==='public'?'Public':'Private'} Room Code:<div class="code">${code}</div>${type==='public'?'Visible in Public Lobbies.':'Share with your opponent.'}<br><small style="color:var(--muted)">Expires in 5:00</small>`);
   codeExpireTimer=setInterval(tick,1000);
+  if(type==='public') loadPublicRooms();
   pollTimer=setInterval(async()=>{
     const room=await fbGet(`rooms/${code}`);
-    if(room&&room.black){clearInterval(pollTimer);pollTimer=null;clearInterval(codeExpireTimer);codeExpireTimer=null;startGame();}
+    if(room&&room.black){
+      clearInterval(pollTimer); pollTimer=null;
+      clearInterval(codeExpireTimer); codeExpireTimer=null;
+      await fbPatch(`rooms/${code}`,{status:'playing'});
+      startGame();
+    }
   },1200);
 }
 
+async function loadPublicRooms(){
+  const list=document.getElementById('public-list'); if(!list) return;
+  const rooms=await fbGet('rooms');
+  const now=Date.now();
+  const arr=[];
+  if(rooms){
+    for(const [code,r] of Object.entries(rooms)){
+      if(!r||r.type!=='public'||r.status!=='waiting'||r.black||!r.white) continue;
+      if(r.expires&&now>r.expires){ fbDelete(`rooms/${code}`); continue; }
+      arr.push({code,...r});
+    }
+  }
+  arr.sort((a,b)=>(a.created||0)-(b.created||0));
+  if(!arr.length){ list.innerHTML='<div class="public-empty">No public lobbies are open right now.</div>'; return; }
+  list.innerHTML='';
+  arr.forEach(r=>{
+    const row=document.createElement('div'); row.className='public-room';
+    const info=document.createElement('div');
+    info.innerHTML=`<div class="room-name">${escapeHtml(r.hostName||'Player')}'s Lobby</div><div class="room-host">Open game • ${escapeHtml(r.code)}</div>`;
+    const btn=document.createElement('button'); btn.textContent='Join';
+    btn.onclick=()=>joinSpecificRoom(r.code);
+    row.append(info,btn); list.appendChild(row);
+  });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function joinSpecificRoom(code){
+  document.getElementById('join-id').value=code;
+  showPage('lobby');
+  await joinRoom();
+}
+
 async function joinRoom(){
+  if(!myName){showToast('Choose a username first');return;}
   const raw=document.getElementById('join-id').value.trim().toUpperCase();
   if(raw.length!==6){lobbyStatus('Enter the 6-digit room code.');return;}
   lobbyStatus('Looking up room…');
@@ -759,14 +931,18 @@ async function joinRoom(){
   if(!room||!room.white){lobbyStatus('Room not found.');return;}
   if(room.black){lobbyStatus('Room is already full.');return;}
   if(room.expires&&Date.now()>room.expires){lobbyStatus('<span class="warn">Room code expired.</span>');return;}
-  roomId=raw; myColor='b';
-  await fbPatch(`rooms/${raw}`,{black:MY_ID,heartbeat_black:Date.now()});
+  roomId=raw; myColor='b'; roomType=room.type||'private';
+  await fbPatch(`rooms/${raw}`,{black:MY_ID,blackName:myName,heartbeat_black:Date.now(),status:'playing'});
   lobbyStatus('Joined! Starting…');
   setTimeout(startGame,500);
 }
 
 function startGame(){
+  gameStarted=true;
+  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
+  document.getElementById('top-tabs').classList.add('hidden');
   document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('public-page').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
   document.getElementById('my-color').textContent=myColor==='w'?'♔ White':'♚ Black';
   document.getElementById('room-disp').textContent=roomId;
@@ -1093,9 +1269,22 @@ function updateUI(){
   logEl.scrollTop=logEl.scrollHeight;
 }
 
+window.addEventListener('beforeunload',()=>{
+  releaseUsername();
+  if(roomId && !gameStarted && roomType){
+    try{ fetch(`${FB}/rooms/${roomId}.json`,{method:'DELETE',keepalive:true}); }catch(e){}
+  }
+});
+window.addEventListener('pagehide',releaseUsername);
+
+if(document.getElementById('name-input')){
+  document.getElementById('name-input').addEventListener('keydown',e=>{
+    if(e.key==='Enter') claimUsername();
+  });
+}
+
 // ══════════════════════════════════════════════════════════════
 initGame();
-checkAutoJoin();
 
 // Auto-play on first user interaction (browsers require this before playing audio)
 (function(){
@@ -1112,3 +1301,4 @@ checkAutoJoin();
 </script>
 </body>
 </html>
+```
