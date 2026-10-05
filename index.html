@@ -837,6 +837,7 @@
 
   .spectate-sq.last-from { background:rgba(255,220,50,.35) !important; }
   .spectate-sq.last-to { background:rgba(255,220,50,.55) !important; }
+  .spectate-sq.in-check { background:#c0392b !important; }
 
   .spectate-piece {
     width:88%;
@@ -1195,12 +1196,12 @@
       </div>
 
       <div id="spectate-timers">
-        <div class="timer-box">
+        <div class="timer-box" id="spectate-timer-white">
           <div class="t-label">White ♔</div>
           <div class="t-val" id="spectate-tv-white">0:30</div>
         </div>
 
-        <div class="timer-box">
+        <div class="timer-box" id="spectate-timer-black">
           <div class="t-label">Black ♚</div>
           <div class="t-val" id="spectate-tv-black">0:30</div>
         </div>
@@ -2534,7 +2535,13 @@ function nameStatus(html){
    CHAT (shared by players + spectators)
 ============================================================ */
 
-const _chatSignatures={ game:'', spectate:'' };
+/*
+  Signature cache initialised to `null` so the very first
+  render always runs. With an initial `''` an empty chat would
+  match the "signature of no messages" and the placeholder
+  ("Chat is loading…") would never be replaced.
+*/
+const _chatSignatures={ game:null, spectate:null };
 
 function renderChatMessages(containerId,chatData,cacheKey){
   const box=document.getElementById(containerId);
@@ -3465,7 +3472,7 @@ function startGame(){
   document.getElementById('room-disp')
     .textContent=roomId;
 
-  _chatSignatures.game='';
+  _chatSignatures.game=null;
 
   initGame();
 
@@ -4091,7 +4098,7 @@ async function openSpectator(code){
   spectatorState=null;
   spectateSig='';
   spectateRoomStatus=room.status||'playing';
-  _chatSignatures.spectate='';
+  _chatSignatures.spectate=null;
 
   if(publicPollTimer){
     clearInterval(publicPollTimer);
@@ -4218,6 +4225,16 @@ function renderSpectatorBoard(){
 
   if(!st||!st.board) return;
 
+  /* highlight the king that is in check, mirroring the
+     player board so spectators see the same red square */
+  const inCheckStatus=
+    st.status==='check'||
+    st.status==='checkmate';
+
+  const kpos=inCheckStatus
+    ?findKing(st.board,st.turn)
+    :null;
+
   wrap.innerHTML='';
 
   for(let r=0;r<8;r++){
@@ -4248,6 +4265,14 @@ function renderSpectatorBoard(){
         sq.classList.add('last-to');
       }
 
+      if(
+        kpos&&
+        kpos[0]===r&&
+        kpos[1]===c
+      ){
+        sq.classList.add('in-check');
+      }
+
       const p=st.board[r]?st.board[r][c]:null;
 
       if(p&&PIECE_FILES[p]){
@@ -4260,6 +4285,20 @@ function renderSpectatorBoard(){
         img.draggable=false;
 
         sq.appendChild(img);
+      }
+
+      if(c===0){
+        const co=document.createElement('div');
+        co.className='coord-rank';
+        co.textContent=8-r;
+        sq.appendChild(co);
+      }
+
+      if(r===7){
+        const co=document.createElement('div');
+        co.className='coord-file';
+        co.textContent=FILES_STR[c];
+        sq.appendChild(co);
       }
 
       wrap.appendChild(sq);
@@ -4275,7 +4314,12 @@ function renderSpectatorUI(){
 
   const ended=
     spectateRoomStatus==='ended'||
-    st.status==='ended';
+    st.status==='ended'||
+    st.status==='checkmate'||
+    st.status==='stalemate'||
+    st.status==='insufficient'||
+    st.status==='fifty'||
+    st.status==='repetition';
 
   const turnName=
     st.turn==='w'
@@ -4289,14 +4333,30 @@ function renderSpectatorUI(){
       ?'Game Over'
       :turnName;
 
+  let statusHtml;
+
+  if(ended){
+
+    statusHtml='<span class="accent">Game Over</span>';
+
+  }else if(st.status==='check'){
+
+    statusHtml=
+      'Watching live · <span class="warn">'+
+      turnName+
+      ' in check!</span>';
+
+  }else{
+
+    statusHtml=
+      'Watching live · <span class="accent">'+
+      turnName+
+      ' to move</span>';
+  }
+
   document.getElementById(
     'spectate-status'
-  ).innerHTML=
-    ended
-      ?'<span class="accent">Game Over</span>'
-      :'Watching live · <span class="accent">'+
-       turnName+
-       ' to move</span>';
+  ).innerHTML=statusHtml;
 
   const log=st.log||[];
 
@@ -4335,7 +4395,10 @@ function renderSpectatorTimers(){
     spectateRoomStatus!=='ended'&&
     st.status!=='ended'&&
     st.status!=='checkmate'&&
-    st.status!=='stalemate';
+    st.status!=='stalemate'&&
+    st.status!=='insufficient'&&
+    st.status!=='fifty'&&
+    st.status!=='repetition';
 
   const elapsed=running
     ?Math.max(0,(Date.now()-st.updated)/1000)
@@ -4362,6 +4425,17 @@ function renderSpectatorTimers(){
     if(el){
       el.textContent=
         `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+    }
+
+    const box=document.getElementById(
+      c==='w'
+        ?'spectate-timer-white'
+        :'spectate-timer-black'
+    );
+
+    if(box){
+      box.classList.toggle('active',running&&st.turn===c);
+      box.classList.toggle('urgent',running&&st.turn===c&&secs<=8);
     }
   }
 }
