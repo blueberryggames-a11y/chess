@@ -923,6 +923,74 @@
     transform:translateY(0);
   }
 
+  /* ---- seek bar row (new) ---- */
+
+  #music-progress-wrap {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:0 12px;
+    height:44px;
+    pointer-events:auto;
+    width:300px;
+    max-width:calc(100vw - 40px);
+  }
+
+  #music-time-current,
+  #music-time-total {
+    font-family:'Cinzel',serif;
+    font-size:.65rem;
+    letter-spacing:1px;
+    color:var(--muted);
+    user-select:none;
+    min-width:34px;
+    text-align:center;
+    flex-shrink:0;
+  }
+
+  #music-progress {
+    -webkit-appearance:none;
+    appearance:none;
+    flex:1;
+    width:auto;
+    height:3px;
+    border-radius:2px;
+    background:var(--border);
+    outline:none;
+    cursor:pointer;
+    border:none;
+    padding:0;
+    letter-spacing:0;
+    text-align:left;
+    font-size:0;
+    accent-color:var(--gold);
+    min-width:0;
+  }
+
+  #music-progress::-webkit-slider-thumb {
+    -webkit-appearance:none;
+    width:13px;
+    height:13px;
+    border-radius:50%;
+    background:var(--gold);
+    cursor:pointer;
+    border:none;
+    box-shadow:0 0 8px rgba(201,168,76,.4);
+  }
+
+  #music-progress::-moz-range-thumb {
+    width:13px;
+    height:13px;
+    border-radius:50%;
+    background:var(--gold);
+    border:none;
+    cursor:pointer;
+    box-shadow:0 0 8px rgba(201,168,76,.4);
+  }
+
   #music-controls {
     display:flex;
     align-items:center;
@@ -1021,6 +1089,7 @@
     #game-btns button { padding:9px 14px; }
     .card { padding:20px 16px; }
     #music-player { right:10px; bottom:10px; }
+    #music-progress-wrap { width:260px; }
   }
 </style>
 </head>
@@ -1254,6 +1323,12 @@
 <div id="music-player">
   <div id="music-info"></div>
 
+  <div id="music-progress-wrap">
+    <span id="music-time-current">0:00</span>
+    <input type="range" id="music-progress" min="0" max="1000" step="1" value="0" oninput="musicSeek(this.value)" title="Seek">
+    <span id="music-time-total">0:00</span>
+  </div>
+
   <div id="music-controls">
     <div id="music-vol-wrap">
       <span id="music-vol-icon">♪</span>
@@ -1277,13 +1352,13 @@ const MUSIC_BASE='https://raw.githubusercontent.com/blueberryggames-a11y/chess/m
 const MUSIC_FILES=[
   'passobem.mp3',
   'WashingMachine.mp3',
- 'JustMight.mp3',
- 'WayUAre.mp3',
- 'BillieJean.mp3',
- 'SmoothCrime.mp3',
- 'HeadLock.mp3',
- 'LoveMe.mp3',
- 'GutGenug.mp3',
+  'JustMight.mp3',
+  'WayUAre.mp3',
+  'BillieJean.mp3',
+  'SmoothCrime.mp3',
+  'HeadLock.mp3',
+  'LoveMe.mp3',
+  'GutGenug.mp3',
   'dirtyshoes.mp3',
   'tiktiki.mp3',
   'montagem.mp3',
@@ -1303,6 +1378,14 @@ let _musicPlaying=false;
 let _musicAudio=null;
 let _musicVol=.5;
 let _musicInfoTimer=null;
+
+/*
+  While the user is dragging the seek bar we briefly stop
+  syncing the slider position from the audio element.
+  This avoids the slider jumping back to where the audio
+  currently is while the user is mid-drag.
+*/
+let _musicSeekingUntil=0;
 
 function _shuffleArr(arr){
   const a=arr.slice();
@@ -1334,12 +1417,79 @@ function _showTrackInfo(name){
   },4000);
 }
 
+function _formatTime(s){
+  if(!isFinite(s)||s<0) s=0;
+
+  s=Math.floor(s);
+
+  const m=Math.floor(s/60);
+  const sec=s%60;
+
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function _updateMusicProgress(){
+  const slider=document.getElementById('music-progress');
+  const cur=document.getElementById('music-time-current');
+  const tot=document.getElementById('music-time-total');
+
+  if(!slider||!cur||!tot) return;
+
+  const a=_musicAudio;
+
+  if(!a){
+    slider.value=0;
+    cur.textContent='0:00';
+    tot.textContent='0:00';
+    return;
+  }
+
+  const d=a.duration;
+  const t=a.currentTime;
+
+  if(isFinite(d)&&d>0){
+    slider.value=(t/d)*1000;
+    cur.textContent=_formatTime(t);
+    tot.textContent=_formatTime(d);
+  }else{
+    slider.value=0;
+    cur.textContent=_formatTime(isFinite(t)?t:0);
+    tot.textContent='0:00';
+  }
+}
+
+function musicSeek(val){
+  const a=_musicAudio;
+
+  if(!a) return;
+
+  const d=a.duration;
+
+  if(!isFinite(d)||d<=0) return;
+
+  const pct=Math.max(0,Math.min(1000,parseFloat(val)||0));
+  const t=(pct/1000)*d;
+
+  _musicSeekingUntil=Date.now()+150;
+
+  try{
+    a.currentTime=t;
+  }catch(e){}
+
+  const cur=document.getElementById('music-time-current');
+
+  if(cur) cur.textContent=_formatTime(t);
+}
+
 function _loadTrack(idx,autoplay){
   if(!_musicQueue.length) return;
 
   if(_musicAudio){
     _musicAudio.onended=null;
     _musicAudio.onerror=null;
+    _musicAudio.ontimeupdate=null;
+    _musicAudio.onloadedmetadata=null;
+    _musicAudio.ondurationchange=null;
     _musicAudio.pause();
     _musicAudio.src='';
     _musicAudio=null;
@@ -1360,8 +1510,24 @@ function _loadTrack(idx,autoplay){
     _loadTrack(_musicIdx,_musicPlaying);
   };
 
+  audio.ontimeupdate=()=>{
+    if(Date.now()<_musicSeekingUntil) return;
+    _updateMusicProgress();
+  };
+
+  audio.onloadedmetadata=()=>{
+    _updateMusicProgress();
+  };
+
+  audio.ondurationchange=()=>{
+    _updateMusicProgress();
+  };
+
   _musicAudio=audio;
+  _musicSeekingUntil=0;
+
   _showTrackInfo(_trackName(file));
+  _updateMusicProgress();
 
   if(autoplay){
     audio.play().catch(()=>{});
@@ -1479,12 +1645,6 @@ function makePieceEl(p){
 
 /* ============================================================
    BOARD (DE)SERIALIZATION
-   ------------------------------------------------------------
-   Firebase's Realtime Database does not keep nulls inside
-   arrays — a board like [null,null,'p',...] comes back as an
-   object with holes. That is what used to break the spectator
-   board (rows 2-5 simply vanished, then the renderer crashed).
-   We therefore publish the board as 8 plain strings.
 ============================================================ */
 
 function serializeBoard(board){
@@ -2542,12 +2702,6 @@ function nameStatus(html){
    CHAT (shared by players + spectators)
 ============================================================ */
 
-/*
-  Signature cache initialised to `null` so the very first
-  render always runs. With an initial `''` an empty chat would
-  match the "signature of no messages" and the placeholder
-  ("Chat is loading…") would never be replaced.
-*/
 const _chatSignatures={ game:null, spectate:null };
 
 function renderChatMessages(containerId,chatData,cacheKey){
