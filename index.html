@@ -2199,18 +2199,20 @@
 /* ============================================================
    FIREBASE INIT
    ------------------------------------------------------------
-   Replace the apiKey with the Web API key from:
-   Firebase Console → Project Settings → Your apps → Web app config.
-   Everything else matches the existing project.
+   Live credentials for project "chest-188bb".
+   The compat SDK is loaded above so `firebase.initializeApp`
+   works globally.
 ============================================================ */
 
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyCJJSE203Fevjy9u2SV4eI4jDXF6fJzaZ4", // <-- replace with your real Web API key
+  apiKey:            "AIzaSyCJJSE203Fevjy9u2SV4eI4jDXF6fJzaZ4",
   authDomain:        "chest-188bb.firebaseapp.com",
   databaseURL:       "https://chest-188bb-default-rtdb.firebaseio.com",
   projectId:         "chest-188bb",
-  storageBucket:     "chest-188bb.appspot.com",
-  messagingSenderId: "000000000000"
+  storageBucket:     "chest-188bb.firebasestorage.app",
+  messagingSenderId: "205821111046",
+  appId:             "1:205821111046:web:514731313d2a5f9cc10c87",
+  measurementId:     "G-YGTX4ZBCGY"
 };
 
 let firebaseApp = null;
@@ -3045,8 +3047,8 @@ const END_RETURN_SECONDS=30;
 const WIN_REWARD=10;
 
 let MY_ID=Math.random().toString(36).slice(2,10);
-let currentUser=null;         // Firebase user or null
-let userProfile=null;         // { name, coins, ownedSkins, equippedSkin } or null
+let currentUser=null;
+let userProfile=null;
 let isGuest=true;
 
 let roomId=null;
@@ -3090,7 +3092,6 @@ let spectatorEndReturnFired=false;
 let roomCleanedUp=false;
 let coinsAwardedThisGame=false;
 
-/* current room's skin IDs, updated when we read room data */
 let currentRoomSkins = { w:'classic', b:'classic' };
 
 
@@ -3118,7 +3119,6 @@ async function signInWithGoogle(){
 }
 
 function continueAsGuest(){
-  // Assign a random guest name
   const adjectives=['Swift','Brave','Clever','Silent','Bold','Sharp','Quick','Calm','Bright','Fierce'];
   const animals=['Fox','Lion','Wolf','Hawk','Bear','Tiger','Falcon','Eagle','Otter','Panther'];
   const adj=adjectives[Math.floor(Math.random()*adjectives.length)];
@@ -3149,7 +3149,6 @@ async function loadOrCreateProfile(user){
     await fbSet(path, profile);
     showToast('Welcome! +10 starting coins', 3500);
   }else{
-    // Ensure the fields exist
     let changed=false;
     if(typeof profile.coins!=='number'){ profile.coins=0; changed=true; }
     if(!profile.ownedSkins || typeof profile.ownedSkins!=='object'){
@@ -3212,7 +3211,6 @@ if(auth){
         authStatus('<span class="warn">Could not load profile</span>');
       }
     }
-    // If no user, the auth screen remains visible and the guest button works.
   });
 }
 
@@ -3243,7 +3241,6 @@ function renderShop(){
     empty.className='shop-empty';
     empty.innerHTML='🎨 <strong style="color:var(--gold)">Sign in with Google</strong> to unlock skins.<br>Guests cannot earn coins or buy skins.';
     grid.appendChild(empty);
-    // Still show the skins as previews
     SKINS.forEach(skin=> grid.appendChild(buildShopItem(skin, false)));
     return;
   }
@@ -3261,7 +3258,7 @@ function buildShopItem(skin, interactive){
   const preview=document.createElement('div');
   preview.className='shop-preview';
   const img=document.createElement('img');
-  img.src=pieceUrl('N'); // white knight for preview
+  img.src=pieceUrl('N');
   img.alt=skin.name;
   img.style.filter=skin.filter;
   preview.appendChild(img);
@@ -3352,7 +3349,6 @@ async function equipSkin(skinId){
     equippedSkin: skinId
   });
 
-  // If in an active game, publish to room
   if(roomId && myColor && gameStarted && !isSpectator){
     await fbPatch(`rooms/${roomId}/skins`, {
       [myColor]: skinId
@@ -4095,7 +4091,6 @@ async function pollMoves(){
       return;
     }
 
-    // Always update skins
     if(room.skins){
       currentRoomSkins = {
         w: room.skins.w || 'classic',
@@ -4103,7 +4098,6 @@ async function pollMoves(){
       };
     }
 
-    // Always keep chat in sync, even after game end
     renderChatMessages(
       'game-messages',
       room.chat,
@@ -4116,7 +4110,6 @@ async function pollMoves(){
       }
     );
 
-    // Redraw board if skins changed
     if(room.skins && gameStarted && !gameEnded){
       renderBoard();
     }
@@ -4174,7 +4167,6 @@ function publicState(){
 }
 
 async function publishInitialState(){
-  // Publish our own skin for our colour
   const mySkin=getMyEquippedSkin();
   await fbPatch(`rooms/${roomId}/skins`, { [myColor]: mySkin });
 
@@ -4592,7 +4584,7 @@ async function awardWinCoins(){
   coinsAwardedThisGame=true;
 
   if(isGuest||!currentUser||!userProfile){
-    return; // guests don't earn coins
+    return;
   }
 
   userProfile.coins=(userProfile.coins||0)+WIN_REWARD;
@@ -4618,7 +4610,6 @@ function triggerGameEnd(type,winner,reason){
   timerInterval=null;
   heartbeatTimer=null;
 
-  // Slow the poll but keep chat in sync
   if(pollTimer){
     clearInterval(pollTimer);
     pollTimer=setInterval(pollMoves,2000);
