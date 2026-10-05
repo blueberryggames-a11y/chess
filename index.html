@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,6 +138,33 @@
   .top-tab { flex:1; max-width:220px; background:var(--surface); color:var(--muted); border:1px solid var(--border); }
   .top-tab.active { background:var(--gold); color:var(--bg); border-color:var(--gold); }
   #public-page { width:100%; max-width:700px; display:flex; flex-direction:column; gap:14px; }
+  #live-page { width:100%; max-width:900px; display:flex; flex-direction:column; gap:14px; }
+  #live-list { display:flex; flex-direction:column; gap:8px; }
+  .live-game { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:13px 14px; text-align:left; }
+  .live-game .game-title { color:var(--text); font-family:'Cinzel',serif; font-size:.9rem; }
+  .live-game .game-meta { color:var(--muted); font-size:.8rem; margin-top:3px; }
+  .live-badge { color:#5ec27a; font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:1px; }
+  .spectate-layout { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(300px,620px) minmax(260px,340px); gap:14px; align-items:start; }
+  #spectate-game { width:100%; display:flex; flex-direction:column; gap:10px; }
+  #spectate-board-wrap { width:100%; aspect-ratio:1/1; border:2px solid rgba(201,168,76,0.3); border-radius:6px; overflow:hidden; box-shadow:0 12px 60px rgba(0,0,0,.7); }
+  #spectate-board { display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); width:100%; height:100%; }
+  .spectate-sq { display:flex; align-items:center; justify-content:center; position:relative; aspect-ratio:1/1; user-select:none; }
+  .spectate-sq.light { background:var(--white-sq); } .spectate-sq.dark { background:var(--dark-sq); }
+  .spectate-sq.last-from { background:rgba(255,220,50,.35) !important; } .spectate-sq.last-to { background:rgba(255,220,50,.55) !important; }
+  .spectate-piece { width:88%; height:88%; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
+  #spectate-info { display:flex; gap:8px; width:100%; }
+  #spectate-chat { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; min-height:520px; display:flex; flex-direction:column; }
+  #spectate-chat-head { padding:12px 14px; border-bottom:1px solid var(--border); font-family:'Cinzel',serif; color:var(--gold); letter-spacing:2px; font-size:.8rem; }
+  #spectate-messages { flex:1; min-height:420px; max-height:620px; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:7px; }
+  .chat-msg { background:var(--surface2); border:1px solid rgba(201,168,76,.08); border-radius:8px; padding:7px 9px; word-break:break-word; }
+  .chat-name { color:var(--gold); font-family:'Cinzel',serif; font-size:.68rem; }
+  .chat-text { color:var(--text); font-size:.86rem; margin-top:2px; line-height:1.3; }
+  #spectate-chat-form { display:flex; gap:6px; padding:9px; border-top:1px solid var(--border); }
+  #spectate-chat-input { flex:1; width:auto; text-align:left; letter-spacing:0; font-family:'Crimson Pro',serif; font-size:.95rem; padding:9px 10px; }
+  #spectate-chat-form button { padding:9px 13px; }
+  #spectate-status { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; text-align:center; }
+  #spectate-close { align-self:center; }
+  @media(max-width:760px){ .spectate-layout{grid-template-columns:1fr;} #spectate-chat{min-height:360px;} #spectate-messages{min-height:250px;max-height:360px;} }
   #public-list { display:flex; flex-direction:column; gap:8px; }
   .public-room { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; text-align:left; }
   .public-room .room-name { color:var(--text); font-family:'Cinzel',serif; font-size:.9rem; }
@@ -282,6 +308,7 @@
 <div id="top-tabs">
   <button id="tab-lobby" class="top-tab active" onclick="showPage('lobby')">My Lobby</button>
   <button id="tab-public" class="top-tab" onclick="showPage('public')">Public Lobbies</button>
+  <button id="tab-live" class="top-tab" onclick="showPage('live')">Live Games</button>
 </div>
 
 <div id="lobby">
@@ -314,10 +341,24 @@
   </div>
 </div>
 
+<div id="live-page" class="hidden">
+  <div class="card">
+    <h2>Live Games</h2>
+    <p>Watch games live when the host has enabled spectators. The board updates as moves are made.</p>
+    <div id="live-list"><div class="public-empty">Loading live games…</div></div>
+    <br>
+    <button class="ghost" onclick="loadLiveGames()">Refresh</button>
+  </div>
+</div>
+
 <div id="create-type-modal">
   <div id="create-type-box">
     <h3>Choose Lobby Type</h3>
     <p>Private rooms are only joinable with their code. Public rooms appear in the Public Lobbies tab.</p>
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text);font-size:.9rem;margin:0 0 16px;cursor:pointer;">
+      <input id="spectators-toggle" type="checkbox" style="width:auto;padding:0;accent-color:var(--gold);cursor:pointer;">
+      Allow spectators to watch this game
+    </label>
     <div class="create-type-btns">
       <button onclick="createRoom('private')">Private Lobby</button>
       <button onclick="createRoom('public')">Public Lobby</button>
@@ -345,6 +386,34 @@
     <button class="ghost" onclick="offerDraw()">½ Draw</button>
     <button class="ghost" onclick="resignGame()">Resign</button>
     <button class="ghost" onclick="location.href=location.pathname">Leave</button>
+  </div>
+</div>
+
+<div id="spectator-view" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;">
+  <div class="spectate-layout">
+    <div id="spectate-game">
+      <div id="spectate-status">Connecting to live game…</div>
+      <div id="spectate-info">
+        <div class="info-box"><div class="label">White</div><div class="value" id="spectate-white">—</div></div>
+        <div class="info-box"><div class="label">Turn</div><div class="value" id="spectate-turn">—</div></div>
+        <div class="info-box"><div class="label">Black</div><div class="value" id="spectate-black">—</div></div>
+      </div>
+      <div id="spectate-timers">
+        <div class="timer-box"><div class="t-label">White ♔</div><div class="t-val" id="spectate-tv-white">0:30</div></div>
+        <div class="timer-box"><div class="t-label">Black ♚</div><div class="t-val" id="spectate-tv-black">0:30</div></div>
+      </div>
+      <div id="spectate-board-wrap"><div id="spectate-board"></div></div>
+      <div id="spectate-move-log" class="move-log" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-height:90px;overflow-y:auto;font-size:.82rem;color:var(--muted);line-height:1.8;"></div>
+      <button id="spectate-close" class="ghost" onclick="leaveSpectator()">Back to Live Games</button>
+    </div>
+    <div id="spectate-chat">
+      <div id="spectate-chat-head">LIVE CHAT</div>
+      <div id="spectate-messages"><div class="public-empty">Chat is loading…</div></div>
+      <div id="spectate-chat-form">
+        <input id="spectate-chat-input" maxlength="180" placeholder="Chat as your username…" autocomplete="off">
+        <button onclick="sendSpectatorChat()">Send</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -757,10 +826,12 @@ const MOVE_TIME=30, CODE_EXPIRE=300, DISCONNECT_GRACE=20000, GAME_START_GRACE=15
 const USERNAME_GRACE=15000, PUBLIC_POLL=2500;
 const MY_ID=Math.random().toString(36).slice(2,10);
 let roomId=null, myColor=null, myName='';
-let roomType='private', gameStarted=false;
+let roomType='private', gameStarted=false, spectatorEnabled=false, isSpectator=false;
+let livePollTimer=null, spectatorPollTimer=null, spectatorChatTimer=null, spectatorTimerInterval=null;
+let spectatorRoomId=null, spectatorLastChat=0;
 let pollTimer=null, lastSeq=-1, timerInterval=null, publicPollTimer=null;
 let usernameHeartbeatTimer=null, usernameKey=null;
-let moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME};
+let moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME}, turnStartedAt=Date.now();
 let gameEnded=false, heartbeatTimer=null, codeExpireTimer=null, gameStartTime=null;
 
 function showToast(msg,ms=2500){
@@ -816,16 +887,22 @@ function releaseUsername(){
 }
 
 function showPage(page){
-  const lobby=document.getElementById('lobby'), pub=document.getElementById('public-page');
-  const a=document.getElementById('tab-lobby'), b=document.getElementById('tab-public');
-  const isPub=page==='public';
-  lobby.classList.toggle('hidden',isPub);
+  if(isSpectator) return;
+  const lobby=document.getElementById('lobby'), pub=document.getElementById('public-page'), live=document.getElementById('live-page');
+  const a=document.getElementById('tab-lobby'), b=document.getElementById('tab-public'), c=document.getElementById('tab-live');
+  const isPub=page==='public', isLive=page==='live';
+  lobby.classList.toggle('hidden',isPub||isLive);
   pub.classList.toggle('hidden',!isPub);
-  a.classList.toggle('active',!isPub); b.classList.toggle('active',isPub);
-  if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
+  live.classList.toggle('hidden',!isLive);
+  a.classList.toggle('active',!isPub&&!isLive); b.classList.toggle('active',isPub); c.classList.toggle('active',isLive);
+  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
+  if(livePollTimer){clearInterval(livePollTimer);livePollTimer=null;}
   if(isPub){
     loadPublicRooms();
     publicPollTimer=setInterval(loadPublicRooms,PUBLIC_POLL);
+  }else if(isLive){
+    loadLiveGames();
+    livePollTimer=setInterval(loadLiveGames,PUBLIC_POLL);
   }
 }
 
@@ -856,13 +933,15 @@ async function createRoom(type='private'){
   if(!myName){showToast('Choose a username first');return;}
   lobbyStatus('Creating room…');
   roomType=type;
+  spectatorEnabled=!!document.getElementById('spectators-toggle')?.checked;
   const code=genCode(); roomId=code; myColor='w';
   const now=Date.now();
   await fbSet(`rooms/${code}`,{
     white:MY_ID, whiteName:myName, black:null, blackName:null,
     seq:0, move:null, created:now, expires:now+CODE_EXPIRE*1000,
-    event:null, type:type, status:'waiting', hostName:myName,
-    heartbeat_white:now, heartbeat_black:null
+    event:null, type:type, status:'waiting', hostName:myName, spectatorEnabled:spectatorEnabled,
+    whiteName:myName, blackName:null, heartbeat_white:now, heartbeat_black:null,
+    state:null, chat:null
   });
   document.getElementById('room-actions').classList.remove('hidden');
   let secs=CODE_EXPIRE;
@@ -931,7 +1010,7 @@ async function joinRoom(){
   if(!room||!room.white){lobbyStatus('Room not found.');return;}
   if(room.black){lobbyStatus('Room is already full.');return;}
   if(room.expires&&Date.now()>room.expires){lobbyStatus('<span class="warn">Room code expired.</span>');return;}
-  roomId=raw; myColor='b'; roomType=room.type||'private';
+  roomId=raw; myColor='b'; roomType=room.type||'private'; spectatorEnabled=!!room.spectatorEnabled;
   await fbPatch(`rooms/${raw}`,{black:MY_ID,blackName:myName,heartbeat_black:Date.now(),status:'playing'});
   lobbyStatus('Joined! Starting…');
   setTimeout(startGame,500);
@@ -948,6 +1027,8 @@ function startGame(){
   document.getElementById('room-disp').textContent=roomId;
   initGame(); renderBoard(); updateUI();
   lastSeq=0; gameStartTime=Date.now();
+  turnStartedAt=Date.now();
+  awaitablePublishInitialState();
   pollTimer=setInterval(pollMoves,900);
   startMoveTimer(); startHeartbeat();
 }
@@ -983,7 +1064,7 @@ async function skipTurn(sc){
   processSkip(sc);
 }
 function processSkip(sc){
-  G.log.push({color:sc,note:'(time)'}); G.turn=opp(sc); moveTimeLeft[sc]=MOVE_TIME;
+  G.log.push({color:sc,note:'(time)'}); G.turn=opp(sc); moveTimeLeft[sc]=MOVE_TIME; turnStartedAt=Date.now();
   selected=null; legalNow=[];
   renderBoard(); updateUI(); renderTimers(); startMoveTimer();
 }
@@ -1012,7 +1093,122 @@ async function pollMoves(){
     }else if(room.seq>lastSeq) lastSeq=room.seq;
   }catch(e){}
 }
-async function sendMoveData(data){ lastSeq++; await fbPatch(`rooms/${roomId}`,{seq:lastSeq,move:{by:MY_ID,data}}); }
+function publicState(){
+  return {
+    board:G.board, turn:G.turn, castling:G.castling, enPassant:G.enPassant, halfClock:G.halfClock,
+    posHist:G.posHist, log:G.log, lastMove:G.lastMove, status:G.status, moveTimeLeft:moveTimeLeft,
+    turnStartedAt:turnStartedAt, updated:Date.now()
+  };
+}
+async function awaitablePublishInitialState(){
+  await fbPatch(`rooms/${roomId}`,{state:publicState(),status:'playing',spectatorEnabled:spectatorEnabled});
+}
+async function publishGameState(){
+  if(!roomId||isSpectator) return;
+  await fbPatch(`rooms/${roomId}`,{state:publicState()});
+}
+async function sendMoveData(data){ lastSeq++; await fbPatch(`rooms/${roomId}`,{seq:lastSeq,move:{by:MY_ID,data},state:publicState()}); }
+
+async function loadLiveGames(){
+  const list=document.getElementById('live-list'); if(!list||isSpectator) return;
+  const rooms=await fbGet('rooms'); const arr=[];
+  if(rooms){
+    for(const [code,r] of Object.entries(rooms)){
+      if(!r||r.status!=='playing'||!r.spectatorEnabled||!r.white||!r.black) continue;
+      arr.push({code,...r});
+    }
+  }
+  arr.sort((a,b)=>(b.created||0)-(a.created||0));
+  if(!arr.length){list.innerHTML='<div class="public-empty">No spectatable live games right now.</div>';return;}
+  list.innerHTML='';
+  arr.forEach(r=>{
+    const row=document.createElement('div'); row.className='live-game';
+    const info=document.createElement('div');
+    info.innerHTML=`<div class="game-title">${escapeHtml(r.whiteName||'White')} vs ${escapeHtml(r.blackName||'Black')}</div><div class="game-meta">Room ${escapeHtml(r.code)} · <span class="live-badge">● LIVE</span></div>`;
+    const btn=document.createElement('button'); btn.textContent='Spectate'; btn.onclick=()=>openSpectator(r.code);
+    row.append(info,btn); list.appendChild(row);
+  });
+}
+
+async function openSpectator(code){
+  if(!myName){showToast('Choose a username first');return;}
+  const room=await fbGet(`rooms/${code}`);
+  if(!room||room.status!=='playing'||!room.spectatorEnabled){showToast('That game is not available to spectate.');return;}
+  spectatorRoomId=code; isSpectator=true; spectatorEnabled=true; spectatorLastChat=0;
+  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
+  if(livePollTimer){clearInterval(livePollTimer);livePollTimer=null;}
+  document.getElementById('top-tabs').classList.add('hidden');
+  document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('public-page').classList.add('hidden');
+  document.getElementById('live-page').classList.add('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('spectator-view').classList.remove('hidden');
+  renderSpectatorRoom(room);
+  spectatorPollTimer=setInterval(pollSpectator,800);
+  spectatorChatTimer=setInterval(loadSpectatorChat,1200);
+  spectatorTimerInterval=setInterval(renderSpectatorTimers,250);
+  loadSpectatorChat();
+}
+
+function renderSpectatorRoom(room){
+  const st=room.state;
+  document.getElementById('spectate-white').textContent=room.whiteName||'White';
+  document.getElementById('spectate-black').textContent=room.blackName||'Black';
+  if(!st){document.getElementById('spectate-status').textContent='Waiting for the live board…';return;}
+  window._spectateState={...st,moveTimeLeft:st.moveTimeLeft||{w:MOVE_TIME,b:MOVE_TIME}};
+  renderSpectatorBoard(); renderSpectatorUI(); renderSpectatorTimers();
+}
+function renderSpectatorBoard(){
+  const wrap=document.getElementById('spectate-board'); if(!wrap) return; const st=window._spectateState; if(!st) return;
+  wrap.innerHTML='';
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    const sq=document.createElement('div'); sq.className='spectate-sq '+((r+c)%2===0?'light':'dark');
+    if(st.lastMove&&st.lastMove.fr===r&&st.lastMove.fc===c)sq.classList.add('last-from');
+    if(st.lastMove&&st.lastMove.tr===r&&st.lastMove.tc===c)sq.classList.add('last-to');
+    const p=st.board[r][c];
+    if(p){const img=document.createElement('img');img.className='spectate-piece';img.src=pieceUrl(p);img.alt=p;sq.appendChild(img);}
+    wrap.appendChild(sq);
+  }
+}
+function renderSpectatorUI(){
+  const st=window._spectateState; if(!st)return;
+  const turnName=st.turn==='w'?'White':'Black';
+  document.getElementById('spectate-turn').textContent=st.status==='ended'?'Game Over':turnName;
+  document.getElementById('spectate-status').innerHTML=st.status==='ended'?'<span class="accent">Game Over</span>':'Watching live · <span class="accent">'+turnName+' to move</span>';
+  const log=st.log||[]; let html='';
+  for(let i=0;i<log.length;i+=2){const n=Math.floor(i/2)+1;const w=log[i]?.note||'',b=log[i+1]?.note||'';html+=`<span class="mv-num">${n}.</span><span class="mv-w">${escapeHtml(w)}</span>${b?`<span class="mv-b">${escapeHtml(b)}</span>`:''} `;}
+  document.getElementById('spectate-move-log').innerHTML=html||'<em style="color:#555;font-style:italic">No moves yet</em>';
+}
+function renderSpectatorTimers(){
+  const st=window._spectateState; if(!st)return; const vals={...(st.moveTimeLeft||{w:MOVE_TIME,b:MOVE_TIME})};
+  if(st.status==='playing'&&st.turnStartedAt){const elapsed=Math.floor((Date.now()-st.turnStartedAt)/1000);vals[st.turn]=Math.max(0,(vals[st.turn]||MOVE_TIME)-elapsed);}
+  for(const c of ['w','b'])document.getElementById(`spectate-tv-${c==='w'?'white':'black'}`).textContent=`0:${String(vals[c]).padStart(2,'0')}`;
+}
+async function pollSpectator(){
+  if(!spectatorRoomId)return; const room=await fbGet(`rooms/${spectatorRoomId}`);
+  if(!room||(!room.spectatorEnabled&&!room.state)){showToast('Spectating is no longer available.',2500);leaveSpectator();return;}
+  if(room.state)renderSpectatorRoom(room);
+  if(room.status==='ended'&&room.event){
+    const title=room.event.winner==='draw'?'Draw':`${room.event.winner==='w'?'White':'Black'} wins`;
+    document.getElementById('spectate-status').innerHTML=`<span class="accent">Game Over · ${escapeHtml(title)}</span>`;
+  }
+}
+async function loadSpectatorChat(){
+  if(!spectatorRoomId)return; const data=await fbGet(`rooms/${spectatorRoomId}/chat`); const msgs=[];
+  if(data)Object.entries(data).forEach(([id,m])=>{if(m&&m.created>spectatorLastChat)msgs.push({id,...m});});
+  msgs.sort((a,b)=>(a.created||0)-(b.created||0));
+  if(msgs.length){const box=document.getElementById('spectate-messages'); if(spectatorLastChat===0)box.innerHTML=''; msgs.slice(-50).forEach(m=>{const row=document.createElement('div');row.className='chat-msg';row.innerHTML=`<div class="chat-name">${escapeHtml(m.name||'Player')}</div><div class="chat-text">${escapeHtml(m.text||'')}</div>`;box.appendChild(row);}); spectatorLastChat=Math.max(...msgs.map(m=>m.created||0)); box.scrollTop=box.scrollHeight;}
+}
+async function sendSpectatorChat(){
+  if(!spectatorRoomId||!myName)return; const input=document.getElementById('spectate-chat-input'); const text=input.value.trim(); if(!text)return;
+  const id=Math.random().toString(36).slice(2,10); const created=Date.now();
+  const clean=text.replace(/[<>]/g,'');
+  await fbSet(`rooms/${spectatorRoomId}/chat/${created}_${id}`,{name:myName,text:clean,created}); input.value=''; loadSpectatorChat();
+}
+function leaveSpectator(){
+  clearInterval(spectatorPollTimer); clearInterval(spectatorChatTimer); clearInterval(spectatorTimerInterval); spectatorPollTimer=spectatorChatTimer=spectatorTimerInterval=null; spectatorRoomId=null; isSpectator=false;
+  document.getElementById('spectator-view').classList.add('hidden'); document.getElementById('top-tabs').classList.remove('hidden'); showPage('live');
+}
 
 async function offerDraw(){
   if(gameEnded) return;
@@ -1031,7 +1227,7 @@ async function resignGame(){
   await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} resigned`);
   triggerGameEnd('resign',winner);
 }
-async function broadcastEnd(winner,reason){ await fbPatch(`rooms/${roomId}`,{event:{type:'end',winner,reason}}); }
+async function broadcastEnd(winner,reason){ await fbPatch(`rooms/${roomId}`,{event:{type:'end',winner,reason},status:'ended'}); }
 
 function triggerGameEnd(type,winner,reason){
   if(gameEnded) return;
@@ -1116,6 +1312,7 @@ function executeMove(move, local){
   G.lastMove=move;
   const movedColor=G.turn;
   G.turn=opp(G.turn);
+  turnStartedAt=Date.now();
   selected=null; legalNow=[];
 
   G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
@@ -1270,6 +1467,7 @@ function updateUI(){
 }
 
 window.addEventListener('beforeunload',()=>{
+  clearInterval(spectatorPollTimer); clearInterval(spectatorChatTimer); clearInterval(spectatorTimerInterval);
   releaseUsername();
   if(roomId && !gameStarted && roomType){
     try{ fetch(`${FB}/rooms/${roomId}.json`,{method:'DELETE',keepalive:true}); }catch(e){}
@@ -1281,6 +1479,7 @@ if(document.getElementById('name-input')){
   document.getElementById('name-input').addEventListener('keydown',e=>{
     if(e.key==='Enter') claimUsername();
   });
+  document.getElementById('spectate-chat-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter') sendSpectatorChat(); });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1301,4 +1500,3 @@ initGame();
 </script>
 </body>
 </html>
-```
