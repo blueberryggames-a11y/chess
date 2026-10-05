@@ -421,6 +421,80 @@
     justify-content:center;
   }
 
+  /* ---------- shared chat styling ---------- */
+
+  .chat-panel {
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .chat-panel-head {
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    font-family:'Cinzel',serif;
+    color:var(--gold);
+    letter-spacing:2px;
+    font-size:.75rem;
+  }
+
+  .chat-panel-messages {
+    overflow-y:auto;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+
+  .chat-panel-form {
+    display:flex;
+    gap:6px;
+    padding:9px;
+    border-top:1px solid var(--border);
+  }
+
+  .chat-panel-form input {
+    flex:1;
+    width:auto;
+    text-align:left;
+    letter-spacing:0;
+    font-family:'Crimson Pro',serif;
+    font-size:.95rem;
+    padding:9px 10px;
+  }
+
+  .chat-panel-form button { padding:9px 13px; }
+
+  #game-messages {
+    height:150px;
+    min-height:150px;
+  }
+
+  .chat-msg {
+    background:var(--surface2);
+    border:1px solid rgba(201,168,76,.08);
+    border-radius:8px;
+    padding:7px 9px;
+    word-break:break-word;
+  }
+
+  .chat-name {
+    color:var(--gold);
+    font-family:'Cinzel',serif;
+    font-size:.68rem;
+  }
+
+  .chat-text {
+    color:var(--text);
+    font-size:.86rem;
+    margin-top:2px;
+    line-height:1.3;
+  }
+
   #promo-modal {
     display:none;
     position:fixed;
@@ -755,6 +829,7 @@
     position:relative;
     aspect-ratio:1/1;
     user-select:none;
+    overflow:hidden;
   }
 
   .spectate-sq.light { background:var(--white-sq); }
@@ -767,7 +842,9 @@
     width:88%;
     height:88%;
     object-fit:contain;
+    display:block;
     filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+    pointer-events:none;
   }
 
   #spectate-info {
@@ -783,74 +860,14 @@
   }
 
   #spectate-chat {
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:12px;
-    overflow:hidden;
     min-height:520px;
-    display:flex;
-    flex-direction:column;
-  }
-
-  #spectate-chat-head {
-    padding:12px 14px;
-    border-bottom:1px solid var(--border);
-    font-family:'Cinzel',serif;
-    color:var(--gold);
-    letter-spacing:2px;
-    font-size:.8rem;
   }
 
   #spectate-messages {
     flex:1;
     min-height:420px;
     max-height:620px;
-    overflow-y:auto;
-    padding:10px;
-    display:flex;
-    flex-direction:column;
-    gap:7px;
   }
-
-  .chat-msg {
-    background:var(--surface2);
-    border:1px solid rgba(201,168,76,.08);
-    border-radius:8px;
-    padding:7px 9px;
-    word-break:break-word;
-  }
-
-  .chat-name {
-    color:var(--gold);
-    font-family:'Cinzel',serif;
-    font-size:.68rem;
-  }
-
-  .chat-text {
-    color:var(--text);
-    font-size:.86rem;
-    margin-top:2px;
-    line-height:1.3;
-  }
-
-  #spectate-chat-form {
-    display:flex;
-    gap:6px;
-    padding:9px;
-    border-top:1px solid var(--border);
-  }
-
-  #spectate-chat-input {
-    flex:1;
-    width:auto;
-    text-align:left;
-    letter-spacing:0;
-    font-family:'Crimson Pro',serif;
-    font-size:.95rem;
-    padding:9px 10px;
-  }
-
-  #spectate-chat-form button { padding:9px 13px; }
 
   #spectate-status {
     background:var(--surface);
@@ -858,6 +875,7 @@
     border-radius:10px;
     padding:10px 14px;
     text-align:center;
+    width:100%;
   }
 
   #spectate-close { align-self:center; }
@@ -1140,6 +1158,17 @@
     <button class="ghost" onclick="resignGame()">Resign</button>
     <button class="ghost" onclick="leaveGame()">Leave</button>
   </div>
+
+  <div id="game-chat" class="chat-panel">
+    <div class="chat-panel-head">GAME CHAT</div>
+    <div id="game-messages" class="chat-panel-messages">
+      <div class="public-empty">No messages yet.</div>
+    </div>
+    <div class="chat-panel-form">
+      <input id="game-chat-input" maxlength="180" placeholder="Message your opponent…" autocomplete="off">
+      <button onclick="sendGameChat()">Send</button>
+    </div>
+  </div>
 </div>
 
 <div id="spectator-view" class="hidden">
@@ -1186,14 +1215,14 @@
       <button id="spectate-close" class="ghost" onclick="leaveSpectator()">Back to Live Games</button>
     </div>
 
-    <div id="spectate-chat">
-      <div id="spectate-chat-head">LIVE CHAT</div>
+    <div id="spectate-chat" class="chat-panel">
+      <div class="chat-panel-head">LIVE CHAT</div>
 
-      <div id="spectate-messages">
+      <div id="spectate-messages" class="chat-panel-messages">
         <div class="public-empty">Chat is loading…</div>
       </div>
 
-      <div id="spectate-chat-form">
+      <div class="chat-panel-form">
         <input id="spectate-chat-input" maxlength="180" placeholder="Chat as your username…" autocomplete="off">
         <button onclick="sendSpectatorChat()">Send</button>
       </div>
@@ -1246,7 +1275,7 @@ const MUSIC_BASE='https://raw.githubusercontent.com/blueberryggames-a11y/chess/m
 
 const MUSIC_FILES=[
   'passobem.mp3',
- 'WashingMachine.mp3',
+  'WashingMachine.mp3',
   'dirtyshoes.mp3',
   'tiktiki.mp3',
   'montagem.mp3',
@@ -1437,6 +1466,48 @@ function makePieceEl(p){
 
   w.appendChild(img);
   return w;
+}
+
+
+/* ============================================================
+   BOARD (DE)SERIALIZATION
+   ------------------------------------------------------------
+   Firebase's Realtime Database does not keep nulls inside
+   arrays — a board like [null,null,'p',...] comes back as an
+   object with holes. That is what used to break the spectator
+   board (rows 2-5 simply vanished, then the renderer crashed).
+   We therefore publish the board as 8 plain strings.
+============================================================ */
+
+function serializeBoard(board){
+  return board.map(row=>row.map(p=>p||'.').join(''));
+}
+
+function deserializeBoard(rows){
+  const out=[];
+
+  for(let r=0;r<8;r++){
+    const raw=rows?rows[r]:null;
+
+    let line='';
+
+    if(Array.isArray(raw)){
+      line=raw.map(p=>p||'.').join('');
+    }else if(typeof raw==='string'){
+      line=raw;
+    }
+
+    const arr=[];
+
+    for(let c=0;c<8;c++){
+      const ch=line[c];
+      arr.push(!ch||ch==='.'?null:ch);
+    }
+
+    out.push(arr);
+  }
+
+  return out;
 }
 
 
@@ -1857,6 +1928,8 @@ function pseudoMoves(board,color,castling,enPassant){
           ]
         }[pt];
 
+        if(!dirs) continue;
+
         for(const [dr,dc] of dirs){
 
           let nr=r+dr;
@@ -2207,11 +2280,9 @@ let isSpectator=false;
 
 let livePollTimer=null;
 let spectatorPollTimer=null;
-let spectatorChatTimer=null;
 let spectatorTimerInterval=null;
 
 let spectatorRoomId=null;
-let spectatorLastChat=0;
 
 let pollTimer=null;
 let lastSeq=-1;
@@ -2456,6 +2527,121 @@ function lobbyStatus(html){
 
 function nameStatus(html){
   document.getElementById('name-status').innerHTML=html;
+}
+
+
+/* ============================================================
+   CHAT (shared by players + spectators)
+============================================================ */
+
+const _chatSignatures={ game:'', spectate:'' };
+
+function renderChatMessages(containerId,chatData,cacheKey){
+  const box=document.getElementById(containerId);
+
+  if(!box) return;
+
+  const msgs=[];
+
+  if(chatData&&typeof chatData==='object'){
+    Object.keys(chatData).forEach(key=>{
+      const m=chatData[key];
+      if(m&&typeof m==='object'&&typeof m.text==='string'){
+        msgs.push({
+          key,
+          name:m.name||'Player',
+          text:m.text,
+          created:Number(m.created)||0
+        });
+      }
+    });
+  }
+
+  msgs.sort((a,b)=>
+    (a.created-b.created)||
+    String(a.key).localeCompare(String(b.key))
+  );
+
+  const shown=msgs.slice(-80);
+
+  const sig=shown
+    .map(m=>`${m.key}\u0001${m.name}\u0001${m.text}`)
+    .join('\u0002');
+
+  if(sig===_chatSignatures[cacheKey]) return;
+
+  _chatSignatures[cacheKey]=sig;
+
+  const atBottom=
+    box.scrollHeight-box.scrollTop-box.clientHeight<40;
+
+  box.innerHTML='';
+
+  if(!shown.length){
+    const empty=document.createElement('div');
+    empty.className='public-empty';
+    empty.textContent='No messages yet.';
+    box.appendChild(empty);
+    return;
+  }
+
+  shown.forEach(m=>{
+    const row=document.createElement('div');
+    row.className='chat-msg';
+
+    const nameEl=document.createElement('div');
+    nameEl.className='chat-name';
+    nameEl.textContent=m.name;
+
+    const textEl=document.createElement('div');
+    textEl.className='chat-text';
+    textEl.textContent=m.text;
+
+    row.append(nameEl,textEl);
+    box.appendChild(row);
+  });
+
+  if(atBottom) box.scrollTop=box.scrollHeight;
+}
+
+async function pushChatMessage(code,inputEl){
+  if(!code||!inputEl) return;
+
+  const text=inputEl.value.trim().slice(0,180);
+
+  if(!text) return;
+
+  inputEl.value='';
+
+  const id=Math.random().toString(36).slice(2,10);
+  const created=Date.now();
+
+  const clean=text.replace(/[<>]/g,'');
+
+  await fbSet(
+    `rooms/${code}/chat/${created}_${id}`,
+    {
+      name:myName||'Player',
+      text:clean,
+      created
+    }
+  );
+}
+
+function sendGameChat(){
+  if(!roomId) return;
+  pushChatMessage(
+    roomId,
+    document.getElementById('game-chat-input')
+  );
+}
+
+function sendSpectatorChat(){
+  if(!spectatorRoomId) return;
+  pushChatMessage(
+    spectatorRoomId,
+    document.getElementById('spectate-chat-input')
+  );
 }
 
 
@@ -3279,6 +3465,8 @@ function startGame(){
   document.getElementById('room-disp')
     .textContent=roomId;
 
+  _chatSignatures.game='';
+
   initGame();
 
   renderBoard();
@@ -3289,7 +3477,7 @@ function startGame(){
   gameStartTime=Date.now();
   turnStartedAt=Date.now();
 
-  awaitablePublishInitialState();
+  publishInitialState();
 
   pollTimer=setInterval(
     pollMoves,
@@ -3564,6 +3752,9 @@ async function pollMoves(){
       return;
     }
 
+    /* keep the in-game chat in sync (players can chat too) */
+    renderChatMessages('game-messages',room.chat,'game');
+
     if(
       room.event&&
       room.event.type==='end'&&
@@ -3601,17 +3792,17 @@ async function pollMoves(){
 
       const md=room.move.data;
 
-      if(md?.skip){
+      if(md&&md.skip){
 
         processSkip(
           md.skippedColor
         );
 
-      }else if(md?.drawOffer){
+      }else if(md&&md.drawOffer){
 
         handleDrawOffer();
 
-      }else if(md?.resign){
+      }else if(md&&md.resign){
 
         handleRemoteEnd(
           md.winner,
@@ -3648,15 +3839,18 @@ async function pollMoves(){
   }catch(e){}
 }
 
+/*
+  Only the data a spectator actually needs is published.
+  The board is sent as 8 strings so Firebase cannot mangle it.
+*/
 function publicState(){
 
   return {
-    board:G.board,
+    board:serializeBoard(G.board),
     turn:G.turn,
     castling:G.castling,
     enPassant:G.enPassant,
     halfClock:G.halfClock,
-    posHist:G.posHist,
     log:G.log,
     lastMove:G.lastMove,
     status:G.status,
@@ -3669,7 +3863,7 @@ function publicState(){
   };
 }
 
-async function awaitablePublishInitialState(){
+async function publishInitialState(){
 
   await fbPatch(
     `rooms/${roomId}`,
@@ -3862,6 +4056,10 @@ async function loadLiveGames(){
    SPECTATOR
 ============================================================ */
 
+let spectatorState=null;
+let spectateSig='';
+let spectateRoomStatus='playing';
+
 async function openSpectator(code){
 
   if(!myName){
@@ -3889,7 +4087,11 @@ async function openSpectator(code){
   spectatorRoomId=code;
   isSpectator=true;
   spectatorEnabled=true;
-  spectatorLastChat=0;
+
+  spectatorState=null;
+  spectateSig='';
+  spectateRoomStatus=room.status||'playing';
+  _chatSignatures.spectate='';
 
   if(publicPollTimer){
     clearInterval(publicPollTimer);
@@ -3926,22 +4128,17 @@ async function openSpectator(code){
     800
   );
 
-  spectatorChatTimer=setInterval(
-    loadSpectatorChat,
-    1200
-  );
-
   spectatorTimerInterval=setInterval(
     renderSpectatorTimers,
     250
   );
-
-  loadSpectatorChat();
 }
 
 function renderSpectatorRoom(room){
 
-  const st=room.state;
+  if(!room) return;
+
+  spectateRoomStatus=room.status||'playing';
 
   document.getElementById(
     'spectate-white'
@@ -3951,27 +4148,61 @@ function renderSpectatorRoom(room){
     'spectate-black'
   ).textContent=room.blackName||'Black';
 
-  if(!st){
+  renderChatMessages(
+    'spectate-messages',
+    room.chat,
+    'spectate'
+  );
+
+  const st=room.state;
+
+  if(!st||!st.board||!(st.board.length||Object.keys(st.board).length)){
 
     document.getElementById(
       'spectate-status'
-    ).textContent=
-      'Waiting for the live board…';
+    ).textContent='Waiting for the live board…';
+
+    spectatorState=null;
 
     return;
   }
 
-  window._spectateState={
-    ...st,
-    moveTimeLeft:
-      st.moveTimeLeft||{
-        w:MOVE_TIME,
-        b:MOVE_TIME
+  const decodedBoard=deserializeBoard(st.board);
+
+  const timeLeft=(st.moveTimeLeft&&typeof st.moveTimeLeft==='object')
+    ? {
+        w:Number(st.moveTimeLeft.w),
+        b:Number(st.moveTimeLeft.b)
       }
+    : {w:MOVE_TIME,b:MOVE_TIME};
+
+  if(!isFinite(timeLeft.w)) timeLeft.w=MOVE_TIME;
+  if(!isFinite(timeLeft.b)) timeLeft.b=MOVE_TIME;
+
+  spectatorState={
+    board:decodedBoard,
+    turn:(st.turn==='b'||st.turn==='w')?st.turn:'w',
+    log:Array.isArray(st.log)?st.log:[],
+    lastMove:(st.lastMove&&typeof st.lastMove==='object')?st.lastMove:null,
+    status:typeof st.status==='string'?st.status:'playing',
+    moveTimeLeft:timeLeft,
+    updated:(typeof st.updated==='number')?st.updated:Date.now()
   };
 
-  renderSpectatorBoard();
-  renderSpectatorUI();
+  const sig=JSON.stringify([
+    st.board,
+    spectatorState.lastMove,
+    spectatorState.turn,
+    spectatorState.status,
+    spectatorState.log.length
+  ]);
+
+  if(sig!==spectateSig){
+    spectateSig=sig;
+    renderSpectatorBoard();
+    renderSpectatorUI();
+  }
+
   renderSpectatorTimers();
 }
 
@@ -3983,9 +4214,9 @@ function renderSpectatorBoard(){
 
   if(!wrap) return;
 
-  const st=window._spectateState;
+  const st=spectatorState;
 
-  if(!st) return;
+  if(!st||!st.board) return;
 
   wrap.innerHTML='';
 
@@ -4006,9 +4237,7 @@ function renderSpectatorBoard(){
         st.lastMove.fr===r&&
         st.lastMove.fc===c
       ){
-        sq.classList.add(
-          'last-from'
-        );
+        sq.classList.add('last-from');
       }
 
       if(
@@ -4016,22 +4245,19 @@ function renderSpectatorBoard(){
         st.lastMove.tr===r&&
         st.lastMove.tc===c
       ){
-        sq.classList.add(
-          'last-to'
-        );
+        sq.classList.add('last-to');
       }
 
-      const p=st.board[r][c];
+      const p=st.board[r]?st.board[r][c]:null;
 
-      if(p){
+      if(p&&PIECE_FILES[p]){
 
-        const img=document.createElement(
-          'img'
-        );
+        const img=document.createElement('img');
 
         img.className='spectate-piece';
         img.src=pieceUrl(p);
         img.alt=p;
+        img.draggable=false;
 
         sq.appendChild(img);
       }
@@ -4043,9 +4269,13 @@ function renderSpectatorBoard(){
 
 function renderSpectatorUI(){
 
-  const st=window._spectateState;
+  const st=spectatorState;
 
   if(!st) return;
+
+  const ended=
+    spectateRoomStatus==='ended'||
+    st.status==='ended';
 
   const turnName=
     st.turn==='w'
@@ -4055,14 +4285,14 @@ function renderSpectatorUI(){
   document.getElementById(
     'spectate-turn'
   ).textContent=
-    st.status==='ended'
+    ended
       ?'Game Over'
       :turnName;
 
   document.getElementById(
     'spectate-status'
   ).innerHTML=
-    st.status==='ended'
+    ended
       ?'<span class="accent">Game Over</span>'
       :'Watching live · <span class="accent">'+
        turnName+
@@ -4076,8 +4306,8 @@ function renderSpectatorUI(){
 
     const n=Math.floor(i/2)+1;
 
-    const w=log[i]?.note||'';
-    const b=log[i+1]?.note||'';
+    const w=log[i]&&log[i].note?log[i].note:'';
+    const b=log[i+1]&&log[i+1].note?log[i+1].note:'';
 
     html+=
       `<span class="mv-num">${n}.</span>`+
@@ -4097,45 +4327,42 @@ function renderSpectatorUI(){
 
 function renderSpectatorTimers(){
 
-  const st=window._spectateState;
+  const st=spectatorState;
 
   if(!st) return;
 
-  const vals={
-    ...(st.moveTimeLeft||{
-      w:MOVE_TIME,
-      b:MOVE_TIME
-    })
-  };
+  const running=
+    spectateRoomStatus!=='ended'&&
+    st.status!=='ended'&&
+    st.status!=='checkmate'&&
+    st.status!=='stalemate';
 
-  if(
-    st.status==='playing'&&
-    st.turnStartedAt
-  ){
-
-    const elapsed=Math.floor(
-      (Date.now()-st.turnStartedAt)/1000
-    );
-
-    vals[st.turn]=Math.max(
-      0,
-      (vals[st.turn]||MOVE_TIME)-elapsed
-    );
-  }
+  const elapsed=running
+    ?Math.max(0,(Date.now()-st.updated)/1000)
+    :0;
 
   for(const c of ['w','b']){
 
-    const value=Math.floor(
-      Math.max(
-        0,
-        vals[c]||0
-      )
+    let value=Number(st.moveTimeLeft[c]);
+
+    if(!isFinite(value)) value=MOVE_TIME;
+
+    if(c===st.turn){
+      value=Math.max(0,value-elapsed);
+    }
+
+    const secs=Math.floor(Math.max(0,value));
+
+    const el=document.getElementById(
+      c==='w'
+        ?'spectate-tv-white'
+        :'spectate-tv-black'
     );
 
-    document.getElementById(
-      `spectate-tv-${c==='w'?'white':'black'}`
-    ).textContent=
-      `${Math.floor(value/60)}:${String(value%60).padStart(2,'0')}`;
+    if(el){
+      el.textContent=
+        `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+    }
   }
 }
 
@@ -4162,9 +4389,7 @@ async function pollSpectator(){
     return;
   }
 
-  if(room.state){
-    renderSpectatorRoom(room);
-  }
+  renderSpectatorRoom(room);
 
   if(
     room.status==='ended'&&
@@ -4182,135 +4407,24 @@ async function pollSpectator(){
       'spectate-status'
     ).innerHTML=
       `<span class="accent">Game Over · `+
-      `${escapeHtml(title)}</span>`;
+      `${escapeHtml(title)}</span>`+
+      (room.event.reason
+        ?`<br><small style="color:var(--muted)">${escapeHtml(room.event.reason)}</small>`
+        :'');
   }
-}
-
-async function loadSpectatorChat(){
-
-  if(!spectatorRoomId) return;
-
-  const data=await fbGet(
-    `rooms/${spectatorRoomId}/chat`
-  );
-
-  const msgs=[];
-
-  if(data){
-
-    Object.entries(data).forEach(
-      ([id,m])=>{
-
-        if(
-          m&&
-          m.created>spectatorLastChat
-        ){
-          msgs.push({
-            id,
-            ...m
-          });
-        }
-      }
-    );
-  }
-
-  msgs.sort(
-    (a,b)=>
-      (a.created||0)-
-      (b.created||0)
-  );
-
-  if(msgs.length){
-
-    const box=document.getElementById(
-      'spectate-messages'
-    );
-
-    if(spectatorLastChat===0){
-      box.innerHTML='';
-    }
-
-    msgs.slice(-50).forEach(m=>{
-
-      const row=document.createElement(
-        'div'
-      );
-
-      row.className='chat-msg';
-
-      row.innerHTML=
-        `<div class="chat-name">`+
-        `${escapeHtml(m.name||'Player')}`+
-        `</div>`+
-        `<div class="chat-text">`+
-        `${escapeHtml(m.text||'')}`+
-        `</div>`;
-
-      box.appendChild(row);
-    });
-
-    spectatorLastChat=Math.max(
-      ...msgs.map(m=>m.created||0)
-    );
-
-    box.scrollTop=box.scrollHeight;
-  }
-}
-
-async function sendSpectatorChat(){
-
-  if(!spectatorRoomId||!myName) return;
-
-  const input=document.getElementById(
-    'spectate-chat-input'
-  );
-
-  const text=input.value.trim();
-
-  if(!text) return;
-
-  const id=Math.random()
-    .toString(36)
-    .slice(2,10);
-
-  const created=Date.now();
-
-  const clean=text
-    .replace(/[<>]/g,'');
-
-  await fbSet(
-    `rooms/${spectatorRoomId}/chat/${created}_${id}`,
-    {
-      name:myName,
-      text:clean,
-      created
-    }
-  );
-
-  input.value='';
-
-  loadSpectatorChat();
 }
 
 function leaveSpectator(){
 
-  clearInterval(
-    spectatorPollTimer
-  );
-
-  clearInterval(
-    spectatorChatTimer
-  );
-
-  clearInterval(
-    spectatorTimerInterval
-  );
+  clearInterval(spectatorPollTimer);
+  clearInterval(spectatorTimerInterval);
 
   spectatorPollTimer=null;
-  spectatorChatTimer=null;
   spectatorTimerInterval=null;
 
   spectatorRoomId=null;
+  spectatorState=null;
+  spectateSig='';
   isSpectator=false;
 
   document.getElementById(
@@ -4843,7 +4957,7 @@ function executeMove(move,local){
   G.enPassant=result.enPassant;
 
   G.log.push({
-    color:G.turn,
+    color:movedColor,
     note
   });
 
@@ -4896,7 +5010,13 @@ function executeMove(move,local){
   if(local){
 
     sendMoveData({
-      ...move,
+      fr:move.fr,
+      fc:move.fc,
+      tr:move.tr,
+      tc:move.tc,
+      promo:move.promo||null,
+      isEnPassant:!!move.isEnPassant,
+      castleSide:move.castleSide||null,
       color:movedColor
     });
   }
@@ -4984,10 +5104,6 @@ function executeMove(move,local){
   }else{
 
     startMoveTimer();
-
-    if(local){
-      publishGameState();
-    }
   }
 }
 
@@ -5452,45 +5568,15 @@ function updateUI(){
 window.addEventListener(
   'beforeunload',
   ()=>{
-    clearInterval(
-      spectatorPollTimer
-    );
-
-    clearInterval(
-      spectatorChatTimer
-    );
-
-    clearInterval(
-      spectatorTimerInterval
-    );
-
-    clearInterval(
-      publicPollTimer
-    );
-
-    clearInterval(
-      livePollTimer
-    );
-
-    clearInterval(
-      pollTimer
-    );
-
-    clearInterval(
-      timerInterval
-    );
-
-    clearInterval(
-      heartbeatTimer
-    );
-
-    clearInterval(
-      codeExpireTimer
-    );
-
-    clearInterval(
-      usernameHeartbeatTimer
-    );
+    clearInterval(spectatorPollTimer);
+    clearInterval(spectatorTimerInterval);
+    clearInterval(publicPollTimer);
+    clearInterval(livePollTimer);
+    clearInterval(pollTimer);
+    clearInterval(timerInterval);
+    clearInterval(heartbeatTimer);
+    clearInterval(codeExpireTimer);
+    clearInterval(usernameHeartbeatTimer);
 
     /*
       Critical cleanup:
@@ -5538,6 +5624,17 @@ document.getElementById(
   }
 );
 
+document.getElementById(
+  'game-chat-input'
+)?.addEventListener(
+  'keydown',
+  e=>{
+    if(e.key==='Enter'){
+      sendGameChat();
+    }
+  }
+);
+
 
 /* ============================================================
    INITIALIZATION
@@ -5554,40 +5651,18 @@ initGame();
 
   function _startMusic(){
 
-    document.removeEventListener(
-      'click',
-      _startMusic
-    );
-
-    document.removeEventListener(
-      'keydown',
-      _startMusic
-    );
-
-    document.removeEventListener(
-      'touchstart',
-      _startMusic
-    );
+    document.removeEventListener('click',_startMusic);
+    document.removeEventListener('keydown',_startMusic);
+    document.removeEventListener('touchstart',_startMusic);
 
     if(!_musicPlaying){
       musicToggle();
     }
   }
 
-  document.addEventListener(
-    'click',
-    _startMusic
-  );
-
-  document.addEventListener(
-    'keydown',
-    _startMusic
-  );
-
-  document.addEventListener(
-    'touchstart',
-    _startMusic
-  );
+  document.addEventListener('click',_startMusic);
+  document.addEventListener('keydown',_startMusic);
+  document.addEventListener('touchstart',_startMusic);
 
 })();
 </script>
