@@ -6,292 +6,1008 @@
 <title>Chess Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --gold: #c9a84c; --gold-light: #e8c97a; --gold-dim: rgba(201,168,76,0.25);
-    --bg: #0d0d14; --surface: #13131f; --surface2: #1a1a2c;
-    --border: rgba(201,168,76,0.18); --text: #e8e0d0; --muted: #7a7066;
-    --white-sq: #ede0c8; --dark-sq: #a07850;
-  }
-  body {
-    font-family: 'Crimson Pro', Georgia, serif;
-    background: var(--bg); color: var(--text);
-    min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: flex-start;
-    padding: 20px 12px 40px; gap: 18px;
-    background-image: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%);
-  }
-  h1 {
-    font-family: 'Cinzel', serif; font-size: clamp(1.4rem, 4vw, 2rem);
-    letter-spacing: 6px; color: var(--gold);
-    text-shadow: 0 0 30px rgba(201,168,76,0.3); margin-top: 4px;
-  }
-  h1 span { color: var(--text); opacity: 0.4; }
-  #lobby { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 24px 28px; width: 100%;
-    text-align: center; position: relative; overflow: hidden;
-  }
-  .card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold-light), transparent); opacity: 0.4;
-  }
-  .card h2 { font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 3px; color: var(--gold); margin-bottom: 12px; text-transform: uppercase; }
-  .card p { color: var(--muted); font-size: 0.9rem; margin-bottom: 14px; line-height: 1.5; }
-  input {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    color: var(--text); padding: 10px 16px; border-radius: 8px;
-    font-family: 'Cinzel', serif; font-size: 1.1rem; width: 200px;
-    outline: none; text-align: center; letter-spacing: 4px; transition: border-color 0.2s;
-  }
-  input:focus { border-color: var(--gold); }
-  input::placeholder { letter-spacing: 1px; font-size: 0.85rem; font-family: 'Crimson Pro', serif; color: var(--muted); }
-  button {
-    background: var(--gold); color: var(--bg); border: none;
-    padding: 10px 26px; border-radius: 8px; font-family: 'Cinzel', serif;
-    font-size: 0.8rem; font-weight: 700; letter-spacing: 2px;
-    cursor: pointer; transition: background 0.15s, transform 0.1s;
-  }
-  button:hover { background: var(--gold-light); transform: translateY(-1px); }
-  button:active { transform: translateY(0); }
-  button.ghost { background: transparent; color: var(--gold); border: 1px solid var(--border); font-size: 0.75rem; }
-  button.ghost:hover { background: var(--gold-dim); }
-  #lobby-status { font-size: 0.9rem; color: var(--muted); text-align: center; min-height: 24px; line-height: 1.5; }
-  #lobby-status .code { display: inline-block; font-family: 'Cinzel', serif; font-size: 1.8rem; letter-spacing: 8px; color: var(--gold); margin: 6px 0; }
-  #lobby-status .warn { color: #e05252; font-size: 0.8rem; }
-  #room-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-  #game { width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  #status-bar {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 20px; font-size: 0.95rem;
-    text-align: center; width: 100%; font-style: italic;
-  }
-  #status-bar .accent { color: var(--gold); font-style: normal; font-weight: bold; }
-  #status-bar .warn { color: #e05252; font-style: normal; font-weight: bold; }
-  #status-bar .good { color: #5ec27a; font-style: normal; font-weight: bold; }
-  #game-info { display: flex; gap: 8px; width: 100%; }
-  .info-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 6px; text-align: center; }
-  .info-box .label { color: var(--muted); font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
-  .info-box .value { color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.95rem; }
-  #timers { display: flex; gap: 8px; width: 100%; }
-  .timer-box { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; transition: border-color 0.3s, background 0.3s; }
-  .timer-box .t-label { font-size: 0.7rem; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
-  .timer-box .t-val { font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 700; color: var(--text); letter-spacing: 2px; transition: color 0.2s; }
-  .timer-box.active { border-color: var(--gold); background: rgba(201,168,76,0.07); }
-  .timer-box.active .t-val { color: var(--gold); }
-  .timer-box.urgent .t-val { color: #e05252 !important; animation: pulse-red 0.5s infinite alternate; }
-  @keyframes pulse-red { from{opacity:1}to{opacity:0.55} }
-  #board-wrap {
-    width: 100%; aspect-ratio: 1/1; max-width: 520px;
-    border: 2px solid rgba(201,168,76,0.3); border-radius: 6px;
-    overflow: hidden; box-shadow: 0 12px 60px rgba(0,0,0,0.7);
-  }
-  #board { display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(8,1fr); width: 100%; height: 100%; }
-  .sq { display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; aspect-ratio: 1/1; user-select: none; }
-  .sq.light { background: var(--white-sq); }
-  .sq.dark  { background: var(--dark-sq); }
-  .sq.selected  { background: #7bc47b !important; }
-  .sq.moveable::after {
-    content: ''; position: absolute; width: 34%; height: 34%;
-    background: rgba(0,0,0,0.18); border-radius: 50%; pointer-events: none; z-index: 2;
-  }
-  .sq.moveable.occupied::after {
-    width: 100%; height: 100%; border-radius: 0; background: transparent;
-    box-shadow: inset 0 0 0 5px rgba(0,0,0,0.22);
-  }
-  .sq.last-from { background: rgba(255,220,50,0.35) !important; }
-  .sq.last-to   { background: rgba(255,220,50,0.55) !important; }
-  .sq.in-check  { background: #c0392b !important; }
-  .coord-file { position: absolute; bottom: 2px; right: 3px; font-size: 9px; font-weight: bold; opacity: 0.45; pointer-events: none; font-family: 'Cinzel', serif; }
-  .coord-rank { position: absolute; top: 2px; left: 3px; font-size: 9px; font-weight: bold; opacity: 0.45; pointer-events: none; font-family: 'Cinzel', serif; }
-  .piece-wrap { width: 88%; height: 88%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
-  .piece-img { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); object-fit: contain; }
-  #move-log {
-    width: 100%; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 14px; max-height: 80px;
-    overflow-y: auto; font-size: 0.82rem; color: var(--muted); line-height: 1.8;
-  }
-  #move-log .mv-num { color: var(--gold); margin-right: 4px; font-family: 'Cinzel', serif; font-size: 0.75rem; }
-  #move-log .mv-w { color: var(--text); }
-  #move-log .mv-b { color: #bbb; margin-left: 6px; }
-  #game-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  #promo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:100; }
-  #promo-modal.show { display:flex; }
-  #promo-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px 36px; text-align:center; }
-  #promo-box h3 { font-family:'Cinzel',serif; letter-spacing:2px; color:var(--gold); margin-bottom:16px; }
-  .promo-piece { display:inline-block; width:70px; height:70px; cursor:pointer; padding:8px; border-radius:10px; transition:background 0.1s; border:1px solid transparent; }
-  .promo-piece:hover { background:var(--gold-dim); border-color:var(--border); }
-  .promo-piece img { width:100%; height:100%; object-fit:contain; }
-  #result-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.87); backdrop-filter:blur(6px); align-items:center; justify-content:center; z-index:200; }
-  #result-overlay.show { display:flex; }
-  #result-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:40px 48px; text-align:center; max-width:380px; width:90%; position:relative; }
-  #result-box::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
-  #result-icon { font-size:3.5rem; margin-bottom:12px; display:block; }
-  #result-title { font-family:'Cinzel',serif; font-size:1.5rem; color:var(--gold); letter-spacing:3px; margin-bottom:8px; }
-  #result-reason { color:var(--muted); font-size:0.9rem; margin-bottom:24px; line-height:1.5; }
-  #result-box button { margin:4px; }
-  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); color:var(--text); padding:10px 22px; border-radius:8px; font-family:'Cinzel',serif; font-size:0.75rem; letter-spacing:1px; transition:transform 0.3s; z-index:9999; white-space:nowrap; }
-  #toast.show { transform:translateX(-50%) translateY(0); }
-  .hidden { display:none !important; }
-  #top-tabs { width:100%; max-width:700px; display:flex; gap:8px; justify-content:center; margin-top:-4px; }
-  .top-tab { flex:1; max-width:220px; background:var(--surface); color:var(--muted); border:1px solid var(--border); }
-  .top-tab.active { background:var(--gold); color:var(--bg); border-color:var(--gold); }
-  #public-page { width:100%; max-width:700px; display:flex; flex-direction:column; gap:14px; }
-  #live-page { width:100%; max-width:900px; display:flex; flex-direction:column; gap:14px; }
-  #live-list { display:flex; flex-direction:column; gap:8px; }
-  .live-game { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:13px 14px; text-align:left; }
-  .live-game .game-title { color:var(--text); font-family:'Cinzel',serif; font-size:.9rem; }
-  .live-game .game-meta { color:var(--muted); font-size:.8rem; margin-top:3px; }
-  .live-badge { color:#5ec27a; font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:1px; }
-  .spectate-layout { width:100%; max-width:1000px; display:grid; grid-template-columns:minmax(300px,620px) minmax(260px,340px); gap:14px; align-items:start; }
-  #spectate-game { width:100%; display:flex; flex-direction:column; gap:10px; }
-  #spectate-board-wrap { width:100%; aspect-ratio:1/1; border:2px solid rgba(201,168,76,0.3); border-radius:6px; overflow:hidden; box-shadow:0 12px 60px rgba(0,0,0,.7); }
-  #spectate-board { display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); width:100%; height:100%; }
-  .spectate-sq { display:flex; align-items:center; justify-content:center; position:relative; aspect-ratio:1/1; user-select:none; }
-  .spectate-sq.light { background:var(--white-sq); } .spectate-sq.dark { background:var(--dark-sq); }
-  .spectate-sq.last-from { background:rgba(255,220,50,.35) !important; } .spectate-sq.last-to { background:rgba(255,220,50,.55) !important; }
-  .spectate-piece { width:88%; height:88%; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,.45)); }
-  #spectate-info { display:flex; gap:8px; width:100%; }
-  #spectate-chat { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; min-height:520px; display:flex; flex-direction:column; }
-  #spectate-chat-head { padding:12px 14px; border-bottom:1px solid var(--border); font-family:'Cinzel',serif; color:var(--gold); letter-spacing:2px; font-size:.8rem; }
-  #spectate-messages { flex:1; min-height:420px; max-height:620px; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:7px; }
-  .chat-msg { background:var(--surface2); border:1px solid rgba(201,168,76,.08); border-radius:8px; padding:7px 9px; word-break:break-word; }
-  .chat-name { color:var(--gold); font-family:'Cinzel',serif; font-size:.68rem; }
-  .chat-text { color:var(--text); font-size:.86rem; margin-top:2px; line-height:1.3; }
-  #spectate-chat-form { display:flex; gap:6px; padding:9px; border-top:1px solid var(--border); }
-  #spectate-chat-input { flex:1; width:auto; text-align:left; letter-spacing:0; font-family:'Crimson Pro',serif; font-size:.95rem; padding:9px 10px; }
-  #spectate-chat-form button { padding:9px 13px; }
-  #spectate-status { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; text-align:center; }
-  #spectate-close { align-self:center; }
-  @media(max-width:760px){ .spectate-layout{grid-template-columns:1fr;} #spectate-chat{min-height:360px;} #spectate-messages{min-height:250px;max-height:360px;} }
-  #public-list { display:flex; flex-direction:column; gap:8px; }
-  .public-room { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; text-align:left; }
-  .public-room .room-name { color:var(--text); font-family:'Cinzel',serif; font-size:.9rem; }
-  .public-room .room-host { color:var(--muted); font-size:.8rem; margin-top:3px; }
-  .public-empty { color:var(--muted); padding:22px 10px; text-align:center; }
-  #name-screen { position:fixed; inset:0; z-index:1000; background:rgba(13,13,20,.97); display:flex; align-items:center; justify-content:center; padding:20px; }
-  #name-card { max-width:430px; }
-  #name-input { width:min(280px,90%); letter-spacing:1px; }
-  #create-type-modal { display:none; position:fixed; inset:0; z-index:900; background:rgba(0,0,0,.8); backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:20px; }
-  #create-type-modal.show { display:flex; }
-  #create-type-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:min(430px,100%); text-align:center; }
-  #create-type-box h3 { font-family:'Cinzel',serif; color:var(--gold); letter-spacing:2px; margin-bottom:10px; }
-  #create-type-box p { color:var(--muted); margin-bottom:18px; }
-  .create-type-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  .create-type-btns button { min-width:145px; }
-  #player-name-display { color:var(--gold); font-family:'Cinzel',serif; font-size:.8rem; letter-spacing:1px; margin-bottom:4px; }
-  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 
-  /* ── MUSIC PLAYER ── */
+  :root {
+    --gold:#c9a84c;
+    --gold-light:#e8c97a;
+    --gold-dim:rgba(201,168,76,0.25);
+    --bg:#0d0d14;
+    --surface:#13131f;
+    --surface2:#1a1a2c;
+    --border:rgba(201,168,76,0.18);
+    --text:#e8e0d0;
+    --muted:#7a7066;
+    --white-sq:#ede0c8;
+    --dark-sq:#a07850;
+  }
+
+  body {
+    font-family:'Crimson Pro',Georgia,serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:20px 12px 40px;
+    gap:18px;
+    background-image:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,0.06) 0%,transparent 60%);
+  }
+
+  h1 {
+    font-family:'Cinzel',serif;
+    font-size:clamp(1.4rem,4vw,2rem);
+    letter-spacing:6px;
+    color:var(--gold);
+    text-shadow:0 0 30px rgba(201,168,76,0.3);
+    margin-top:4px;
+  }
+
+  h1 span { color:var(--text); opacity:.4; }
+
+  #lobby {
+    width:100%;
+    max-width:500px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    align-items:center;
+  }
+
+  .card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:24px 28px;
+    width:100%;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card::before {
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-light),transparent);
+    opacity:.4;
+  }
+
+  .card h2 {
+    font-family:'Cinzel',serif;
+    font-size:1rem;
+    letter-spacing:3px;
+    color:var(--gold);
+    margin-bottom:12px;
+    text-transform:uppercase;
+  }
+
+  .card p {
+    color:var(--muted);
+    font-size:.9rem;
+    margin-bottom:14px;
+    line-height:1.5;
+  }
+
+  input {
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:8px;
+    font-family:'Cinzel',serif;
+    font-size:1.1rem;
+    width:200px;
+    outline:none;
+    text-align:center;
+    letter-spacing:4px;
+    transition:border-color .2s;
+  }
+
+  input:focus { border-color:var(--gold); }
+
+  input::placeholder {
+    letter-spacing:1px;
+    font-size:.85rem;
+    font-family:'Crimson Pro',serif;
+    color:var(--muted);
+  }
+
+  button {
+    background:var(--gold);
+    color:var(--bg);
+    border:none;
+    padding:10px 26px;
+    border-radius:8px;
+    font-family:'Cinzel',serif;
+    font-size:.8rem;
+    font-weight:700;
+    letter-spacing:2px;
+    cursor:pointer;
+    transition:background .15s,transform .1s;
+  }
+
+  button:hover {
+    background:var(--gold-light);
+    transform:translateY(-1px);
+  }
+
+  button:active { transform:translateY(0); }
+
+  button.ghost {
+    background:transparent;
+    color:var(--gold);
+    border:1px solid var(--border);
+    font-size:.75rem;
+  }
+
+  button.ghost:hover { background:var(--gold-dim); }
+
+  button:disabled {
+    opacity:.45;
+    cursor:not-allowed;
+    transform:none !important;
+  }
+
+  #lobby-status {
+    font-size:.9rem;
+    color:var(--muted);
+    text-align:center;
+    min-height:24px;
+    line-height:1.5;
+  }
+
+  #lobby-status .code {
+    display:inline-block;
+    font-family:'Cinzel',serif;
+    font-size:1.8rem;
+    letter-spacing:8px;
+    color:var(--gold);
+    margin:6px 0;
+  }
+
+  .warn { color:#e05252 !important; }
+
+  #room-actions {
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+
+  #game {
+    width:100%;
+    max-width:520px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+
+  #status-bar {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 20px;
+    font-size:.95rem;
+    text-align:center;
+    width:100%;
+    font-style:italic;
+  }
+
+  #status-bar .accent {
+    color:var(--gold);
+    font-style:normal;
+    font-weight:bold;
+  }
+
+  #status-bar .warn {
+    color:#e05252;
+    font-style:normal;
+    font-weight:bold;
+  }
+
+  #status-bar .good {
+    color:#5ec27a;
+    font-style:normal;
+    font-weight:bold;
+  }
+
+  #game-info {
+    display:flex;
+    gap:8px;
+    width:100%;
+  }
+
+  .info-box {
+    flex:1;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px 6px;
+    text-align:center;
+  }
+
+  .info-box .label {
+    color:var(--muted);
+    font-size:.7rem;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+
+  .info-box .value {
+    color:var(--gold);
+    font-family:'Cinzel',serif;
+    font-size:.95rem;
+  }
+
+  #timers {
+    display:flex;
+    gap:8px;
+    width:100%;
+  }
+
+  .timer-box {
+    flex:1;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px;
+    text-align:center;
+    transition:border-color .3s,background .3s;
+  }
+
+  .timer-box .t-label {
+    font-size:.7rem;
+    letter-spacing:1px;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:3px;
+  }
+
+  .timer-box .t-val {
+    font-family:'Cinzel',serif;
+    font-size:1.6rem;
+    font-weight:700;
+    color:var(--text);
+    letter-spacing:2px;
+  }
+
+  .timer-box.active {
+    border-color:var(--gold);
+    background:rgba(201,168,76,.07);
+  }
+
+  .timer-box.active .t-val { color:var(--gold); }
+
+  .timer-box.urgent .t-val {
+    color:#e05252 !important;
+    animation:pulse-red .5s infinite alternate;
+  }
+
+  @keyframes pulse-red {
+    from { opacity:1; }
+    to { opacity:.55; }
+  }
+
+  #board-wrap {
+    width:100%;
+    aspect-ratio:1/1;
+    max-width:520px;
+    border:2px solid rgba(201,168,76,.3);
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 12px 60px rgba(0,0,0,.7);
+  }
+
+  #board {
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    grid-template-rows:repeat(8,1fr);
+    width:100%;
+    height:100%;
+  }
+
+  .sq {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    position:relative;
+    aspect-ratio:1/1;
+    user-select:none;
+  }
+
+  .sq.light { background:var(--white-sq); }
+  .sq.dark { background:var(--dark-sq); }
+
+  .sq.selected { background:#7bc47b !important; }
+
+  .sq.moveable::after {
+    content:'';
+    position:absolute;
+    width:34%;
+    height:34%;
+    background:rgba(0,0,0,.18);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:2;
+  }
+
+  .sq.moveable.occupied::after {
+    width:100%;
+    height:100%;
+    border-radius:0;
+    background:transparent;
+    box-shadow:inset 0 0 0 5px rgba(0,0,0,.22);
+  }
+
+  .sq.last-from { background:rgba(255,220,50,.35) !important; }
+  .sq.last-to { background:rgba(255,220,50,.55) !important; }
+  .sq.in-check { background:#c0392b !important; }
+
+  .coord-file,
+  .coord-rank {
+    position:absolute;
+    font-size:9px;
+    font-weight:bold;
+    opacity:.45;
+    pointer-events:none;
+    font-family:'Cinzel',serif;
+  }
+
+  .coord-file {
+    bottom:2px;
+    right:3px;
+  }
+
+  .coord-rank {
+    top:2px;
+    left:3px;
+  }
+
+  .piece-wrap {
+    width:88%;
+    height:88%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:1;
+  }
+
+  .piece-img {
+    width:100%;
+    height:100%;
+    display:block;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+    object-fit:contain;
+  }
+
+  #move-log {
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    max-height:80px;
+    overflow-y:auto;
+    font-size:.82rem;
+    color:var(--muted);
+    line-height:1.8;
+  }
+
+  #move-log .mv-num {
+    color:var(--gold);
+    margin-right:4px;
+    font-family:'Cinzel',serif;
+    font-size:.75rem;
+  }
+
+  #move-log .mv-w { color:var(--text); }
+  #move-log .mv-b { color:#bbb; margin-left:6px; }
+
+  #game-btns {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+
+  #promo-modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.82);
+    backdrop-filter:blur(4px);
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+
+  #promo-modal.show { display:flex; }
+
+  #promo-box {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:28px 36px;
+    text-align:center;
+  }
+
+  #promo-box h3 {
+    font-family:'Cinzel',serif;
+    letter-spacing:2px;
+    color:var(--gold);
+    margin-bottom:16px;
+  }
+
+  .promo-piece {
+    display:inline-block;
+    width:70px;
+    height:70px;
+    cursor:pointer;
+    padding:8px;
+    border-radius:10px;
+    transition:background .1s;
+    border:1px solid transparent;
+  }
+
+  .promo-piece:hover {
+    background:var(--gold-dim);
+    border-color:var(--border);
+  }
+
+  .promo-piece img {
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
+  #result-overlay {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.87);
+    backdrop-filter:blur(6px);
+    align-items:center;
+    justify-content:center;
+    z-index:200;
+  }
+
+  #result-overlay.show { display:flex; }
+
+  #result-box {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:40px 48px;
+    text-align:center;
+    max-width:380px;
+    width:90%;
+    position:relative;
+  }
+
+  #result-box::before {
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+
+  #result-icon {
+    font-size:3.5rem;
+    margin-bottom:12px;
+    display:block;
+  }
+
+  #result-title {
+    font-family:'Cinzel',serif;
+    font-size:1.5rem;
+    color:var(--gold);
+    letter-spacing:3px;
+    margin-bottom:8px;
+  }
+
+  #result-reason {
+    color:var(--muted);
+    font-size:.9rem;
+    margin-bottom:24px;
+    line-height:1.5;
+  }
+
+  #result-box button { margin:4px; }
+
+  #toast {
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 22px;
+    border-radius:8px;
+    font-family:'Cinzel',serif;
+    font-size:.75rem;
+    letter-spacing:1px;
+    transition:transform .3s;
+    z-index:9999;
+    white-space:nowrap;
+  }
+
+  #toast.show { transform:translateX(-50%) translateY(0); }
+
+  .hidden { display:none !important; }
+
+  #top-tabs {
+    width:100%;
+    max-width:700px;
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    margin-top:-4px;
+  }
+
+  .top-tab {
+    flex:1;
+    max-width:220px;
+    background:var(--surface);
+    color:var(--muted);
+    border:1px solid var(--border);
+  }
+
+  .top-tab.active {
+    background:var(--gold);
+    color:var(--bg);
+    border-color:var(--gold);
+  }
+
+  #public-page,
+  #live-page {
+    width:100%;
+    max-width:900px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  #public-page { max-width:700px; }
+
+  #live-list,
+  #public-list {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .live-game,
+  .public-room {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:13px 14px;
+    text-align:left;
+  }
+
+  .live-game .game-title,
+  .public-room .room-name {
+    color:var(--text);
+    font-family:'Cinzel',serif;
+    font-size:.9rem;
+  }
+
+  .live-game .game-meta,
+  .public-room .room-host {
+    color:var(--muted);
+    font-size:.8rem;
+    margin-top:3px;
+  }
+
+  .live-badge {
+    color:#5ec27a;
+    font-family:'Cinzel',serif;
+    font-size:.65rem;
+    letter-spacing:1px;
+  }
+
+  .public-empty {
+    color:var(--muted);
+    padding:22px 10px;
+    text-align:center;
+  }
+
+  #name-screen {
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    background:rgba(13,13,20,.97);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  #name-card { max-width:430px; }
+
+  #name-input {
+    width:min(280px,90%);
+    letter-spacing:1px;
+  }
+
+  #name-status {
+    margin-top:12px;
+    min-height:20px;
+    color:var(--muted);
+  }
+
+  #create-type-modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:900;
+    background:rgba(0,0,0,.8);
+    backdrop-filter:blur(5px);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+
+  #create-type-modal.show { display:flex; }
+
+  #create-type-box {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:28px;
+    width:min(430px,100%);
+    text-align:center;
+  }
+
+  #create-type-box h3 {
+    font-family:'Cinzel',serif;
+    color:var(--gold);
+    letter-spacing:2px;
+    margin-bottom:10px;
+  }
+
+  #create-type-box p {
+    color:var(--muted);
+    margin-bottom:18px;
+  }
+
+  .create-type-btns {
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .create-type-btns button { min-width:145px; }
+
+  #player-name-display {
+    color:var(--gold);
+    font-family:'Cinzel',serif;
+    font-size:.8rem;
+    letter-spacing:1px;
+    margin-bottom:4px;
+  }
+
+  .spectate-layout {
+    width:100%;
+    max-width:1000px;
+    display:grid;
+    grid-template-columns:minmax(300px,620px) minmax(260px,340px);
+    gap:14px;
+    align-items:start;
+  }
+
+  #spectator-view {
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+
+  #spectate-game {
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  #spectate-board-wrap {
+    width:100%;
+    aspect-ratio:1/1;
+    border:2px solid rgba(201,168,76,.3);
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 12px 60px rgba(0,0,0,.7);
+  }
+
+  #spectate-board {
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    grid-template-rows:repeat(8,1fr);
+    width:100%;
+    height:100%;
+  }
+
+  .spectate-sq {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    aspect-ratio:1/1;
+    user-select:none;
+  }
+
+  .spectate-sq.light { background:var(--white-sq); }
+  .spectate-sq.dark { background:var(--dark-sq); }
+
+  .spectate-sq.last-from { background:rgba(255,220,50,.35) !important; }
+  .spectate-sq.last-to { background:rgba(255,220,50,.55) !important; }
+
+  .spectate-piece {
+    width:88%;
+    height:88%;
+    object-fit:contain;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+  }
+
+  #spectate-info {
+    display:flex;
+    gap:8px;
+    width:100%;
+  }
+
+  #spectate-timers {
+    display:flex;
+    gap:8px;
+    width:100%;
+  }
+
+  #spectate-chat {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    min-height:520px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  #spectate-chat-head {
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    font-family:'Cinzel',serif;
+    color:var(--gold);
+    letter-spacing:2px;
+    font-size:.8rem;
+  }
+
+  #spectate-messages {
+    flex:1;
+    min-height:420px;
+    max-height:620px;
+    overflow-y:auto;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+
+  .chat-msg {
+    background:var(--surface2);
+    border:1px solid rgba(201,168,76,.08);
+    border-radius:8px;
+    padding:7px 9px;
+    word-break:break-word;
+  }
+
+  .chat-name {
+    color:var(--gold);
+    font-family:'Cinzel',serif;
+    font-size:.68rem;
+  }
+
+  .chat-text {
+    color:var(--text);
+    font-size:.86rem;
+    margin-top:2px;
+    line-height:1.3;
+  }
+
+  #spectate-chat-form {
+    display:flex;
+    gap:6px;
+    padding:9px;
+    border-top:1px solid var(--border);
+  }
+
+  #spectate-chat-input {
+    flex:1;
+    width:auto;
+    text-align:left;
+    letter-spacing:0;
+    font-family:'Crimson Pro',serif;
+    font-size:.95rem;
+    padding:9px 10px;
+  }
+
+  #spectate-chat-form button { padding:9px 13px; }
+
+  #spectate-status {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    text-align:center;
+  }
+
+  #spectate-close { align-self:center; }
+
+  @media(max-width:760px) {
+    .spectate-layout { grid-template-columns:1fr; }
+    #spectate-chat { min-height:360px; }
+    #spectate-messages { min-height:250px; max-height:360px; }
+  }
+
   #music-player {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 500;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    pointer-events: none;
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:500;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+    pointer-events:none;
   }
+
   #music-info {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 7px 13px;
-    font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    color: var(--gold);
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: auto;
-    opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.3s, transform 0.3s;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:7px 13px;
+    font-family:'Cinzel',serif;
+    font-size:.65rem;
+    letter-spacing:1px;
+    color:var(--gold);
+    max-width:200px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    pointer-events:auto;
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .3s,transform .3s;
   }
+
   #music-info.visible {
-    opacity: 1;
-    transform: translateY(0);
+    opacity:1;
+    transform:translateY(0);
   }
+
   #music-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    pointer-events: auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    pointer-events:auto;
   }
+
   #music-vol-wrap {
-    display: flex;
-    align-items: center;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 0 10px;
-    height: 44px;
-    gap: 6px;
+    display:flex;
+    align-items:center;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:0 10px;
+    height:44px;
+    gap:6px;
   }
-  #music-vol-icon { font-size: 0.75rem; color: var(--muted); user-select: none; }
+
+  #music-vol-icon {
+    font-size:.75rem;
+    color:var(--muted);
+    user-select:none;
+  }
+
   #music-vol {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 64px;
-    height: 3px;
-    border-radius: 2px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-    border: none;
-    padding: 0;
-    accent-color: var(--gold);
+    -webkit-appearance:none;
+    appearance:none;
+    width:64px;
+    height:3px;
+    border-radius:2px;
+    background:var(--border);
+    outline:none;
+    cursor:pointer;
+    border:none;
+    padding:0;
+    accent-color:var(--gold);
   }
+
   #music-vol::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--gold);
-    cursor: pointer;
+    -webkit-appearance:none;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:var(--gold);
+    cursor:pointer;
   }
+
   #music-vol::-moz-range-thumb {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--gold);
-    border: none;
-    cursor: pointer;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:var(--gold);
+    border:none;
+    cursor:pointer;
   }
+
   .music-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--gold);
-    font-size: 1.1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
-    padding: 0;
-    letter-spacing: 0;
-    font-family: serif;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--gold);
+    font-size:1.1rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s,border-color .15s,transform .1s;
+    padding:0;
+    letter-spacing:0;
+    font-family:serif;
   }
+
   .music-btn:hover {
-    background: var(--gold-dim);
-    border-color: var(--gold);
-    transform: translateY(-1px);
+    background:var(--gold-dim);
+    border-color:var(--gold);
+    transform:translateY(-1px);
   }
-  .music-btn:active { transform: scale(0.95); }
+
+  .music-btn:active { transform:scale(.95); }
+
   .music-btn.playing {
-    border-color: var(--gold);
-    box-shadow: 0 0 12px rgba(201,168,76,0.25);
+    border-color:var(--gold);
+    box-shadow:0 0 12px rgba(201,168,76,.25);
   }
-  #music-btn-play { font-size: 1.2rem; }
+
+  #music-btn-play { font-size:1.2rem; }
+
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  @media(max-width:520px) {
+    body { padding-left:7px; padding-right:7px; }
+    #game-btns button { padding:9px 14px; }
+    .card { padding:20px 16px; }
+    #music-player { right:10px; bottom:10px; }
+  }
 </style>
 </head>
+
 <body>
+
 <h1>♟ CHESS <span>/</span> ONLINE</h1>
 
 <div id="name-screen">
@@ -313,21 +1029,25 @@
 
 <div id="lobby">
   <div id="player-name-display"></div>
+
   <div class="card">
     <h2>Create a Room</h2>
     <p>Create a private room for a specific opponent or a public room that other players can see and join.</p>
     <button onclick="openCreateType()">Create Room</button>
+
     <div id="room-actions" class="hidden">
       <button class="ghost" onclick="copyRoomLink()">📋 Copy Link</button>
       <button class="ghost" onclick="emailInvite()">✉ Email Invite</button>
     </div>
   </div>
+
   <div class="card">
     <h2>Join a Private Room</h2>
-    <input id="join-id" placeholder="Enter code" maxlength="6" oninput="this.value=this.value.toUpperCase()"/>
+    <input id="join-id" placeholder="Enter code" maxlength="6" oninput="this.value=this.value.toUpperCase()">
     <br><br>
     <button onclick="joinRoom()">Join Room</button>
   </div>
+
   <div id="lobby-status"></div>
 </div>
 
@@ -335,7 +1055,9 @@
   <div class="card">
     <h2>Public Lobbies</h2>
     <p>Join an open public game. The list refreshes automatically.</p>
-    <div id="public-list"><div class="public-empty">Loading public lobbies…</div></div>
+    <div id="public-list">
+      <div class="public-empty">Loading public lobbies…</div>
+    </div>
     <br>
     <button class="ghost" onclick="loadPublicRooms()">Refresh</button>
   </div>
@@ -345,7 +1067,9 @@
   <div class="card">
     <h2>Live Games</h2>
     <p>Watch games live when the host has enabled spectators. The board updates as moves are made.</p>
-    <div id="live-list"><div class="public-empty">Loading live games…</div></div>
+    <div id="live-list">
+      <div class="public-empty">Loading live games…</div>
+    </div>
     <br>
     <button class="ghost" onclick="loadLiveGames()">Refresh</button>
   </div>
@@ -355,10 +1079,12 @@
   <div id="create-type-box">
     <h3>Choose Lobby Type</h3>
     <p>Private rooms are only joinable with their code. Public rooms appear in the Public Lobbies tab.</p>
+
     <label style="display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text);font-size:.9rem;margin:0 0 16px;cursor:pointer;">
       <input id="spectators-toggle" type="checkbox" style="width:auto;padding:0;accent-color:var(--gold);cursor:pointer;">
       Allow spectators to watch this game
     </label>
+
     <div class="create-type-btns">
       <button onclick="createRoom('private')">Private Lobby</button>
       <button onclick="createRoom('public')">Public Lobby</button>
@@ -369,51 +1095,110 @@
 
 <div id="game" class="hidden">
   <div id="status-bar">Connecting…</div>
+
   <div id="game-info">
-    <div class="info-box"><div class="label">You Are</div><div class="value" id="my-color">—</div></div>
-    <div class="info-box"><div class="label">Turn</div><div class="value" id="turn-disp">—</div></div>
-    <div class="info-box"><div class="label">Room</div><div class="value" id="room-disp">—</div></div>
+    <div class="info-box">
+      <div class="label">You Are</div>
+      <div class="value" id="my-color">—</div>
+    </div>
+
+    <div class="info-box">
+      <div class="label">Turn</div>
+      <div class="value" id="turn-disp">—</div>
+    </div>
+
+    <div class="info-box">
+      <div class="label">Room</div>
+      <div class="value" id="room-disp">—</div>
+    </div>
   </div>
+
   <div id="timers">
-    <div class="timer-box" id="timer-white"><div class="t-label">White ♔</div><div class="t-val" id="tv-white">0:30</div></div>
-    <div class="timer-box" id="timer-black"><div class="t-label">Black ♚</div><div class="t-val" id="tv-black">0:30</div></div>
+    <div class="timer-box" id="timer-white">
+      <div class="t-label">White ♔</div>
+      <div class="t-val" id="tv-white">0:30</div>
+    </div>
+
+    <div class="timer-box" id="timer-black">
+      <div class="t-label">Black ♚</div>
+      <div class="t-val" id="tv-black">0:30</div>
+    </div>
   </div>
-  <div id="board-wrap"><div id="board"></div></div>
-  <div id="move-log"><em style="color:#555;font-style:italic">No moves yet</em></div>
+
+  <div id="board-wrap">
+    <div id="board"></div>
+  </div>
+
+  <div id="move-log">
+    <em style="color:#555;font-style:italic">No moves yet</em>
+  </div>
+
   <div id="game-btns">
     <button class="ghost" onclick="copyRoomLink()">Copy Link</button>
     <button class="ghost" onclick="emailInvite()">✉ Email</button>
     <button class="ghost" onclick="offerDraw()">½ Draw</button>
     <button class="ghost" onclick="resignGame()">Resign</button>
-    <button class="ghost" onclick="location.href=location.pathname">Leave</button>
+    <button class="ghost" onclick="leaveGame()">Leave</button>
   </div>
 </div>
 
-<div id="spectator-view" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px;">
+<div id="spectator-view" class="hidden">
   <div class="spectate-layout">
+
     <div id="spectate-game">
       <div id="spectate-status">Connecting to live game…</div>
+
       <div id="spectate-info">
-        <div class="info-box"><div class="label">White</div><div class="value" id="spectate-white">—</div></div>
-        <div class="info-box"><div class="label">Turn</div><div class="value" id="spectate-turn">—</div></div>
-        <div class="info-box"><div class="label">Black</div><div class="value" id="spectate-black">—</div></div>
+        <div class="info-box">
+          <div class="label">White</div>
+          <div class="value" id="spectate-white">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="label">Turn</div>
+          <div class="value" id="spectate-turn">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="label">Black</div>
+          <div class="value" id="spectate-black">—</div>
+        </div>
       </div>
+
       <div id="spectate-timers">
-        <div class="timer-box"><div class="t-label">White ♔</div><div class="t-val" id="spectate-tv-white">0:30</div></div>
-        <div class="timer-box"><div class="t-label">Black ♚</div><div class="t-val" id="spectate-tv-black">0:30</div></div>
+        <div class="timer-box">
+          <div class="t-label">White ♔</div>
+          <div class="t-val" id="spectate-tv-white">0:30</div>
+        </div>
+
+        <div class="timer-box">
+          <div class="t-label">Black ♚</div>
+          <div class="t-val" id="spectate-tv-black">0:30</div>
+        </div>
       </div>
-      <div id="spectate-board-wrap"><div id="spectate-board"></div></div>
-      <div id="spectate-move-log" class="move-log" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-height:90px;overflow-y:auto;font-size:.82rem;color:var(--muted);line-height:1.8;"></div>
+
+      <div id="spectate-board-wrap">
+        <div id="spectate-board"></div>
+      </div>
+
+      <div id="spectate-move-log" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;max-height:90px;overflow-y:auto;font-size:.82rem;color:var(--muted);line-height:1.8;"></div>
+
       <button id="spectate-close" class="ghost" onclick="leaveSpectator()">Back to Live Games</button>
     </div>
+
     <div id="spectate-chat">
       <div id="spectate-chat-head">LIVE CHAT</div>
-      <div id="spectate-messages"><div class="public-empty">Chat is loading…</div></div>
+
+      <div id="spectate-messages">
+        <div class="public-empty">Chat is loading…</div>
+      </div>
+
       <div id="spectate-chat-form">
         <input id="spectate-chat-input" maxlength="180" placeholder="Chat as your username…" autocomplete="off">
         <button onclick="sendSpectatorChat()">Send</button>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -433,17 +1218,19 @@
     <button class="ghost" onclick="document.getElementById('result-overlay').classList.remove('show')">Close</button>
   </div>
 </div>
+
 <div id="toast"></div>
 
-<!-- ══ MUSIC PLAYER ══ -->
 <div id="music-player">
   <div id="music-info"></div>
+
   <div id="music-controls">
     <div id="music-vol-wrap">
       <span id="music-vol-icon">♪</span>
       <input type="range" id="music-vol" min="0" max="1" step="0.01" value="0.5" oninput="musicSetVolume(this.value)" title="Volume">
     </div>
-    <button class="music-btn" id="music-btn-skip" onclick="musicSkip()" title="Next track" style="font-size:0.85rem;">&#9654;&#9654;</button>
+
+    <button class="music-btn" id="music-btn-skip" onclick="musicSkip()" title="Next track" style="font-size:.85rem;">&#9654;&#9654;</button>
     <button class="music-btn" id="music-btn-play" onclick="musicToggle()" title="Play / Pause">♪</button>
   </div>
 </div>
@@ -451,1052 +1238,4358 @@
 <script>
 'use strict';
 
-// ══════════════════════════════════════════════════════════════
-//  MUSIC PLAYER
-// ══════════════════════════════════════════════════════════════
-const MUSIC_BASE = 'https://raw.githubusercontent.com/blueberryggames-a11y/chess/main/music/';
-const MUSIC_FILES = [
-  'passobem.mp3','dirtyshoes.mp3','tiktiki.mp3','montagem.mp3','Luana.mp3',
-  'xonda.mp3','tomada.mp3','speedphonk.mp3','sempero.mp3','robbery.mp3',
-  'heatwaves.mp3','batido.mp3',
+/* ============================================================
+   MUSIC
+============================================================ */
+
+const MUSIC_BASE='https://raw.githubusercontent.com/blueberryggames-a11y/chess/main/music/';
+
+const MUSIC_FILES=[
+  'passobem.mp3',
+  'dirtyshoes.mp3',
+  'tiktiki.mp3',
+  'montagem.mp3',
+  'Luana.mp3',
+  'xonda.mp3',
+  'tomada.mp3',
+  'speedphonk.mp3',
+  'sempero.mp3',
+  'robbery.mp3',
+  'heatwaves.mp3',
+  'batido.mp3'
 ];
 
-let _musicQueue   = [];
-let _musicIdx     = 0;
-let _musicPlaying = false;
-let _musicAudio   = null;
-let _musicVol     = 0.5;
-let _musicInfoTimer = null;
+let _musicQueue=[];
+let _musicIdx=0;
+let _musicPlaying=false;
+let _musicAudio=null;
+let _musicVol=.5;
+let _musicInfoTimer=null;
 
-function _shuffleArr(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+function _shuffleArr(arr){
+  const a=arr.slice();
+
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
   }
+
   return a;
 }
 
-function _trackName(filename) {
-  return filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+function _trackName(filename){
+  return filename
+    .replace(/\.[^.]+$/,'')
+    .replace(/[-_]/g,' ');
 }
 
-function _showTrackInfo(name) {
-  const el = document.getElementById('music-info');
-  el.textContent = name;
+function _showTrackInfo(name){
+  const el=document.getElementById('music-info');
+
+  el.textContent=name;
   el.classList.add('visible');
+
   clearTimeout(_musicInfoTimer);
-  _musicInfoTimer = setTimeout(() => el.classList.remove('visible'), 4000);
+
+  _musicInfoTimer=setTimeout(()=>{
+    el.classList.remove('visible');
+  },4000);
 }
 
-function _loadTrack(idx, autoplay) {
-  if (!_musicQueue.length) return;
-  if (_musicAudio) {
-    _musicAudio.onended = null;
-    _musicAudio.onerror = null;
+function _loadTrack(idx,autoplay){
+  if(!_musicQueue.length) return;
+
+  if(_musicAudio){
+    _musicAudio.onended=null;
+    _musicAudio.onerror=null;
     _musicAudio.pause();
-    _musicAudio.src = '';
-    _musicAudio = null;
+    _musicAudio.src='';
+    _musicAudio=null;
   }
-  const file = _musicQueue[idx];
-  const audio = new Audio(MUSIC_BASE + file);
-  audio.volume = _musicVol;
-  audio.onended = () => {
-    _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-    _loadTrack(_musicIdx, true);
+
+  const file=_musicQueue[idx];
+  const audio=new Audio(MUSIC_BASE+file);
+
+  audio.volume=_musicVol;
+
+  audio.onended=()=>{
+    _musicIdx=(_musicIdx+1)%_musicQueue.length;
+    _loadTrack(_musicIdx,true);
   };
-  audio.onerror = () => {
-    _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-    _loadTrack(_musicIdx, _musicPlaying);
+
+  audio.onerror=()=>{
+    _musicIdx=(_musicIdx+1)%_musicQueue.length;
+    _loadTrack(_musicIdx,_musicPlaying);
   };
-  _musicAudio = audio;
+
+  _musicAudio=audio;
   _showTrackInfo(_trackName(file));
-  if (autoplay) audio.play().catch(() => {});
-}
 
-function _updatePlayBtn() {
-  const btn = document.getElementById('music-btn-play');
-  btn.classList.toggle('playing', _musicPlaying);
-  btn.title = _musicPlaying ? 'Pause' : 'Play music';
-  btn.innerHTML = _musicPlaying ? '&#9646;&#9646;' : '&#9834;';
-}
-
-function musicToggle() {
-  if (!MUSIC_FILES.length) { showToast('No tracks configured', 3000); return; }
-  if (!_musicQueue.length) {
-    _musicQueue = _shuffleArr(MUSIC_FILES);
-    _musicIdx = 0;
-    _loadTrack(_musicIdx, false);
+  if(autoplay){
+    audio.play().catch(()=>{});
   }
-  if (_musicPlaying) {
-    _musicAudio && _musicAudio.pause();
-    _musicPlaying = false;
-  } else {
-    if (!_musicAudio) _loadTrack(_musicIdx, false);
-    _musicAudio && _musicAudio.play().catch(() => showToast('Click again to play', 2500));
-    _musicPlaying = true;
+}
+
+function _updatePlayBtn(){
+  const btn=document.getElementById('music-btn-play');
+
+  btn.classList.toggle('playing',_musicPlaying);
+  btn.title=_musicPlaying?'Pause':'Play music';
+  btn.innerHTML=_musicPlaying?'&#9646;&#9646;':'&#9834;';
+}
+
+function musicToggle(){
+  if(!MUSIC_FILES.length){
+    showToast('No tracks configured',3000);
+    return;
+  }
+
+  if(!_musicQueue.length){
+    _musicQueue=_shuffleArr(MUSIC_FILES);
+    _musicIdx=0;
+    _loadTrack(_musicIdx,false);
+  }
+
+  if(_musicPlaying){
+    if(_musicAudio) _musicAudio.pause();
+    _musicPlaying=false;
+  }else{
+    if(!_musicAudio) _loadTrack(_musicIdx,false);
+
+    if(_musicAudio){
+      _musicAudio.play().catch(()=>{
+        showToast('Click again to play',2500);
+      });
+    }
+
+    _musicPlaying=true;
     _showTrackInfo(_trackName(_musicQueue[_musicIdx]));
   }
+
   _updatePlayBtn();
 }
 
-function musicSkip() {
-  if (!MUSIC_FILES.length) return;
-  if (!_musicQueue.length) { _musicQueue = _shuffleArr(MUSIC_FILES); }
-  _musicIdx = (_musicIdx + 1) % _musicQueue.length;
-  _loadTrack(_musicIdx, _musicPlaying);
+function musicSkip(){
+  if(!MUSIC_FILES.length) return;
+
+  if(!_musicQueue.length){
+    _musicQueue=_shuffleArr(MUSIC_FILES);
+  }
+
+  _musicIdx=(_musicIdx+1)%_musicQueue.length;
+  _loadTrack(_musicIdx,_musicPlaying);
   _updatePlayBtn();
 }
 
-function musicSetVolume(val) {
-  _musicVol = parseFloat(val);
-  if (_musicAudio) _musicAudio.volume = _musicVol;
+function musicSetVolume(val){
+  _musicVol=parseFloat(val);
+
+  if(_musicAudio){
+    _musicAudio.volume=_musicVol;
+  }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  PIECE IMAGES
-//  FIX: Use jsDelivr CDN instead of raw.githubusercontent.com
-//  jsDelivr serves SVGs with correct image/svg+xml content-type
-//  and proper CORS headers, which Safari/iPad requires.
-//  crossOrigin attribute removed — not needed for <img> display.
-// ══════════════════════════════════════════════════════════════
-const PIECE_REPO = 'https://cdn.jsdelivr.net/gh/blueberryggames-a11y/chess@main/icons';
-const PIECE_FILES = {
-  K:'wK.svg',Q:'wQ.svg',R:'wR.svg',B:'wB.svg',N:'wN.svg',P:'wP.svg',
-  k:'bK.svg',q:'bQ.svg',r:'bR.svg',b:'bB.svg',n:'bN.svg',p:'bP.svg'
+
+/* ============================================================
+   PIECES
+============================================================ */
+
+const PIECE_REPO='https://cdn.jsdelivr.net/gh/blueberryggames-a11y/chess@main/icons';
+
+const PIECE_FILES={
+  K:'wK.svg',
+  Q:'wQ.svg',
+  R:'wR.svg',
+  B:'wB.svg',
+  N:'wN.svg',
+  P:'wP.svg',
+  k:'bK.svg',
+  q:'bQ.svg',
+  r:'bR.svg',
+  b:'bB.svg',
+  n:'bN.svg',
+  p:'bP.svg'
 };
 
-function preloadPieces() {
-  Object.entries(PIECE_FILES).forEach(([key, file]) => {
-    const img = new Image();
-    // No crossOrigin — not needed for <img> and causes Safari CORS issues with SVG
-    img.src = `${PIECE_REPO}/${file}`;
+function preloadPieces(){
+  Object.entries(PIECE_FILES).forEach(([key,file])=>{
+    const img=new Image();
+    img.src=`${PIECE_REPO}/${file}`;
   });
 }
+
 preloadPieces();
 
-function pieceUrl(p) { return `${PIECE_REPO}/${PIECE_FILES[p]}`; }
+function pieceUrl(p){
+  return `${PIECE_REPO}/${PIECE_FILES[p]}`;
+}
 
-function makePieceEl(p) {
-  const w = document.createElement('div');
-  w.className = 'piece-wrap';
-  const img = document.createElement('img');
-  img.className = 'piece-img';
-  // No crossOrigin attribute — Safari/iPad is strict about CORS + SVG
-  img.src = pieceUrl(p);
-  img.alt = p;
-  img.draggable = false;
+function makePieceEl(p){
+  const w=document.createElement('div');
+  w.className='piece-wrap';
+
+  const img=document.createElement('img');
+  img.className='piece-img';
+  img.src=pieceUrl(p);
+  img.alt=p;
+  img.draggable=false;
+
   w.appendChild(img);
   return w;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  CHESS ENGINE
-// ══════════════════════════════════════════════════════════════
 
-const FILES_STR = 'abcdefgh';
-const colorOf = p => !p ? null : p===p.toUpperCase() ? 'w' : 'b';
-const opp     = c => c==='w' ? 'b' : 'w';
-const inBounds= (r,c)=> r>=0&&r<8&&c>=0&&c<8;
-const copyBoard= b => b.map(r=>r.slice());
+/* ============================================================
+   CHESS ENGINE
+============================================================ */
 
-function findKing(board, color){
-  const k = color==='w'?'K':'k';
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++) if(board[r][c]===k) return [r,c];
+const FILES_STR='abcdefgh';
+
+const colorOf=p=>{
+  if(!p) return null;
+  return p===p.toUpperCase()?'w':'b';
+};
+
+const opp=c=>c==='w'?'b':'w';
+
+const inBounds=(r,c)=>r>=0&&r<8&&c>=0&&c<8;
+
+const copyBoard=b=>b.map(r=>r.slice());
+
+function findKing(board,color){
+  const k=color==='w'?'K':'k';
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      if(board[r][c]===k) return [r,c];
+    }
+  }
+
   return null;
 }
 
-function isAttacked(board, r, c, byColor){
-  const pDir = byColor==='w' ? 1 : -1;
-  for(const dc of[-1,1]){
-    const pr=r+pDir, pc=c+dc;
+function isAttacked(board,r,c,byColor){
+
+  const pDir=byColor==='w'?1:-1;
+
+  for(const dc of [-1,1]){
+    const pr=r+pDir;
+    const pc=c+dc;
+
     if(inBounds(pr,pc)){
       const p=board[pr][pc];
-      if(p && colorOf(p)===byColor && p.toLowerCase()==='p') return true;
+
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='p'){
+        return true;
+      }
     }
   }
-  for(const [dr,dc] of[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
-    const nr=r+dr,nc=c+dc;
-    if(inBounds(nr,nc)){const p=board[nr][nc]; if(p&&colorOf(p)===byColor&&p.toLowerCase()==='n') return true;}
+
+  for(const [dr,dc] of [
+    [-2,-1],[-2,1],[-1,-2],[-1,2],
+    [1,-2],[1,2],[2,-1],[2,1]
+  ]){
+    const nr=r+dr;
+    const nc=c+dc;
+
+    if(inBounds(nr,nc)){
+      const p=board[nr][nc];
+
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='n'){
+        return true;
+      }
+    }
   }
-  for(const [dr,dc] of[[-1,-1],[-1,1],[1,-1],[1,1]]){
-    let nr=r+dr,nc=c+dc;
+
+  for(const [dr,dc] of [
+    [-1,-1],[-1,1],[1,-1],[1,1]
+  ]){
+    let nr=r+dr;
+    let nc=c+dc;
+
     while(inBounds(nr,nc)){
       const p=board[nr][nc];
-      if(p){ if(colorOf(p)===byColor&&(p.toLowerCase()==='b'||p.toLowerCase()==='q')) return true; break; }
-      nr+=dr; nc+=dc;
+
+      if(p){
+        if(colorOf(p)===byColor&&(p.toLowerCase()==='b'||p.toLowerCase()==='q')){
+          return true;
+        }
+
+        break;
+      }
+
+      nr+=dr;
+      nc+=dc;
     }
   }
-  for(const [dr,dc] of[[-1,0],[1,0],[0,-1],[0,1]]){
-    let nr=r+dr,nc=c+dc;
+
+  for(const [dr,dc] of [
+    [-1,0],[1,0],[0,-1],[0,1]
+  ]){
+    let nr=r+dr;
+    let nc=c+dc;
+
     while(inBounds(nr,nc)){
       const p=board[nr][nc];
-      if(p){ if(colorOf(p)===byColor&&(p.toLowerCase()==='r'||p.toLowerCase()==='q')) return true; break; }
-      nr+=dr; nc+=dc;
+
+      if(p){
+        if(colorOf(p)===byColor&&(p.toLowerCase()==='r'||p.toLowerCase()==='q')){
+          return true;
+        }
+
+        break;
+      }
+
+      nr+=dr;
+      nc+=dc;
     }
   }
-  for(const [dr,dc] of[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
-    const nr=r+dr,nc=c+dc;
-    if(inBounds(nr,nc)){const p=board[nr][nc]; if(p&&colorOf(p)===byColor&&p.toLowerCase()==='k') return true;}
+
+  for(const [dr,dc] of [
+    [-1,-1],[-1,0],[-1,1],
+    [0,-1],[0,1],
+    [1,-1],[1,0],[1,1]
+  ]){
+    const nr=r+dr;
+    const nc=c+dc;
+
+    if(inBounds(nr,nc)){
+      const p=board[nr][nc];
+
+      if(p&&colorOf(p)===byColor&&p.toLowerCase()==='k'){
+        return true;
+      }
+    }
   }
+
   return false;
 }
 
-function kingInCheck(board, color){
-  const kp=findKing(board,color); if(!kp) return false;
+function kingInCheck(board,color){
+  const kp=findKing(board,color);
+
+  if(!kp) return true;
+
   return isAttacked(board,kp[0],kp[1],opp(color));
 }
 
-function doMove(board, move, castling, enPassant){
-  const nb=copyBoard(board), nc={...castling}; let nep=null;
-  const p=nb[move.fr][move.fc];
-  const pt=p.toLowerCase(), color=colorOf(p);
+function doMove(board,move,castling,enPassant){
 
-  nb[move.tr][move.tc] = move.promo
-    ? (color==='w' ? move.promo.toUpperCase() : move.promo.toLowerCase())
+  const nb=copyBoard(board);
+  const nc={...castling};
+  let nep=null;
+
+  const p=nb[move.fr][move.fc];
+
+  if(!p) return {
+    board:nb,
+    castling:nc,
+    enPassant:nep
+  };
+
+  const pt=p.toLowerCase();
+  const color=colorOf(p);
+
+  nb[move.tr][move.tc]=move.promo
+    ? (color==='w'?move.promo.toUpperCase():move.promo.toLowerCase())
     : p;
+
   nb[move.fr][move.fc]=null;
 
-  if(move.isEnPassant) nb[move.fr][move.tc]=null;
-
-  if(move.castleSide){
-    if(move.castleSide==='K'){ nb[move.tr][5]=nb[move.tr][7]; nb[move.tr][7]=null; }
-    else                      { nb[move.tr][3]=nb[move.tr][0]; nb[move.tr][0]=null; }
+  if(move.isEnPassant){
+    nb[move.fr][move.tc]=null;
   }
 
-  if(p==='K'){ nc.wK=false; nc.wKR=false; nc.wQR=false; }
-  if(p==='k'){ nc.bK=false; nc.bKR=false; nc.bQR=false; }
+  if(move.castleSide==='K'){
+    nb[move.tr][5]=nb[move.tr][7];
+    nb[move.tr][7]=null;
+  }
+
+  if(move.castleSide==='Q'){
+    nb[move.tr][3]=nb[move.tr][0];
+    nb[move.tr][0]=null;
+  }
+
+  if(p==='K'){
+    nc.wK=false;
+    nc.wKR=false;
+    nc.wQR=false;
+  }
+
+  if(p==='k'){
+    nc.bK=false;
+    nc.bKR=false;
+    nc.bQR=false;
+  }
+
   if(p==='R'&&move.fr===7&&move.fc===0) nc.wQR=false;
   if(p==='R'&&move.fr===7&&move.fc===7) nc.wKR=false;
   if(p==='r'&&move.fr===0&&move.fc===0) nc.bQR=false;
   if(p==='r'&&move.fr===0&&move.fc===7) nc.bKR=false;
+
   if(move.tr===7&&move.tc===0) nc.wQR=false;
   if(move.tr===7&&move.tc===7) nc.wKR=false;
   if(move.tr===0&&move.tc===0) nc.bQR=false;
   if(move.tr===0&&move.tc===7) nc.bKR=false;
 
-  if(pt==='p' && Math.abs(move.tr-move.fr)===2)
-    nep=[(move.fr+move.tr)/2, move.fc];
+  if(pt==='p'&&Math.abs(move.tr-move.fr)===2){
+    nep=[(move.fr+move.tr)/2,move.fc];
+  }
 
-  return {board:nb, castling:nc, enPassant:nep};
+  return {
+    board:nb,
+    castling:nc,
+    enPassant:nep
+  };
 }
 
-function pseudoMoves(board, color, castling, enPassant){
-  const moves=[];
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const p=board[r][c]; if(!p||colorOf(p)!==color) continue;
-    const pt=p.toLowerCase();
+function pseudoMoves(board,color,castling,enPassant){
 
-    if(pt==='p'){
-      const dir=color==='w'?-1:1;
-      const start=color==='w'?6:1, promoRank=color==='w'?0:7;
-      if(inBounds(r+dir,c)&&!board[r+dir][c]){
-        if(r+dir===promoRank){ for(const pr of['q','r','b','n']) moves.push({fr:r,fc:c,tr:r+dir,tc:c,promo:pr}); }
-        else { moves.push({fr:r,fc:c,tr:r+dir,tc:c}); }
-        if(r===start&&!board[r+2*dir][c]) moves.push({fr:r,fc:c,tr:r+2*dir,tc:c});
-      }
-      for(const dc of[-1,1]){
-        const nr=r+dir,nc=c+dc; if(!inBounds(nr,nc)) continue;
-        const tgt=board[nr][nc];
-        if(tgt&&colorOf(tgt)!==color){
-          if(nr===promoRank){ for(const pr of['q','r','b','n']) moves.push({fr:r,fc:c,tr:nr,tc:nc,promo:pr}); }
-          else moves.push({fr:r,fc:c,tr:nr,tc:nc});
+  const moves=[];
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+
+      const p=board[r][c];
+
+      if(!p||colorOf(p)!==color) continue;
+
+      const pt=p.toLowerCase();
+
+      if(pt==='p'){
+
+        const dir=color==='w'?-1:1;
+        const start=color==='w'?6:1;
+        const promoRank=color==='w'?0:7;
+
+        if(inBounds(r+dir,c)&&!board[r+dir][c]){
+
+          if(r+dir===promoRank){
+            for(const pr of ['q','r','b','n']){
+              moves.push({
+                fr:r,fc:c,
+                tr:r+dir,tc:c,
+                promo:pr
+              });
+            }
+          }else{
+            moves.push({
+              fr:r,fc:c,
+              tr:r+dir,tc:c
+            });
+          }
+
+          if(r===start&&!board[r+2*dir][c]){
+            moves.push({
+              fr:r,fc:c,
+              tr:r+2*dir,tc:c
+            });
+          }
         }
-        if(enPassant&&enPassant[0]===nr&&enPassant[1]===nc)
-          moves.push({fr:r,fc:c,tr:nr,tc:nc,isEnPassant:true});
-      }
-    }
-    else if(pt==='n'){
-      for(const [dr,dc] of[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]){
-        const nr=r+dr,nc=c+dc;
-        if(inBounds(nr,nc)&&colorOf(board[nr][nc])!==color) moves.push({fr:r,fc:c,tr:nr,tc:nc});
-      }
-    }
-    else if(pt==='k'){
-      for(const [dr,dc] of[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]){
-        const nr=r+dr,nc=c+dc;
-        if(inBounds(nr,nc)&&colorOf(board[nr][nc])!==color) moves.push({fr:r,fc:c,tr:nr,tc:nc});
-      }
-      if(color==='w'&&r===7&&c===4){
-        if(castling.wK&&castling.wKR&&!board[7][5]&&!board[7][6]) moves.push({fr:7,fc:4,tr:7,tc:6,castleSide:'K'});
-        if(castling.wK&&castling.wQR&&!board[7][3]&&!board[7][2]&&!board[7][1]) moves.push({fr:7,fc:4,tr:7,tc:2,castleSide:'Q'});
-      }
-      if(color==='b'&&r===0&&c===4){
-        if(castling.bK&&castling.bKR&&!board[0][5]&&!board[0][6]) moves.push({fr:0,fc:4,tr:0,tc:6,castleSide:'K'});
-        if(castling.bK&&castling.bQR&&!board[0][3]&&!board[0][2]&&!board[0][1]) moves.push({fr:0,fc:4,tr:0,tc:2,castleSide:'Q'});
-      }
-    }
-    else {
-      const dirs={b:[[-1,-1],[-1,1],[1,-1],[1,1]],r:[[-1,0],[1,0],[0,-1],[0,1]],q:[[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]]}[pt];
-      for(const [dr,dc] of dirs){
-        let nr=r+dr,nc=c+dc;
-        while(inBounds(nr,nc)){
+
+        for(const dc of [-1,1]){
+
+          const nr=r+dir;
+          const nc=c+dc;
+
+          if(!inBounds(nr,nc)) continue;
+
           const tgt=board[nr][nc];
-          if(tgt){ if(colorOf(tgt)!==color) moves.push({fr:r,fc:c,tr:nr,tc:nc}); break; }
-          moves.push({fr:r,fc:c,tr:nr,tc:nc}); nr+=dr; nc+=dc;
+
+          if(tgt&&colorOf(tgt)!==color){
+
+            if(nr===promoRank){
+              for(const pr of ['q','r','b','n']){
+                moves.push({
+                  fr:r,fc:c,
+                  tr:nr,tc:nc,
+                  promo:pr
+                });
+              }
+            }else{
+              moves.push({
+                fr:r,fc:c,
+                tr:nr,tc:nc
+              });
+            }
+          }
+
+          if(enPassant&&enPassant[0]===nr&&enPassant[1]===nc){
+            const adjacent=board[r][nc];
+
+            if(adjacent&&colorOf(adjacent)!==color&&adjacent.toLowerCase()==='p'){
+              moves.push({
+                fr:r,
+                fc:c,
+                tr:nr,
+                tc:nc,
+                isEnPassant:true
+              });
+            }
+          }
+        }
+      }
+
+      else if(pt==='n'){
+
+        for(const [dr,dc] of [
+          [-2,-1],[-2,1],[-1,-2],[-1,2],
+          [1,-2],[1,2],[2,-1],[2,1]
+        ]){
+          const nr=r+dr;
+          const nc=c+dc;
+
+          if(
+            inBounds(nr,nc)&&
+            colorOf(board[nr][nc])!==color
+          ){
+            moves.push({
+              fr:r,fc:c,
+              tr:nr,tc:nc
+            });
+          }
+        }
+      }
+
+      else if(pt==='k'){
+
+        for(const [dr,dc] of [
+          [-1,-1],[-1,0],[-1,1],
+          [0,-1],[0,1],
+          [1,-1],[1,0],[1,1]
+        ]){
+          const nr=r+dr;
+          const nc=c+dc;
+
+          if(
+            inBounds(nr,nc)&&
+            colorOf(board[nr][nc])!==color
+          ){
+            moves.push({
+              fr:r,fc:c,
+              tr:nr,tc:nc
+            });
+          }
+        }
+
+        if(color==='w'&&r===7&&c===4){
+
+          if(
+            castling.wK&&
+            castling.wKR&&
+            board[7][7]==='R'&&
+            !board[7][5]&&
+            !board[7][6]
+          ){
+            moves.push({
+              fr:7,fc:4,
+              tr:7,tc:6,
+              castleSide:'K'
+            });
+          }
+
+          if(
+            castling.wK&&
+            castling.wQR&&
+            board[7][0]==='R'&&
+            !board[7][3]&&
+            !board[7][2]&&
+            !board[7][1]
+          ){
+            moves.push({
+              fr:7,fc:4,
+              tr:7,tc:2,
+              castleSide:'Q'
+            });
+          }
+        }
+
+        if(color==='b'&&r===0&&c===4){
+
+          if(
+            castling.bK&&
+            castling.bKR&&
+            board[0][7]==='r'&&
+            !board[0][5]&&
+            !board[0][6]
+          ){
+            moves.push({
+              fr:0,fc:4,
+              tr:0,tc:6,
+              castleSide:'K'
+            });
+          }
+
+          if(
+            castling.bK&&
+            castling.bQR&&
+            board[0][0]==='r'&&
+            !board[0][3]&&
+            !board[0][2]&&
+            !board[0][1]
+          ){
+            moves.push({
+              fr:0,fc:4,
+              tr:0,tc:2,
+              castleSide:'Q'
+            });
+          }
+        }
+      }
+
+      else{
+
+        const dirs={
+          b:[
+            [-1,-1],[-1,1],
+            [1,-1],[1,1]
+          ],
+          r:[
+            [-1,0],[1,0],
+            [0,-1],[0,1]
+          ],
+          q:[
+            [-1,-1],[-1,1],
+            [1,-1],[1,1],
+            [-1,0],[1,0],
+            [0,-1],[0,1]
+          ]
+        }[pt];
+
+        for(const [dr,dc] of dirs){
+
+          let nr=r+dr;
+          let nc=c+dc;
+
+          while(inBounds(nr,nc)){
+
+            const tgt=board[nr][nc];
+
+            if(tgt){
+
+              if(colorOf(tgt)!==color){
+                moves.push({
+                  fr:r,fc:c,
+                  tr:nr,tc:nc
+                });
+              }
+
+              break;
+            }
+
+            moves.push({
+              fr:r,fc:c,
+              tr:nr,tc:nc
+            });
+
+            nr+=dr;
+            nc+=dc;
+          }
         }
       }
     }
   }
+
   return moves;
 }
 
-function legalMoves(board, color, castling, enPassant){
-  const pseudo=pseudoMoves(board,color,castling,enPassant);
+function legalMoves(board,color,castling,enPassant){
+
+  const pseudo=pseudoMoves(
+    board,
+    color,
+    castling,
+    enPassant
+  );
+
   const legal=[];
+
   for(const m of pseudo){
+
     if(m.castleSide){
+
       if(kingInCheck(board,color)) continue;
-      const passTc = m.castleSide==='K' ? 5 : 3;
+
+      const passTc=m.castleSide==='K'?5:3;
+
       const mid=copyBoard(board);
-      mid[m.fr][passTc]=mid[m.fr][m.fc]; mid[m.fr][m.fc]=null;
-      if(isAttacked(mid,m.fr,passTc,opp(color))) continue;
+
+      mid[m.fr][passTc]=mid[m.fr][m.fc];
+      mid[m.fr][m.fc]=null;
+
+      if(isAttacked(mid,m.fr,passTc,opp(color))){
+        continue;
+      }
     }
-    const {board:nb}=doMove(board,m,castling,enPassant);
-    if(!kingInCheck(nb,color)) legal.push(m);
+
+    const result=doMove(
+      board,
+      m,
+      castling,
+      enPassant
+    );
+
+    if(!kingInCheck(result.board,color)){
+      legal.push(m);
+    }
   }
+
   return legal;
 }
 
 function insufficientMaterial(board){
-  const wp=[],bp=[];
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const p=board[r][c]; if(!p||p.toLowerCase()==='k') continue;
-    (colorOf(p)==='w'?wp:bp).push({t:p.toLowerCase(),r,c});
+
+  const pieces=[];
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+
+      const p=board[r][c];
+
+      if(!p||p.toLowerCase()==='k') continue;
+
+      pieces.push({
+        t:p.toLowerCase(),
+        r,
+        c,
+        color:colorOf(p)
+      });
+    }
   }
-  if(wp.length===0&&bp.length===0) return true;
-  if(wp.length===0&&bp.length===1&&(bp[0].t==='b'||bp[0].t==='n')) return true;
-  if(bp.length===0&&wp.length===1&&(wp[0].t==='b'||wp[0].t==='n')) return true;
-  if(wp.length===1&&bp.length===1&&wp[0].t==='b'&&bp[0].t==='b')
-    if((wp[0].r+wp[0].c)%2===(bp[0].r+bp[0].c)%2) return true;
+
+  if(pieces.length===0) return true;
+
+  if(
+    pieces.length===1&&
+    (pieces[0].t==='b'||pieces[0].t==='n')
+  ){
+    return true;
+  }
+
+  if(
+    pieces.length===2&&
+    pieces.every(p=>p.t==='b')&&
+    (pieces[0].r+pieces[0].c)%2===
+    (pieces[1].r+pieces[1].c)%2
+  ){
+    return true;
+  }
+
   return false;
 }
 
-function posKey(board,color,castling,enPassant){
-  return board.map(r=>r.map(p=>p||'.').join('')).join('|')+'|'+color
-    +'|'+(castling.wK?1:0)+(castling.wKR?1:0)+(castling.wQR?1:0)
-    +(castling.bK?1:0)+(castling.bKR?1:0)+(castling.bQR?1:0)
-    +'|'+(enPassant?enPassant.join(','):'-');
+function effectiveEnPassant(board,color,enPassant,castling){
+
+  if(!enPassant) return null;
+
+  const moves=legalMovesWithoutEpRecursion(
+    board,
+    color,
+    castling,
+    enPassant
+  );
+
+  const exists=moves.some(m=>m.isEnPassant);
+
+  return exists?enPassant:null;
 }
 
-function evalStatus(board,color,castling,enPassant,halfClock,posHist){
-  const moves=legalMoves(board,color,castling,enPassant);
-  if(moves.length===0) return kingInCheck(board,color)?'checkmate':'stalemate';
-  if(kingInCheck(board,color)) return 'check';
-  if(halfClock>=100) return 'fifty';
-  if(insufficientMaterial(board)) return 'insufficient';
-  if(posHist){
-    const key=posKey(board,color,castling,enPassant);
-    if(posHist.filter(k=>k===key).length>=3) return 'repetition';
+function legalMovesWithoutEpRecursion(board,color,castling,enPassant){
+
+  const pseudo=pseudoMoves(
+    board,
+    color,
+    castling,
+    enPassant
+  );
+
+  const legal=[];
+
+  for(const m of pseudo){
+
+    if(m.castleSide){
+
+      if(kingInCheck(board,color)) continue;
+
+      const passTc=m.castleSide==='K'?5:3;
+
+      const mid=copyBoard(board);
+
+      mid[m.fr][passTc]=mid[m.fr][m.fc];
+      mid[m.fr][m.fc]=null;
+
+      if(isAttacked(mid,m.fr,passTc,opp(color))) continue;
+    }
+
+    const result=doMove(
+      board,
+      m,
+      castling,
+      enPassant
+    );
+
+    if(!kingInCheck(result.board,color)){
+      legal.push(m);
+    }
   }
+
+  return legal;
+}
+
+function posKey(board,color,castling,enPassant){
+
+  const ep=effectiveEnPassant(
+    board,
+    color,
+    enPassant,
+    castling
+  );
+
+  return board.map(r=>r.map(p=>p||'.').join('')).join('|')
+    +'|'+color
+    +'|'+
+    (castling.wK?1:0)+
+    (castling.wKR?1:0)+
+    (castling.wQR?1:0)+
+    (castling.bK?1:0)+
+    (castling.bKR?1:0)+
+    (castling.bQR?1:0)
+    +'|'+
+    (ep?ep.join(','):'-');
+}
+
+function evalStatus(
+  board,
+  color,
+  castling,
+  enPassant,
+  halfClock,
+  posHist
+){
+
+  const moves=legalMoves(
+    board,
+    color,
+    castling,
+    enPassant
+  );
+
+  if(moves.length===0){
+    return kingInCheck(board,color)
+      ?'checkmate'
+      :'stalemate';
+  }
+
+  if(kingInCheck(board,color)) return 'check';
+
+  if(halfClock>=100) return 'fifty';
+
+  if(insufficientMaterial(board)) return 'insufficient';
+
+  if(posHist){
+
+    const key=posKey(
+      board,
+      color,
+      castling,
+      enPassant
+    );
+
+    if(posHist.filter(k=>k===key).length>=3){
+      return 'repetition';
+    }
+  }
+
   return 'playing';
 }
 
-function toSAN(board, move, color, castling, enPassant){
+function toSAN(
+  board,
+  move,
+  color,
+  castling,
+  enPassant
+){
+
   if(move.castleSide==='K') return 'O-O';
   if(move.castleSide==='Q') return 'O-O-O';
-  const p=board[move.fr][move.fc]; if(!p) return '?';
+
+  const p=board[move.fr][move.fc];
+
+  if(!p) return '?';
+
   const pt=p.toLowerCase();
-  const isCapture=!!board[move.tr][move.tc]||move.isEnPassant;
-  const df=FILES_STR[move.tc], dr=String(8-move.tr);
+
+  const isCapture=
+    !!board[move.tr][move.tc]||
+    move.isEnPassant;
+
+  const df=FILES_STR[move.tc];
+  const dr=String(8-move.tr);
+
   if(pt==='p'){
-    let n=isCapture?FILES_STR[move.fc]+'x':'';
+
+    let n=isCapture
+      ?FILES_STR[move.fc]+'x'
+      :'';
+
     n+=df+dr;
-    if(move.promo) n+='='+move.promo.toUpperCase();
+
+    if(move.promo){
+      n+='='+move.promo.toUpperCase();
+    }
+
     return n;
   }
-  const all=legalMoves(board,color,castling,enPassant);
-  const amb=all.filter(m=>m!==move&&board[m.fr][m.fc]&&board[m.fr][m.fc].toLowerCase()===pt&&m.tr===move.tr&&m.tc===move.tc);
+
+  const all=legalMoves(
+    board,
+    color,
+    castling,
+    enPassant
+  );
+
+  const amb=all.filter(m=>
+    m!==move&&
+    board[m.fr][m.fc]&&
+    board[m.fr][m.fc].toLowerCase()===pt&&
+    m.tr===move.tr&&
+    m.tc===move.tc
+  );
+
   let prefix=pt.toUpperCase();
-  if(amb.length>0){
+
+  if(amb.length){
+
     const sameFile=amb.some(m=>m.fc===move.fc);
     const sameRank=amb.some(m=>m.fr===move.fr);
-    if(!sameFile)      prefix+=FILES_STR[move.fc];
-    else if(!sameRank) prefix+=String(8-move.fr);
-    else               prefix+=FILES_STR[move.fc]+String(8-move.fr);
+
+    if(!sameFile){
+      prefix+=FILES_STR[move.fc];
+    }else if(!sameRank){
+      prefix+=String(8-move.fr);
+    }else{
+      prefix+=FILES_STR[move.fc]+String(8-move.fr);
+    }
   }
-  return prefix+(isCapture?'x':'')+df+dr;
+
+  return prefix+
+    (isCapture?'x':'')+
+    df+
+    dr;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  FIREBASE / LOBBY
-// ══════════════════════════════════════════════════════════════
+
+/* ============================================================
+   FIREBASE
+============================================================ */
+
 const FB='https://chest-188bb-default-rtdb.firebaseio.com';
-const MOVE_TIME=30, CODE_EXPIRE=300, DISCONNECT_GRACE=20000, GAME_START_GRACE=15000;
-const USERNAME_GRACE=15000, PUBLIC_POLL=2500;
+
+const MOVE_TIME=30;
+const CODE_EXPIRE=300;
+const DISCONNECT_GRACE=20000;
+const GAME_START_GRACE=15000;
+const USERNAME_GRACE=15000;
+const PUBLIC_POLL=2500;
+
 const MY_ID=Math.random().toString(36).slice(2,10);
-let roomId=null, myColor=null, myName='';
-let roomType='private', gameStarted=false, spectatorEnabled=false, isSpectator=false;
-let livePollTimer=null, spectatorPollTimer=null, spectatorChatTimer=null, spectatorTimerInterval=null;
-let spectatorRoomId=null, spectatorLastChat=0;
-let pollTimer=null, lastSeq=-1, timerInterval=null, publicPollTimer=null;
-let usernameHeartbeatTimer=null, usernameKey=null;
-let moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME}, turnStartedAt=Date.now();
-let gameEnded=false, heartbeatTimer=null, codeExpireTimer=null, gameStartTime=null;
+
+let roomId=null;
+let myColor=null;
+let myName='';
+
+let roomType='private';
+let gameStarted=false;
+let spectatorEnabled=false;
+let isSpectator=false;
+
+let livePollTimer=null;
+let spectatorPollTimer=null;
+let spectatorChatTimer=null;
+let spectatorTimerInterval=null;
+
+let spectatorRoomId=null;
+let spectatorLastChat=0;
+
+let pollTimer=null;
+let lastSeq=-1;
+let timerInterval=null;
+let publicPollTimer=null;
+
+let usernameHeartbeatTimer=null;
+let usernameKey=null;
+
+let moveTimeLeft={
+  w:MOVE_TIME,
+  b:MOVE_TIME
+};
+
+let turnStartedAt=Date.now();
+
+let gameEnded=false;
+let heartbeatTimer=null;
+let codeExpireTimer=null;
+let gameStartTime=null;
+
+let leaveProcessed=false;
+let timeoutProcessed=false;
+let drawOfferPending=false;
+
+
+/* ============================================================
+   FIREBASE HELPERS
+============================================================ */
+
+async function fbSet(path,data){
+  try{
+    const r=await fetch(
+      `${FB}/${path}.json`,
+      {
+        method:'PUT',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify(data)
+      }
+    );
+
+    return r.ok;
+  }catch(e){
+    return false;
+  }
+}
+
+async function fbPatch(path,data,keepalive=false){
+  try{
+    const r=await fetch(
+      `${FB}/${path}.json`,
+      {
+        method:'PATCH',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify(data),
+        keepalive
+      }
+    );
+
+    return r.ok;
+  }catch(e){
+    return false;
+  }
+}
+
+async function fbGet(path){
+  try{
+    const r=await fetch(
+      `${FB}/${path}.json`,
+      {
+        cache:'no-store'
+      }
+    );
+
+    return r.ok?r.json():null;
+  }catch(e){
+    return null;
+  }
+}
+
+async function fbDelete(path,keepalive=false){
+  try{
+    const r=await fetch(
+      `${FB}/${path}.json`,
+      {
+        method:'DELETE',
+        keepalive
+      }
+    );
+
+    return r.ok;
+  }catch(e){
+    return false;
+  }
+}
+
+
+/*
+  Firebase REST conditional requests.
+
+  This prevents two players from successfully claiming
+  the same empty black-player slot at exactly the same time.
+*/
+async function fbClaimBlack(code){
+
+  try{
+
+    const read=await fetch(
+      `${FB}/rooms/${code}.json`,
+      {
+        headers:{
+          'X-Firebase-ETag':'true'
+        },
+        cache:'no-store'
+      }
+    );
+
+    if(!read.ok){
+      return {
+        ok:false,
+        reason:'not-found'
+      };
+    }
+
+    const room=await read.json();
+    const etag=read.headers.get('ETag');
+
+    if(!room||!etag){
+      return {
+        ok:false,
+        reason:'unavailable'
+      };
+    }
+
+    if(room.black){
+      return {
+        ok:false,
+        reason:'full'
+      };
+    }
+
+    if(room.expires&&Date.now()>room.expires){
+      return {
+        ok:false,
+        reason:'expired'
+      };
+    }
+
+    const next={
+      ...room,
+      black:MY_ID,
+      blackName:myName,
+      heartbeat_black:Date.now(),
+      status:'playing'
+    };
+
+    const write=await fetch(
+      `${FB}/rooms/${code}.json`,
+      {
+        method:'PUT',
+        headers:{
+          'Content-Type':'application/json',
+          'if-match':etag
+        },
+        body:JSON.stringify(next)
+      }
+    );
+
+    if(write.status===412){
+      return {
+        ok:false,
+        reason:'race'
+      };
+    }
+
+    if(!write.ok){
+      return {
+        ok:false,
+        reason:'write'
+      };
+    }
+
+    return {
+      ok:true,
+      room:next
+    };
+
+  }catch(e){
+
+    return {
+      ok:false,
+      reason:'network'
+    };
+  }
+}
+
+
+function safeKey(s){
+  return encodeURIComponent(
+    s.trim().toLowerCase()
+  ).replace(/\./g,'%2E');
+}
+
+function cleanName(s){
+  return s
+    .replace(/[^a-zA-Z0-9 _-]/g,'')
+    .trim()
+    .replace(/\s+/g,' ');
+}
+
+function escapeHtml(s){
+  return String(s).replace(
+    /[&<>"']/g,
+    c=>({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c])
+  );
+}
 
 function showToast(msg,ms=2500){
-  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),ms);
+  const el=document.getElementById('toast');
+
+  el.textContent=msg;
+  el.classList.add('show');
+
+  setTimeout(()=>{
+    el.classList.remove('show');
+  },ms);
 }
-function lobbyStatus(html){ document.getElementById('lobby-status').innerHTML=html; }
-function nameStatus(html){ document.getElementById('name-status').innerHTML=html; }
 
-async function fbSet(p,d){ const r=await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }
-async function fbPatch(p,d){ const r=await fetch(`${FB}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); return r.ok; }
-async function fbGet(p){ const r=await fetch(`${FB}/${p}.json`); return r.ok ? r.json() : null; }
-async function fbDelete(p){ try{ await fetch(`${FB}/${p}.json`,{method:'DELETE',keepalive:true}); }catch(e){} }
+function lobbyStatus(html){
+  document.getElementById('lobby-status').innerHTML=html;
+}
 
-function safeKey(s){ return encodeURIComponent(s.trim().toLowerCase()).replace(/\./g,'%2E'); }
-function cleanName(s){ return s.replace(/[^a-zA-Z0-9 _-]/g,'').trim().replace(/\s+/g,' '); }
+function nameStatus(html){
+  document.getElementById('name-status').innerHTML=html;
+}
+
+
+/* ============================================================
+   USERNAME
+============================================================ */
 
 async function claimUsername(){
+
   const input=document.getElementById('name-input');
+
   const name=cleanName(input.value);
-  if(name.length<2||name.length>20){ nameStatus('<span class="warn">Use 2–20 letters, numbers, spaces, _ or -.</span>'); return; }
-  const key=safeKey(name);
-  nameStatus('Checking name…');
-  const existing=await fbGet(`activeUsers/${key}`);
-  if(existing && existing.id!==MY_ID && existing.heartbeat && Date.now()-existing.heartbeat<USERNAME_GRACE){
-    nameStatus('<span class="warn">That username is currently in use.</span>');
+
+  if(name.length<2||name.length>20){
+
+    nameStatus(
+      '<span class="warn">Use 2–20 letters, numbers, spaces, _ or -.</span>'
+    );
+
     return;
   }
-  myName=name; usernameKey=key;
-  const ok=await fbSet(`activeUsers/${key}`,{id:MY_ID,name:myName,heartbeat:Date.now()});
-  if(!ok){ nameStatus('<span class="warn">Could not claim the username. Try again.</span>'); return; }
-  document.getElementById('name-screen').classList.add('hidden');
-  document.getElementById('player-name-display').textContent=`Playing as ${myName}`;
+
+  const key=safeKey(name);
+
+  nameStatus('Checking name…');
+
+  const existing=await fbGet(`activeUsers/${key}`);
+
+  if(
+    existing&&
+    existing.id!==MY_ID&&
+    existing.heartbeat&&
+    Date.now()-existing.heartbeat<USERNAME_GRACE
+  ){
+
+    nameStatus(
+      '<span class="warn">That username is currently in use.</span>'
+    );
+
+    return;
+  }
+
+  myName=name;
+  usernameKey=key;
+
+  const ok=await fbSet(
+    `activeUsers/${key}`,
+    {
+      id:MY_ID,
+      name:myName,
+      heartbeat:Date.now()
+    }
+  );
+
+  if(!ok){
+
+    nameStatus(
+      '<span class="warn">Could not claim the username. Try again.</span>'
+    );
+
+    return;
+  }
+
+  document.getElementById('name-screen')
+    .classList.add('hidden');
+
+  document.getElementById('player-name-display')
+    .textContent=`Playing as ${myName}`;
+
   startUsernamePresence();
+
   nameStatus('');
+
   checkAutoJoin();
+
   loadPublicRooms();
 }
 
 function startUsernamePresence(){
-  if(usernameHeartbeatTimer) clearInterval(usernameHeartbeatTimer);
+
+  if(usernameHeartbeatTimer){
+    clearInterval(usernameHeartbeatTimer);
+  }
+
   usernameHeartbeatTimer=setInterval(async()=>{
+
     if(!usernameKey) return;
-    await fbPatch(`activeUsers/${usernameKey}`,{id:MY_ID,name:myName,heartbeat:Date.now()});
+
+    await fbPatch(
+      `activeUsers/${usernameKey}`,
+      {
+        id:MY_ID,
+        name:myName,
+        heartbeat:Date.now()
+      }
+    );
+
   },5000);
 }
 
 function releaseUsername(){
+
   if(!usernameKey) return;
+
   try{
-    fetch(`${FB}/activeUsers/${usernameKey}.json`,{method:'DELETE',keepalive:true});
+
+    fetch(
+      `${FB}/activeUsers/${usernameKey}.json`,
+      {
+        method:'DELETE',
+        keepalive:true
+      }
+    );
+
   }catch(e){}
 }
 
+
+/* ============================================================
+   PAGE NAVIGATION
+============================================================ */
+
 function showPage(page){
+
   if(isSpectator) return;
-  const lobby=document.getElementById('lobby'), pub=document.getElementById('public-page'), live=document.getElementById('live-page');
-  const a=document.getElementById('tab-lobby'), b=document.getElementById('tab-public'), c=document.getElementById('tab-live');
-  const isPub=page==='public', isLive=page==='live';
-  lobby.classList.toggle('hidden',isPub||isLive);
-  pub.classList.toggle('hidden',!isPub);
-  live.classList.toggle('hidden',!isLive);
-  a.classList.toggle('active',!isPub&&!isLive); b.classList.toggle('active',isPub); c.classList.toggle('active',isLive);
-  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
-  if(livePollTimer){clearInterval(livePollTimer);livePollTimer=null;}
+
+  const lobby=document.getElementById('lobby');
+  const pub=document.getElementById('public-page');
+  const live=document.getElementById('live-page');
+
+  const a=document.getElementById('tab-lobby');
+  const b=document.getElementById('tab-public');
+  const c=document.getElementById('tab-live');
+
+  const isPub=page==='public';
+  const isLive=page==='live';
+
+  lobby.classList.toggle(
+    'hidden',
+    isPub||isLive
+  );
+
+  pub.classList.toggle(
+    'hidden',
+    !isPub
+  );
+
+  live.classList.toggle(
+    'hidden',
+    !isLive
+  );
+
+  a.classList.toggle(
+    'active',
+    !isPub&&!isLive
+  );
+
+  b.classList.toggle(
+    'active',
+    isPub
+  );
+
+  c.classList.toggle(
+    'active',
+    isLive
+  );
+
+  if(publicPollTimer){
+    clearInterval(publicPollTimer);
+    publicPollTimer=null;
+  }
+
+  if(livePollTimer){
+    clearInterval(livePollTimer);
+    livePollTimer=null;
+  }
+
   if(isPub){
+
     loadPublicRooms();
-    publicPollTimer=setInterval(loadPublicRooms,PUBLIC_POLL);
+
+    publicPollTimer=setInterval(
+      loadPublicRooms,
+      PUBLIC_POLL
+    );
+
   }else if(isLive){
+
     loadLiveGames();
-    livePollTimer=setInterval(loadLiveGames,PUBLIC_POLL);
+
+    livePollTimer=setInterval(
+      loadLiveGames,
+      PUBLIC_POLL
+    );
   }
 }
 
-function openCreateType(){ document.getElementById('create-type-modal').classList.add('show'); }
-function closeCreateType(){ document.getElementById('create-type-modal').classList.remove('show'); }
 
-function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.random()*c.length|0]).join(''); }
-function getRoomLink(code){ const u=new URL(location.href); u.search=''; u.searchParams.set('join',code); return u.toString(); }
-function copyRoomLink(){ if(!roomId){showToast('Create a room first');return;} navigator.clipboard.writeText(getRoomLink(roomId)).then(()=>showToast('Link copied!')); }
+/* ============================================================
+   ROOM CREATION
+============================================================ */
+
+function openCreateType(){
+  document
+    .getElementById('create-type-modal')
+    .classList.add('show');
+}
+
+function closeCreateType(){
+  document
+    .getElementById('create-type-modal')
+    .classList.remove('show');
+}
+
+function genCode(){
+
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  return Array.from(
+    {length:6},
+    ()=>chars[Math.random()*chars.length|0]
+  ).join('');
+}
+
+function getRoomLink(code){
+
+  const u=new URL(location.href);
+
+  u.search='';
+
+  u.searchParams.set(
+    'join',
+    code
+  );
+
+  return u.toString();
+}
+
+function copyRoomLink(){
+
+  if(!roomId){
+    showToast('Create a room first');
+    return;
+  }
+
+  navigator.clipboard
+    .writeText(getRoomLink(roomId))
+    .then(()=>{
+      showToast('Link copied!');
+    })
+    .catch(()=>{
+      showToast('Could not copy link');
+    });
+}
+
 function emailInvite(){
-  if(!roomId){showToast('Create a room first');return;}
-  const link=getRoomLink(roomId), subj=encodeURIComponent('Join my Chess game!');
-  const body=encodeURIComponent(`I challenge you to chess!\n\nJoin instantly:\n${link}\n\nOr enter code: ${roomId}\n\nSee you on the board! ♟`);
-  window.location.href=`mailto:?subject=${subj}&body=${body}`;
+
+  if(!roomId){
+    showToast('Create a room first');
+    return;
+  }
+
+  const link=getRoomLink(roomId);
+
+  const subj=encodeURIComponent(
+    'Join my Chess game!'
+  );
+
+  const body=encodeURIComponent(
+    `I challenge you to chess!\n\n`+
+    `Join instantly:\n${link}\n\n`+
+    `Or enter code: ${roomId}\n\n`+
+    `See you on the board! ♟`
+  );
+
+  window.location.href=
+    `mailto:?subject=${subj}&body=${body}`;
 }
 
 function checkAutoJoin(){
-  const p=new URLSearchParams(location.search), code=p.get('join');
+
+  const p=new URLSearchParams(
+    location.search
+  );
+
+  const code=p.get('join');
+
   if(code&&code.length===6){
-    document.getElementById('join-id').value=code.toUpperCase();
-    const u=new URL(location.href); u.searchParams.delete('join'); history.replaceState({},'',u.toString());
-    setTimeout(joinRoom,300);
+
+    document.getElementById('join-id')
+      .value=code.toUpperCase();
+
+    const u=new URL(location.href);
+
+    u.searchParams.delete('join');
+
+    history.replaceState(
+      {},
+      '',
+      u.toString()
+    );
+
+    setTimeout(
+      joinRoom,
+      300
+    );
   }
 }
 
 async function createRoom(type='private'){
+
   closeCreateType();
-  if(!myName){showToast('Choose a username first');return;}
-  lobbyStatus('Creating room…');
-  roomType=type;
-  spectatorEnabled=!!document.getElementById('spectators-toggle')?.checked;
-  const code=genCode(); roomId=code; myColor='w';
-  const now=Date.now();
-  await fbSet(`rooms/${code}`,{
-    white:MY_ID, whiteName:myName, black:null, blackName:null,
-    seq:0, move:null, created:now, expires:now+CODE_EXPIRE*1000,
-    event:null, type:type, status:'waiting', hostName:myName, spectatorEnabled:spectatorEnabled,
-    whiteName:myName, blackName:null, heartbeat_white:now, heartbeat_black:null,
-    state:null, chat:null
-  });
-  document.getElementById('room-actions').classList.remove('hidden');
-  let secs=CODE_EXPIRE;
-  function tick(){
-    secs--;
-    if(secs<=0){
-      clearInterval(codeExpireTimer); codeExpireTimer=null; fbDelete(`rooms/${code}`);
-      lobbyStatus('<span class="warn">Room expired.</span>');
-      document.getElementById('room-actions').classList.add('hidden'); roomId=null; return;
-    }
-    const m=Math.floor(secs/60),s=secs%60;
-    lobbyStatus(`${type==='public'?'Public':'Private'} Room Code:<div class="code">${code}</div>Share with your opponent.<br><small style="color:var(--muted)">Expires in ${m}:${String(s).padStart(2,'0')}</small>`);
+
+  if(!myName){
+    showToast('Choose a username first');
+    return;
   }
-  lobbyStatus(`${type==='public'?'Public':'Private'} Room Code:<div class="code">${code}</div>${type==='public'?'Visible in Public Lobbies.':'Share with your opponent.'}<br><small style="color:var(--muted)">Expires in 5:00</small>`);
-  codeExpireTimer=setInterval(tick,1000);
-  if(type==='public') loadPublicRooms();
-  pollTimer=setInterval(async()=>{
-    const room=await fbGet(`rooms/${code}`);
-    if(room&&room.black){
-      clearInterval(pollTimer); pollTimer=null;
-      clearInterval(codeExpireTimer); codeExpireTimer=null;
-      await fbPatch(`rooms/${code}`,{status:'playing'});
-      startGame();
+
+  if(roomId){
+    showToast('You already have a room open.');
+    return;
+  }
+
+  lobbyStatus('Creating room…');
+
+  roomType=type;
+
+  spectatorEnabled=!!document
+    .getElementById('spectators-toggle')
+    ?.checked;
+
+  const code=genCode();
+
+  roomId=code;
+  myColor='w';
+
+  const now=Date.now();
+
+  const createdRoom={
+    white:MY_ID,
+    whiteName:myName,
+
+    black:null,
+    blackName:null,
+
+    seq:0,
+    move:null,
+
+    created:now,
+    expires:now+CODE_EXPIRE*1000,
+
+    event:null,
+
+    type:type,
+    status:'waiting',
+
+    hostName:myName,
+
+    spectatorEnabled:spectatorEnabled,
+
+    heartbeat_white:now,
+    heartbeat_black:null,
+
+    state:null,
+    chat:null
+  };
+
+  const ok=await fbSet(
+    `rooms/${code}`,
+    createdRoom
+  );
+
+  if(!ok){
+
+    roomId=null;
+    myColor=null;
+
+    lobbyStatus(
+      '<span class="warn">Could not create the room.</span>'
+    );
+
+    return;
+  }
+
+  document.getElementById('room-actions')
+    .classList.remove('hidden');
+
+  let secs=CODE_EXPIRE;
+
+  function tick(){
+
+    if(gameStarted||!roomId){
+      clearInterval(codeExpireTimer);
+      codeExpireTimer=null;
+      return;
     }
-  },1200);
+
+    secs--;
+
+    if(secs<=0){
+
+      clearInterval(codeExpireTimer);
+      codeExpireTimer=null;
+
+      fbDelete(`rooms/${code}`);
+
+      lobbyStatus(
+        '<span class="warn">Room expired.</span>'
+      );
+
+      document.getElementById('room-actions')
+        .classList.add('hidden');
+
+      roomId=null;
+      myColor=null;
+
+      return;
+    }
+
+    const m=Math.floor(secs/60);
+    const s=secs%60;
+
+    lobbyStatus(
+      `${type==='public'?'Public':'Private'} Room Code:`+
+      `<div class="code">${code}</div>`+
+      `${type==='public'
+        ?'Visible in Public Lobbies.'
+        :'Share with your opponent.'}`+
+      `<br><small style="color:var(--muted)">`+
+      `Expires in ${m}:${String(s).padStart(2,'0')}`+
+      `</small>`
+    );
+  }
+
+  tick();
+
+  codeExpireTimer=setInterval(
+    tick,
+    1000
+  );
+
+  if(type==='public'){
+    loadPublicRooms();
+  }
+
+  if(pollTimer){
+    clearInterval(pollTimer);
+  }
+
+  pollTimer=setInterval(
+    async()=>{
+
+      if(!roomId||roomId!==code||gameStarted){
+        clearInterval(pollTimer);
+        pollTimer=null;
+        return;
+      }
+
+      const room=await fbGet(
+        `rooms/${code}`
+      );
+
+      if(!room){
+
+        clearInterval(pollTimer);
+        pollTimer=null;
+
+        lobbyStatus(
+          '<span class="warn">Room closed.</span>'
+        );
+
+        return;
+      }
+
+      if(room.black){
+
+        clearInterval(pollTimer);
+        pollTimer=null;
+
+        clearInterval(codeExpireTimer);
+        codeExpireTimer=null;
+
+        gameStarted=true;
+
+        await fbPatch(
+          `rooms/${code}`,
+          {
+            status:'playing'
+          }
+        );
+
+        startGame();
+      }
+
+    },
+    1000
+  );
 }
+
+
+/* ============================================================
+   PUBLIC LOBBIES
+============================================================ */
 
 async function loadPublicRooms(){
-  const list=document.getElementById('public-list'); if(!list) return;
+
+  const list=document.getElementById(
+    'public-list'
+  );
+
+  if(!list||isSpectator) return;
+
   const rooms=await fbGet('rooms');
+
   const now=Date.now();
   const arr=[];
+
   if(rooms){
+
     for(const [code,r] of Object.entries(rooms)){
-      if(!r||r.type!=='public'||r.status!=='waiting'||r.black||!r.white) continue;
-      if(r.expires&&now>r.expires){ fbDelete(`rooms/${code}`); continue; }
-      arr.push({code,...r});
+
+      if(
+        !r||
+        r.type!=='public'||
+        r.status!=='waiting'||
+        r.black||
+        !r.white
+      ){
+        continue;
+      }
+
+      if(
+        r.expires&&
+        now>r.expires
+      ){
+        fbDelete(`rooms/${code}`);
+        continue;
+      }
+
+      if(
+        r.heartbeat_white&&
+        now-r.heartbeat_white>
+        DISCONNECT_GRACE
+      ){
+        fbDelete(`rooms/${code}`);
+        continue;
+      }
+
+      arr.push({
+        code,
+        ...r
+      });
     }
   }
-  arr.sort((a,b)=>(a.created||0)-(b.created||0));
-  if(!arr.length){ list.innerHTML='<div class="public-empty">No public lobbies are open right now.</div>'; return; }
+
+  arr.sort(
+    (a,b)=>
+      (a.created||0)-
+      (b.created||0)
+  );
+
+  if(!arr.length){
+
+    list.innerHTML=
+      '<div class="public-empty">'+
+      'No public lobbies are open right now.'+
+      '</div>';
+
+    return;
+  }
+
   list.innerHTML='';
+
   arr.forEach(r=>{
-    const row=document.createElement('div'); row.className='public-room';
+
+    const row=document.createElement('div');
+
+    row.className='public-room';
+
     const info=document.createElement('div');
-    info.innerHTML=`<div class="room-name">${escapeHtml(r.hostName||'Player')}'s Lobby</div><div class="room-host">Open game • ${escapeHtml(r.code)}</div>`;
-    const btn=document.createElement('button'); btn.textContent='Join';
-    btn.onclick=()=>joinSpecificRoom(r.code);
-    row.append(info,btn); list.appendChild(row);
+
+    info.innerHTML=
+      `<div class="room-name">`+
+      `${escapeHtml(r.hostName||'Player')}'s Lobby`+
+      `</div>`+
+      `<div class="room-host">`+
+      `Open game • ${escapeHtml(r.code)}`+
+      `</div>`;
+
+    const btn=document.createElement('button');
+
+    btn.textContent='Join';
+
+    btn.onclick=()=>{
+      joinSpecificRoom(r.code);
+    };
+
+    row.append(
+      info,
+      btn
+    );
+
+    list.appendChild(row);
   });
 }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 async function joinSpecificRoom(code){
-  document.getElementById('join-id').value=code;
+
+  if(!myName){
+    showToast('Choose a username first');
+    return;
+  }
+
+  document.getElementById('join-id')
+    .value=code;
+
   showPage('lobby');
+
   await joinRoom();
 }
 
+
+/* ============================================================
+   JOIN ROOM
+============================================================ */
+
 async function joinRoom(){
-  if(!myName){showToast('Choose a username first');return;}
-  const raw=document.getElementById('join-id').value.trim().toUpperCase();
-  if(raw.length!==6){lobbyStatus('Enter the 6-digit room code.');return;}
+
+  if(!myName){
+    showToast('Choose a username first');
+    return;
+  }
+
+  if(roomId&&gameStarted){
+    showToast('You are already in a game.');
+    return;
+  }
+
+  const raw=document
+    .getElementById('join-id')
+    .value
+    .trim()
+    .toUpperCase();
+
+  if(raw.length!==6){
+
+    lobbyStatus(
+      'Enter the 6-digit room code.'
+    );
+
+    return;
+  }
+
   lobbyStatus('Looking up room…');
-  const room=await fbGet(`rooms/${raw}`);
-  if(!room||!room.white){lobbyStatus('Room not found.');return;}
-  if(room.black){lobbyStatus('Room is already full.');return;}
-  if(room.expires&&Date.now()>room.expires){lobbyStatus('<span class="warn">Room code expired.</span>');return;}
-  roomId=raw; myColor='b'; roomType=room.type||'private'; spectatorEnabled=!!room.spectatorEnabled;
-  await fbPatch(`rooms/${raw}`,{black:MY_ID,blackName:myName,heartbeat_black:Date.now(),status:'playing'});
-  lobbyStatus('Joined! Starting…');
-  setTimeout(startGame,500);
+
+  const room=await fbGet(
+    `rooms/${raw}`
+  );
+
+  if(!room||!room.white){
+
+    lobbyStatus(
+      'Room not found.'
+    );
+
+    return;
+  }
+
+  if(room.status!=='waiting'){
+
+    lobbyStatus(
+      'That room is no longer accepting players.'
+    );
+
+    return;
+  }
+
+  if(room.black){
+
+    lobbyStatus(
+      'Room is already full.'
+    );
+
+    return;
+  }
+
+  if(
+    room.expires&&
+    Date.now()>room.expires
+  ){
+
+    lobbyStatus(
+      '<span class="warn">Room code expired.</span>'
+    );
+
+    return;
+  }
+
+  if(
+    room.heartbeat_white&&
+    Date.now()-room.heartbeat_white>
+    DISCONNECT_GRACE
+  ){
+
+    await fbDelete(
+      `rooms/${raw}`
+    );
+
+    lobbyStatus(
+      '<span class="warn">The host is no longer available.</span>'
+    );
+
+    return;
+  }
+
+  const result=await fbClaimBlack(raw);
+
+  if(!result.ok){
+
+    if(result.reason==='full'){
+
+      lobbyStatus(
+        'Room is already full.'
+      );
+
+    }else if(result.reason==='race'){
+
+      lobbyStatus(
+        'Another player joined first. Try another room.'
+      );
+
+    }else if(result.reason==='expired'){
+
+      lobbyStatus(
+        '<span class="warn">Room code expired.</span>'
+      );
+
+    }else if(result.reason==='not-found'){
+
+      lobbyStatus(
+        'Room not found.'
+      );
+
+    }else{
+
+      lobbyStatus(
+        '<span class="warn">Could not join the room. Try again.</span>'
+      );
+    }
+
+    return;
+  }
+
+  roomId=raw;
+  myColor='b';
+  roomType=room.type||'private';
+  spectatorEnabled=!!room.spectatorEnabled;
+  gameStarted=true;
+
+  lobbyStatus(
+    'Joined! Starting…'
+  );
+
+  clearInterval(codeExpireTimer);
+  codeExpireTimer=null;
+
+  setTimeout(
+    startGame,
+    300
+  );
 }
+
+
+/* ============================================================
+   GAME START
+============================================================ */
 
 function startGame(){
+
+  if(!roomId||!myColor){
+    return;
+  }
+
+  if(pollTimer){
+    clearInterval(pollTimer);
+    pollTimer=null;
+  }
+
   gameStarted=true;
-  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
-  document.getElementById('top-tabs').classList.add('hidden');
-  document.getElementById('lobby').classList.add('hidden');
-  document.getElementById('public-page').classList.add('hidden');
-  document.getElementById('game').classList.remove('hidden');
-  document.getElementById('my-color').textContent=myColor==='w'?'♔ White':'♚ Black';
-  document.getElementById('room-disp').textContent=roomId;
-  initGame(); renderBoard(); updateUI();
-  lastSeq=0; gameStartTime=Date.now();
+  gameEnded=false;
+  leaveProcessed=false;
+  timeoutProcessed=false;
+  drawOfferPending=false;
+
+  if(publicPollTimer){
+    clearInterval(publicPollTimer);
+    publicPollTimer=null;
+  }
+
+  document.getElementById('top-tabs')
+    .classList.add('hidden');
+
+  document.getElementById('lobby')
+    .classList.add('hidden');
+
+  document.getElementById('public-page')
+    .classList.add('hidden');
+
+  document.getElementById('live-page')
+    .classList.add('hidden');
+
+  document.getElementById('game')
+    .classList.remove('hidden');
+
+  document.getElementById('my-color')
+    .textContent=
+    myColor==='w'
+      ?'♔ White'
+      :'♚ Black';
+
+  document.getElementById('room-disp')
+    .textContent=roomId;
+
+  initGame();
+
+  renderBoard();
+  updateUI();
+  renderTimers();
+
+  lastSeq=0;
+  gameStartTime=Date.now();
   turnStartedAt=Date.now();
+
   awaitablePublishInitialState();
-  pollTimer=setInterval(pollMoves,900);
-  startMoveTimer(); startHeartbeat();
+
+  pollTimer=setInterval(
+    pollMoves,
+    700
+  );
+
+  startMoveTimer();
+  startHeartbeat();
 }
 
+
+/* ============================================================
+   HEARTBEAT / DISCONNECT
+============================================================ */
+
 function startHeartbeat(){
-  heartbeatTimer=setInterval(async()=>{
-    if(gameEnded){clearInterval(heartbeatTimer);return;}
-    const field=myColor==='w'?'heartbeat_white':'heartbeat_black';
-    await fbPatch(`rooms/${roomId}`,{[field]:Date.now()});
-    if(Date.now()-gameStartTime<GAME_START_GRACE) return;
-    const room=await fbGet(`rooms/${roomId}`); if(!room||gameEnded) return;
-    const oppField=myColor==='w'?'heartbeat_black':'heartbeat_white';
-    const oppHb=room[oppField];
-    if(oppHb&&(Date.now()-oppHb)>DISCONNECT_GRACE&&G.status==='playing'){
-      await broadcastEnd(myColor,'Opponent disconnected');
-      triggerGameEnd('disconnect',myColor);
-    }
-  },5000);
+
+  if(heartbeatTimer){
+    clearInterval(heartbeatTimer);
+  }
+
+  heartbeatTimer=setInterval(
+    async()=>{
+
+      if(
+        gameEnded||
+        !roomId||
+        !gameStarted
+      ){
+        clearInterval(heartbeatTimer);
+        heartbeatTimer=null;
+        return;
+      }
+
+      const field=
+        myColor==='w'
+          ?'heartbeat_white'
+          :'heartbeat_black';
+
+      await fbPatch(
+        `rooms/${roomId}`,
+        {
+          [field]:Date.now()
+        }
+      );
+
+      if(
+        Date.now()-gameStartTime<
+        GAME_START_GRACE
+      ){
+        return;
+      }
+
+      const room=await fbGet(
+        `rooms/${roomId}`
+      );
+
+      if(!room||gameEnded){
+        return;
+      }
+
+      if(
+        room.status==='ended'&&
+        room.event
+      ){
+
+        handleRemoteEnd(
+          room.event.winner,
+          room.event.reason
+        );
+
+        return;
+      }
+
+      const oppField=
+        myColor==='w'
+          ?'heartbeat_black'
+          :'heartbeat_white';
+
+      const oppHb=room[oppField];
+
+      if(
+        !oppHb||
+        Date.now()-oppHb>
+        DISCONNECT_GRACE
+      ){
+
+        if(
+          room.black&&
+          room.white
+        ){
+
+          const winner=myColor;
+
+          const reason=
+            myColor==='w'
+              ?'Black disconnected'
+              :'White disconnected';
+
+          await broadcastEnd(
+            winner,
+            reason
+          );
+
+          triggerGameEnd(
+            'disconnect',
+            winner,
+            'Opponent disconnected'
+          );
+        }
+      }
+
+    },
+    4000
+  );
+}
+
+
+/* ============================================================
+   CLOCK
+============================================================ */
+
+function currentRemaining(color){
+
+  let base=
+    Number(moveTimeLeft[color]||MOVE_TIME);
+
+  if(
+    G.status==='playing'&&
+    G.turn===color&&
+    turnStartedAt
+  ){
+
+    const elapsed=
+      Math.floor(
+        (Date.now()-turnStartedAt)/1000
+      );
+
+    base=Math.max(
+      0,
+      base-elapsed
+    );
+  }
+
+  return Math.max(
+    0,
+    Math.floor(base)
+  );
 }
 
 function startMoveTimer(){
-  if(timerInterval) clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    if(gameEnded||G.status!=='playing') return;
-    const c=G.turn; moveTimeLeft[c]--;
-    renderTimers();
-    if(moveTimeLeft[c]<=0){moveTimeLeft[c]=0;renderTimers();if(c===myColor)skipTurn(c);}
-  },1000);
+
+  if(timerInterval){
+    clearInterval(timerInterval);
+  }
+
+  renderTimers();
+
+  timerInterval=setInterval(
+    checkClock,
+    200
+  );
 }
-async function skipTurn(sc){
-  clearInterval(timerInterval); lastSeq++;
-  await fbPatch(`rooms/${roomId}`,{seq:lastSeq,move:{by:MY_ID,data:{skip:true,skippedColor:sc}}});
-  processSkip(sc);
-}
-function processSkip(sc){
-  G.log.push({color:sc,note:'(time)'}); G.turn=opp(sc); moveTimeLeft[sc]=MOVE_TIME; turnStartedAt=Date.now();
-  selected=null; legalNow=[];
-  renderBoard(); updateUI(); renderTimers(); startMoveTimer();
-}
-function renderTimers(){
-  for(const c of['w','b']){
-    const id=c==='w'?'white':'black';
-    const box=document.getElementById(`timer-${id}`), val=document.getElementById(`tv-${id}`);
-    const s=moveTimeLeft[c];
-    val.textContent=`0:${String(s).padStart(2,'0')}`;
-    box.classList.toggle('active',G.turn===c&&G.status==='playing'&&!gameEnded);
-    box.classList.toggle('urgent',s<=8&&G.turn===c&&!gameEnded);
+
+async function checkClock(){
+
+  if(
+    gameEnded||
+    !G||
+    G.status!=='playing'
+  ){
+    return;
+  }
+
+  const current=G.turn;
+  const remaining=currentRemaining(current);
+
+  renderTimers();
+
+  if(remaining<=0){
+
+    if(timeoutProcessed) return;
+
+    timeoutProcessed=true;
+
+    clearInterval(timerInterval);
+    timerInterval=null;
+
+    const winner=opp(current);
+
+    await broadcastEnd(
+      winner,
+      `${current==='w'?'White':'Black'} ran out of time`
+    );
+
+    triggerGameEnd(
+      'timeout',
+      winner,
+      `${current==='w'?'White':'Black'} ran out of time`
+    );
   }
 }
+
+function renderTimers(){
+
+  if(!G) return;
+
+  for(const c of ['w','b']){
+
+    const id=c==='w'
+      ?'white'
+      :'black';
+
+    const box=document.getElementById(
+      `timer-${id}`
+    );
+
+    const val=document.getElementById(
+      `tv-${id}`
+    );
+
+    if(!box||!val) continue;
+
+    const s=currentRemaining(c);
+
+    val.textContent=
+      `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+
+    box.classList.toggle(
+      'active',
+      G.turn===c&&
+      G.status==='playing'&&
+      !gameEnded
+    );
+
+    box.classList.toggle(
+      'urgent',
+      s<=8&&
+      G.turn===c&&
+      !gameEnded
+    );
+  }
+}
+
+
+/* ============================================================
+   MOVE POLLING
+============================================================ */
 
 async function pollMoves(){
-  if(gameEnded) return;
+
+  if(
+    gameEnded||
+    !roomId
+  ){
+    return;
+  }
+
   try{
-    const room=await fbGet(`rooms/${roomId}`); if(!room) return;
-    if(room.event&&room.event.type==='end'&&!gameEnded){handleRemoteEnd(room.event.winner,room.event.reason);return;}
-    if(room.seq>lastSeq&&room.move&&room.move.by!==MY_ID){
+
+    const room=await fbGet(
+      `rooms/${roomId}`
+    );
+
+    if(!room){
+
+      handleRemoteEnd(
+        opp(myColor),
+        'Opponent disconnected'
+      );
+
+      return;
+    }
+
+    if(
+      room.event&&
+      room.event.type==='end'&&
+      !gameEnded
+    ){
+
+      handleRemoteEnd(
+        room.event.winner,
+        room.event.reason
+      );
+
+      return;
+    }
+
+    if(
+      room.status==='ended'&&
+      room.event
+    ){
+
+      handleRemoteEnd(
+        room.event.winner,
+        room.event.reason
+      );
+
+      return;
+    }
+
+    if(
+      room.seq>lastSeq&&
+      room.move&&
+      room.move.by!==MY_ID
+    ){
+
       lastSeq=room.seq;
+
       const md=room.move.data;
-      if(md.skip)         processSkip(md.skippedColor);
-      else if(md.drawOffer) handleDrawOffer();
-      else                executeMove(md,false);
-    }else if(room.seq>lastSeq) lastSeq=room.seq;
+
+      if(md?.skip){
+
+        processSkip(
+          md.skippedColor
+        );
+
+      }else if(md?.drawOffer){
+
+        handleDrawOffer();
+
+      }else if(md?.resign){
+
+        handleRemoteEnd(
+          md.winner,
+          md.reason
+        );
+
+      }else if(md){
+
+        const remoteColor=
+          myColor==='w'
+            ?'b'
+            :'w';
+
+        if(
+          md.color&&
+          md.color!==remoteColor
+        ){
+          return;
+        }
+
+        executeMove(
+          md,
+          false
+        );
+      }
+
+    }else if(
+      room.seq>lastSeq
+    ){
+
+      lastSeq=room.seq;
+    }
+
   }catch(e){}
 }
+
 function publicState(){
+
   return {
-    board:G.board, turn:G.turn, castling:G.castling, enPassant:G.enPassant, halfClock:G.halfClock,
-    posHist:G.posHist, log:G.log, lastMove:G.lastMove, status:G.status, moveTimeLeft:moveTimeLeft,
-    turnStartedAt:turnStartedAt, updated:Date.now()
+    board:G.board,
+    turn:G.turn,
+    castling:G.castling,
+    enPassant:G.enPassant,
+    halfClock:G.halfClock,
+    posHist:G.posHist,
+    log:G.log,
+    lastMove:G.lastMove,
+    status:G.status,
+    moveTimeLeft:{
+      w:currentRemaining('w'),
+      b:currentRemaining('b')
+    },
+    turnStartedAt:turnStartedAt,
+    updated:Date.now()
   };
 }
+
 async function awaitablePublishInitialState(){
-  await fbPatch(`rooms/${roomId}`,{state:publicState(),status:'playing',spectatorEnabled:spectatorEnabled});
+
+  await fbPatch(
+    `rooms/${roomId}`,
+    {
+      state:publicState(),
+      status:'playing',
+      spectatorEnabled:spectatorEnabled
+    }
+  );
 }
+
 async function publishGameState(){
+
   if(!roomId||isSpectator) return;
-  await fbPatch(`rooms/${roomId}`,{state:publicState()});
+
+  await fbPatch(
+    `rooms/${roomId}`,
+    {
+      state:publicState()
+    }
+  );
 }
-async function sendMoveData(data){ lastSeq++; await fbPatch(`rooms/${roomId}`,{seq:lastSeq,move:{by:MY_ID,data},state:publicState()}); }
+
+async function sendMoveData(data){
+
+  if(gameEnded||!roomId) return;
+
+  lastSeq++;
+
+  await fbPatch(
+    `rooms/${roomId}`,
+    {
+      seq:lastSeq,
+      move:{
+        by:MY_ID,
+        data
+      },
+      state:publicState()
+    }
+  );
+}
+
+async function skipTurn(sc){
+
+  if(
+    gameEnded||
+    G.status!=='playing'||
+    G.turn!==sc||
+    timeoutProcessed
+  ){
+    return;
+  }
+
+  timeoutProcessed=true;
+
+  await broadcastEnd(
+    opp(sc),
+    `${sc==='w'?'White':'Black'} ran out of time`
+  );
+
+  triggerGameEnd(
+    'timeout',
+    opp(sc),
+    `${sc==='w'?'White':'Black'} ran out of time`
+  );
+}
+
+function processSkip(sc){
+
+  if(
+    !sc||
+    G.status!=='playing'||
+    G.turn!==sc
+  ){
+    return;
+  }
+
+  G.log.push({
+    color:sc,
+    note:'(time)'
+  });
+
+  G.turn=opp(sc);
+
+  moveTimeLeft[sc]=MOVE_TIME;
+
+  turnStartedAt=Date.now();
+
+  selected=null;
+  legalNow=[];
+
+  renderBoard();
+  updateUI();
+  renderTimers();
+}
+
+
+/* ============================================================
+   LIVE GAMES
+============================================================ */
 
 async function loadLiveGames(){
-  const list=document.getElementById('live-list'); if(!list||isSpectator) return;
-  const rooms=await fbGet('rooms'); const arr=[];
+
+  const list=document.getElementById(
+    'live-list'
+  );
+
+  if(!list||isSpectator) return;
+
+  const rooms=await fbGet('rooms');
+
+  const arr=[];
+
   if(rooms){
+
     for(const [code,r] of Object.entries(rooms)){
-      if(!r||r.status!=='playing'||!r.spectatorEnabled||!r.white||!r.black) continue;
-      arr.push({code,...r});
+
+      if(
+        !r||
+        r.status!=='playing'||
+        !r.spectatorEnabled||
+        !r.white||
+        !r.black
+      ){
+        continue;
+      }
+
+      arr.push({
+        code,
+        ...r
+      });
     }
   }
-  arr.sort((a,b)=>(b.created||0)-(a.created||0));
-  if(!arr.length){list.innerHTML='<div class="public-empty">No spectatable live games right now.</div>';return;}
+
+  arr.sort(
+    (a,b)=>
+      (b.created||0)-
+      (a.created||0)
+  );
+
+  if(!arr.length){
+
+    list.innerHTML=
+      '<div class="public-empty">'+
+      'No spectatable live games right now.'+
+      '</div>';
+
+    return;
+  }
+
   list.innerHTML='';
+
   arr.forEach(r=>{
-    const row=document.createElement('div'); row.className='live-game';
+
+    const row=document.createElement('div');
+
+    row.className='live-game';
+
     const info=document.createElement('div');
-    info.innerHTML=`<div class="game-title">${escapeHtml(r.whiteName||'White')} vs ${escapeHtml(r.blackName||'Black')}</div><div class="game-meta">Room ${escapeHtml(r.code)} · <span class="live-badge">● LIVE</span></div>`;
-    const btn=document.createElement('button'); btn.textContent='Spectate'; btn.onclick=()=>openSpectator(r.code);
-    row.append(info,btn); list.appendChild(row);
+
+    info.innerHTML=
+      `<div class="game-title">`+
+      `${escapeHtml(r.whiteName||'White')} vs `+
+      `${escapeHtml(r.blackName||'Black')}`+
+      `</div>`+
+      `<div class="game-meta">`+
+      `Room ${escapeHtml(r.code)} · `+
+      `<span class="live-badge">● LIVE</span>`+
+      `</div>`;
+
+    const btn=document.createElement('button');
+
+    btn.textContent='Spectate';
+
+    btn.onclick=()=>{
+      openSpectator(r.code);
+    };
+
+    row.append(
+      info,
+      btn
+    );
+
+    list.appendChild(row);
   });
 }
 
+
+/* ============================================================
+   SPECTATOR
+============================================================ */
+
 async function openSpectator(code){
-  if(!myName){showToast('Choose a username first');return;}
-  const room=await fbGet(`rooms/${code}`);
-  if(!room||room.status!=='playing'||!room.spectatorEnabled){showToast('That game is not available to spectate.');return;}
-  spectatorRoomId=code; isSpectator=true; spectatorEnabled=true; spectatorLastChat=0;
-  if(publicPollTimer){clearInterval(publicPollTimer);publicPollTimer=null;}
-  if(livePollTimer){clearInterval(livePollTimer);livePollTimer=null;}
-  document.getElementById('top-tabs').classList.add('hidden');
-  document.getElementById('lobby').classList.add('hidden');
-  document.getElementById('public-page').classList.add('hidden');
-  document.getElementById('live-page').classList.add('hidden');
-  document.getElementById('game').classList.add('hidden');
-  document.getElementById('spectator-view').classList.remove('hidden');
+
+  if(!myName){
+    showToast('Choose a username first');
+    return;
+  }
+
+  const room=await fbGet(
+    `rooms/${code}`
+  );
+
+  if(
+    !room||
+    room.status!=='playing'||
+    !room.spectatorEnabled
+  ){
+
+    showToast(
+      'That game is not available to spectate.'
+    );
+
+    return;
+  }
+
+  spectatorRoomId=code;
+  isSpectator=true;
+  spectatorEnabled=true;
+  spectatorLastChat=0;
+
+  if(publicPollTimer){
+    clearInterval(publicPollTimer);
+    publicPollTimer=null;
+  }
+
+  if(livePollTimer){
+    clearInterval(livePollTimer);
+    livePollTimer=null;
+  }
+
+  document.getElementById('top-tabs')
+    .classList.add('hidden');
+
+  document.getElementById('lobby')
+    .classList.add('hidden');
+
+  document.getElementById('public-page')
+    .classList.add('hidden');
+
+  document.getElementById('live-page')
+    .classList.add('hidden');
+
+  document.getElementById('game')
+    .classList.add('hidden');
+
+  document.getElementById('spectator-view')
+    .classList.remove('hidden');
+
   renderSpectatorRoom(room);
-  spectatorPollTimer=setInterval(pollSpectator,800);
-  spectatorChatTimer=setInterval(loadSpectatorChat,1200);
-  spectatorTimerInterval=setInterval(renderSpectatorTimers,250);
+
+  spectatorPollTimer=setInterval(
+    pollSpectator,
+    800
+  );
+
+  spectatorChatTimer=setInterval(
+    loadSpectatorChat,
+    1200
+  );
+
+  spectatorTimerInterval=setInterval(
+    renderSpectatorTimers,
+    250
+  );
+
   loadSpectatorChat();
 }
 
 function renderSpectatorRoom(room){
+
   const st=room.state;
-  document.getElementById('spectate-white').textContent=room.whiteName||'White';
-  document.getElementById('spectate-black').textContent=room.blackName||'Black';
-  if(!st){document.getElementById('spectate-status').textContent='Waiting for the live board…';return;}
-  window._spectateState={...st,moveTimeLeft:st.moveTimeLeft||{w:MOVE_TIME,b:MOVE_TIME}};
-  renderSpectatorBoard(); renderSpectatorUI(); renderSpectatorTimers();
+
+  document.getElementById(
+    'spectate-white'
+  ).textContent=room.whiteName||'White';
+
+  document.getElementById(
+    'spectate-black'
+  ).textContent=room.blackName||'Black';
+
+  if(!st){
+
+    document.getElementById(
+      'spectate-status'
+    ).textContent=
+      'Waiting for the live board…';
+
+    return;
+  }
+
+  window._spectateState={
+    ...st,
+    moveTimeLeft:
+      st.moveTimeLeft||{
+        w:MOVE_TIME,
+        b:MOVE_TIME
+      }
+  };
+
+  renderSpectatorBoard();
+  renderSpectatorUI();
+  renderSpectatorTimers();
 }
+
 function renderSpectatorBoard(){
-  const wrap=document.getElementById('spectate-board'); if(!wrap) return; const st=window._spectateState; if(!st) return;
+
+  const wrap=document.getElementById(
+    'spectate-board'
+  );
+
+  if(!wrap) return;
+
+  const st=window._spectateState;
+
+  if(!st) return;
+
   wrap.innerHTML='';
-  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
-    const sq=document.createElement('div'); sq.className='spectate-sq '+((r+c)%2===0?'light':'dark');
-    if(st.lastMove&&st.lastMove.fr===r&&st.lastMove.fc===c)sq.classList.add('last-from');
-    if(st.lastMove&&st.lastMove.tr===r&&st.lastMove.tc===c)sq.classList.add('last-to');
-    const p=st.board[r][c];
-    if(p){const img=document.createElement('img');img.className='spectate-piece';img.src=pieceUrl(p);img.alt=p;sq.appendChild(img);}
-    wrap.appendChild(sq);
+
+  for(let r=0;r<8;r++){
+
+    for(let c=0;c<8;c++){
+
+      const sq=document.createElement('div');
+
+      sq.className=
+        'spectate-sq '+
+        ((r+c)%2===0
+          ?'light'
+          :'dark');
+
+      if(
+        st.lastMove&&
+        st.lastMove.fr===r&&
+        st.lastMove.fc===c
+      ){
+        sq.classList.add(
+          'last-from'
+        );
+      }
+
+      if(
+        st.lastMove&&
+        st.lastMove.tr===r&&
+        st.lastMove.tc===c
+      ){
+        sq.classList.add(
+          'last-to'
+        );
+      }
+
+      const p=st.board[r][c];
+
+      if(p){
+
+        const img=document.createElement(
+          'img'
+        );
+
+        img.className='spectate-piece';
+        img.src=pieceUrl(p);
+        img.alt=p;
+
+        sq.appendChild(img);
+      }
+
+      wrap.appendChild(sq);
+    }
   }
 }
+
 function renderSpectatorUI(){
-  const st=window._spectateState; if(!st)return;
-  const turnName=st.turn==='w'?'White':'Black';
-  document.getElementById('spectate-turn').textContent=st.status==='ended'?'Game Over':turnName;
-  document.getElementById('spectate-status').innerHTML=st.status==='ended'?'<span class="accent">Game Over</span>':'Watching live · <span class="accent">'+turnName+' to move</span>';
-  const log=st.log||[]; let html='';
-  for(let i=0;i<log.length;i+=2){const n=Math.floor(i/2)+1;const w=log[i]?.note||'',b=log[i+1]?.note||'';html+=`<span class="mv-num">${n}.</span><span class="mv-w">${escapeHtml(w)}</span>${b?`<span class="mv-b">${escapeHtml(b)}</span>`:''} `;}
-  document.getElementById('spectate-move-log').innerHTML=html||'<em style="color:#555;font-style:italic">No moves yet</em>';
+
+  const st=window._spectateState;
+
+  if(!st) return;
+
+  const turnName=
+    st.turn==='w'
+      ?'White'
+      :'Black';
+
+  document.getElementById(
+    'spectate-turn'
+  ).textContent=
+    st.status==='ended'
+      ?'Game Over'
+      :turnName;
+
+  document.getElementById(
+    'spectate-status'
+  ).innerHTML=
+    st.status==='ended'
+      ?'<span class="accent">Game Over</span>'
+      :'Watching live · <span class="accent">'+
+       turnName+
+       ' to move</span>';
+
+  const log=st.log||[];
+
+  let html='';
+
+  for(let i=0;i<log.length;i+=2){
+
+    const n=Math.floor(i/2)+1;
+
+    const w=log[i]?.note||'';
+    const b=log[i+1]?.note||'';
+
+    html+=
+      `<span class="mv-num">${n}.</span>`+
+      `<span class="mv-w">${escapeHtml(w)}</span>`+
+      (b
+        ?`<span class="mv-b">${escapeHtml(b)}</span>`
+        :'')+
+      ' ';
+  }
+
+  document.getElementById(
+    'spectate-move-log'
+  ).innerHTML=
+    html||
+    '<em style="color:#555;font-style:italic">No moves yet</em>';
 }
+
 function renderSpectatorTimers(){
-  const st=window._spectateState; if(!st)return; const vals={...(st.moveTimeLeft||{w:MOVE_TIME,b:MOVE_TIME})};
-  if(st.status==='playing'&&st.turnStartedAt){const elapsed=Math.floor((Date.now()-st.turnStartedAt)/1000);vals[st.turn]=Math.max(0,(vals[st.turn]||MOVE_TIME)-elapsed);}
-  for(const c of ['w','b'])document.getElementById(`spectate-tv-${c==='w'?'white':'black'}`).textContent=`0:${String(vals[c]).padStart(2,'0')}`;
-}
-async function pollSpectator(){
-  if(!spectatorRoomId)return; const room=await fbGet(`rooms/${spectatorRoomId}`);
-  if(!room||(!room.spectatorEnabled&&!room.state)){showToast('Spectating is no longer available.',2500);leaveSpectator();return;}
-  if(room.state)renderSpectatorRoom(room);
-  if(room.status==='ended'&&room.event){
-    const title=room.event.winner==='draw'?'Draw':`${room.event.winner==='w'?'White':'Black'} wins`;
-    document.getElementById('spectate-status').innerHTML=`<span class="accent">Game Over · ${escapeHtml(title)}</span>`;
+
+  const st=window._spectateState;
+
+  if(!st) return;
+
+  const vals={
+    ...(st.moveTimeLeft||{
+      w:MOVE_TIME,
+      b:MOVE_TIME
+    })
+  };
+
+  if(
+    st.status==='playing'&&
+    st.turnStartedAt
+  ){
+
+    const elapsed=Math.floor(
+      (Date.now()-st.turnStartedAt)/1000
+    );
+
+    vals[st.turn]=Math.max(
+      0,
+      (vals[st.turn]||MOVE_TIME)-elapsed
+    );
+  }
+
+  for(const c of ['w','b']){
+
+    const value=Math.floor(
+      Math.max(
+        0,
+        vals[c]||0
+      )
+    );
+
+    document.getElementById(
+      `spectate-tv-${c==='w'?'white':'black'}`
+    ).textContent=
+      `${Math.floor(value/60)}:${String(value%60).padStart(2,'0')}`;
   }
 }
+
+async function pollSpectator(){
+
+  if(!spectatorRoomId) return;
+
+  const room=await fbGet(
+    `rooms/${spectatorRoomId}`
+  );
+
+  if(
+    !room||
+    (!room.spectatorEnabled&&!room.state)
+  ){
+
+    showToast(
+      'Spectating is no longer available.',
+      2500
+    );
+
+    leaveSpectator();
+
+    return;
+  }
+
+  if(room.state){
+    renderSpectatorRoom(room);
+  }
+
+  if(
+    room.status==='ended'&&
+    room.event
+  ){
+
+    const title=
+      room.event.winner==='draw'
+        ?'Draw'
+        :`${room.event.winner==='w'
+            ?'White'
+            :'Black'} wins`;
+
+    document.getElementById(
+      'spectate-status'
+    ).innerHTML=
+      `<span class="accent">Game Over · `+
+      `${escapeHtml(title)}</span>`;
+  }
+}
+
 async function loadSpectatorChat(){
-  if(!spectatorRoomId)return; const data=await fbGet(`rooms/${spectatorRoomId}/chat`); const msgs=[];
-  if(data)Object.entries(data).forEach(([id,m])=>{if(m&&m.created>spectatorLastChat)msgs.push({id,...m});});
-  msgs.sort((a,b)=>(a.created||0)-(b.created||0));
-  if(msgs.length){const box=document.getElementById('spectate-messages'); if(spectatorLastChat===0)box.innerHTML=''; msgs.slice(-50).forEach(m=>{const row=document.createElement('div');row.className='chat-msg';row.innerHTML=`<div class="chat-name">${escapeHtml(m.name||'Player')}</div><div class="chat-text">${escapeHtml(m.text||'')}</div>`;box.appendChild(row);}); spectatorLastChat=Math.max(...msgs.map(m=>m.created||0)); box.scrollTop=box.scrollHeight;}
+
+  if(!spectatorRoomId) return;
+
+  const data=await fbGet(
+    `rooms/${spectatorRoomId}/chat`
+  );
+
+  const msgs=[];
+
+  if(data){
+
+    Object.entries(data).forEach(
+      ([id,m])=>{
+
+        if(
+          m&&
+          m.created>spectatorLastChat
+        ){
+          msgs.push({
+            id,
+            ...m
+          });
+        }
+      }
+    );
+  }
+
+  msgs.sort(
+    (a,b)=>
+      (a.created||0)-
+      (b.created||0)
+  );
+
+  if(msgs.length){
+
+    const box=document.getElementById(
+      'spectate-messages'
+    );
+
+    if(spectatorLastChat===0){
+      box.innerHTML='';
+    }
+
+    msgs.slice(-50).forEach(m=>{
+
+      const row=document.createElement(
+        'div'
+      );
+
+      row.className='chat-msg';
+
+      row.innerHTML=
+        `<div class="chat-name">`+
+        `${escapeHtml(m.name||'Player')}`+
+        `</div>`+
+        `<div class="chat-text">`+
+        `${escapeHtml(m.text||'')}`+
+        `</div>`;
+
+      box.appendChild(row);
+    });
+
+    spectatorLastChat=Math.max(
+      ...msgs.map(m=>m.created||0)
+    );
+
+    box.scrollTop=box.scrollHeight;
+  }
 }
+
 async function sendSpectatorChat(){
-  if(!spectatorRoomId||!myName)return; const input=document.getElementById('spectate-chat-input'); const text=input.value.trim(); if(!text)return;
-  const id=Math.random().toString(36).slice(2,10); const created=Date.now();
-  const clean=text.replace(/[<>]/g,'');
-  await fbSet(`rooms/${spectatorRoomId}/chat/${created}_${id}`,{name:myName,text:clean,created}); input.value=''; loadSpectatorChat();
+
+  if(!spectatorRoomId||!myName) return;
+
+  const input=document.getElementById(
+    'spectate-chat-input'
+  );
+
+  const text=input.value.trim();
+
+  if(!text) return;
+
+  const id=Math.random()
+    .toString(36)
+    .slice(2,10);
+
+  const created=Date.now();
+
+  const clean=text
+    .replace(/[<>]/g,'');
+
+  await fbSet(
+    `rooms/${spectatorRoomId}/chat/${created}_${id}`,
+    {
+      name:myName,
+      text:clean,
+      created
+    }
+  );
+
+  input.value='';
+
+  loadSpectatorChat();
 }
+
 function leaveSpectator(){
-  clearInterval(spectatorPollTimer); clearInterval(spectatorChatTimer); clearInterval(spectatorTimerInterval); spectatorPollTimer=spectatorChatTimer=spectatorTimerInterval=null; spectatorRoomId=null; isSpectator=false;
-  document.getElementById('spectator-view').classList.add('hidden'); document.getElementById('top-tabs').classList.remove('hidden'); showPage('live');
+
+  clearInterval(
+    spectatorPollTimer
+  );
+
+  clearInterval(
+    spectatorChatTimer
+  );
+
+  clearInterval(
+    spectatorTimerInterval
+  );
+
+  spectatorPollTimer=null;
+  spectatorChatTimer=null;
+  spectatorTimerInterval=null;
+
+  spectatorRoomId=null;
+  isSpectator=false;
+
+  document.getElementById(
+    'spectator-view'
+  ).classList.add('hidden');
+
+  document.getElementById(
+    'top-tabs'
+  ).classList.remove('hidden');
+
+  showPage('live');
 }
+
+
+/* ============================================================
+   DRAW / RESIGN
+============================================================ */
 
 async function offerDraw(){
-  if(gameEnded) return;
-  await sendMoveData({drawOffer:true}); showToast('Draw offer sent',3000);
+
+  if(
+    gameEnded||
+    G.status!=='playing'
+  ){
+    return;
+  }
+
+  if(drawOfferPending){
+    showToast('Draw offer already sent.');
+    return;
+  }
+
+  drawOfferPending=true;
+
+  await sendMoveData({
+    drawOffer:true,
+    color:myColor
+  });
+
+  showToast(
+    'Draw offer sent',
+    3000
+  );
 }
+
 function handleDrawOffer(){
-  if(gameEnded) return;
-  if(confirm('Your opponent offers a draw. Accept?')){
-    broadcastEnd('draw','Draw by agreement'); triggerGameEnd('draw','draw','Draw by agreement');
+
+  if(
+    gameEnded||
+    G.status!=='playing'
+  ){
+    return;
+  }
+
+  if(
+    confirm(
+      'Your opponent offers a draw. Accept?'
+    )
+  ){
+
+    broadcastEnd(
+      'draw',
+      'Draw by agreement'
+    );
+
+    triggerGameEnd(
+      'draw',
+      'draw',
+      'Draw by agreement'
+    );
+
+  }else{
+
+    drawOfferPending=false;
+    showToast(
+      'Draw offer declined',
+      2000
+    );
   }
 }
+
 async function resignGame(){
-  if(gameEnded) return;
-  if(!confirm('Resign this game?')) return;
+
+  if(
+    gameEnded||
+    G.status!=='playing'
+  ){
+    return;
+  }
+
+  if(
+    !confirm(
+      'Resign this game?'
+    )
+  ){
+    return;
+  }
+
   const winner=opp(myColor);
-  await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} resigned`);
-  triggerGameEnd('resign',winner);
-}
-async function broadcastEnd(winner,reason){ await fbPatch(`rooms/${roomId}`,{event:{type:'end',winner,reason},status:'ended'}); }
 
-function triggerGameEnd(type,winner,reason){
+  await broadcastEnd(
+    winner,
+    `${myColor==='w'?'White':'Black'} resigned`
+  );
+
+  triggerGameEnd(
+    'resign',
+    winner,
+    `${myColor==='w'?'White':'Black'} resigned`
+  );
+}
+
+async function broadcastEnd(
+  winner,
+  reason
+){
+
+  if(!roomId) return;
+
+  await fbPatch(
+    `rooms/${roomId}`,
+    {
+      event:{
+        type:'end',
+        winner,
+        reason,
+        at:Date.now(),
+        by:MY_ID
+      },
+      status:'ended'
+    }
+  );
+}
+
+
+/* ============================================================
+   GAME END
+============================================================ */
+
+function triggerGameEnd(
+  type,
+  winner,
+  reason
+){
+
   if(gameEnded) return;
+
   gameEnded=true;
-  clearInterval(timerInterval); clearInterval(pollTimer); clearInterval(heartbeatTimer);
+
+  clearInterval(timerInterval);
+  clearInterval(pollTimer);
+  clearInterval(heartbeatTimer);
+
+  timerInterval=null;
+  pollTimer=null;
+  heartbeatTimer=null;
+
   G.status='ended';
-  const isDraw=winner==='draw', iWin=winner===myColor;
-  const icon=isDraw?'🤝':iWin?'🏆':'💔';
-  const title=isDraw?'Draw':iWin?'Victory!':'Defeated';
+
+  const isDraw=winner==='draw';
+  const iWin=winner===myColor;
+
+  const icon=
+    isDraw
+      ?'🤝'
+      :iWin
+        ?'🏆'
+        :'💔';
+
+  const title=
+    isDraw
+      ?'Draw'
+      :iWin
+        ?'Victory!'
+        :'Defeated';
+
   const texts={
-    checkmate:`Checkmate — ${winner==='w'?'White':'Black'} wins!`,
-    stalemate:'Stalemate — no legal moves',
-    resign: reason||'Opponent resigned',
-    disconnect:'Opponent disconnected',
-    draw: reason||'Draw',
-    insufficient:'Draw — insufficient material',
-    fifty:'Draw — fifty-move rule',
-    repetition:'Draw — threefold repetition'
+
+    checkmate:
+      `Checkmate — ${winner==='w'?'White':'Black'} wins!`,
+
+    stalemate:
+      'Stalemate — no legal moves',
+
+    resign:
+      reason||'Opponent resigned',
+
+    disconnect:
+      'Opponent disconnected',
+
+    timeout:
+      reason||'Time expired',
+
+    draw:
+      reason||'Draw',
+
+    insufficient:
+      'Draw — insufficient material',
+
+    fifty:
+      'Draw — fifty-move rule',
+
+    repetition:
+      'Draw — threefold repetition'
   };
-  document.getElementById('result-icon').textContent=icon;
-  document.getElementById('result-title').textContent=title;
-  document.getElementById('result-reason').textContent=texts[type]||reason||'Game over';
-  document.getElementById('result-overlay').classList.add('show');
-  renderBoard(); updateUI(); renderTimers();
-}
-function handleRemoteEnd(winner,reason){
-  if(gameEnded) return;
-  let type='draw';
-  if(reason?.includes('resigned'))          type='resign';
-  else if(reason?.includes('disconnected')) type='disconnect';
-  else if(reason?.toLowerCase().includes('checkmate'))    type='checkmate';
-  else if(reason?.toLowerCase().includes('stalemate'))    type='stalemate';
-  else if(reason?.toLowerCase().includes('insufficient')) type='insufficient';
-  else if(reason?.toLowerCase().includes('fifty'))        type='fifty';
-  else if(reason?.toLowerCase().includes('repetition'))   type='repetition';
-  triggerGameEnd(type,winner,reason);
+
+  document.getElementById(
+    'result-icon'
+  ).textContent=icon;
+
+  document.getElementById(
+    'result-title'
+  ).textContent=title;
+
+  document.getElementById(
+    'result-reason'
+  ).textContent=
+    texts[type]||
+    reason||
+    'Game over';
+
+  document.getElementById(
+    'result-overlay'
+  ).classList.add('show');
+
+  renderBoard();
+  updateUI();
+  renderTimers();
+
+  setTimeout(
+    loadLiveGames,
+    100
+  );
 }
 
-// ══════════════════════════════════════════════════════════════
-//  GAME STATE
-// ══════════════════════════════════════════════════════════════
+function handleRemoteEnd(
+  winner,
+  reason
+){
+
+  if(gameEnded) return;
+
+  let type='draw';
+
+  const lower=
+    String(reason||'')
+      .toLowerCase();
+
+  if(lower.includes('resigned')){
+    type='resign';
+  }else if(lower.includes('disconnected')){
+    type='disconnect';
+  }else if(lower.includes('checkmate')){
+    type='checkmate';
+  }else if(lower.includes('stalemate')){
+    type='stalemate';
+  }else if(lower.includes('insufficient')){
+    type='insufficient';
+  }else if(lower.includes('fifty')){
+    type='fifty';
+  }else if(lower.includes('repetition')){
+    type='repetition';
+  }else if(lower.includes('time')||lower.includes('ran out')){
+    type='timeout';
+  }
+
+  triggerGameEnd(
+    type,
+    winner,
+    reason
+  );
+}
+
+
+/* ============================================================
+   LEAVING A GAME
+============================================================ */
+
+async function leaveGame(){
+
+  if(
+    !roomId||
+    leaveProcessed
+  ){
+    location.href=location.pathname;
+    return;
+  }
+
+  if(gameEnded){
+    location.href=location.pathname;
+    return;
+  }
+
+  if(
+    !confirm(
+      'Leave this game? Leaving counts as a loss.'
+    )
+  ){
+    return;
+  }
+
+  leaveProcessed=true;
+
+  const winner=opp(myColor);
+
+  await broadcastEnd(
+    winner,
+    `${myColor==='w'?'White':'Black'} left the game`
+  );
+
+  clearInterval(timerInterval);
+  clearInterval(pollTimer);
+  clearInterval(heartbeatTimer);
+
+  location.href=location.pathname;
+}
+
+function emergencyLeave(){
+
+  if(
+    !roomId||
+    leaveProcessed||
+    isSpectator
+  ){
+    return;
+  }
+
+  leaveProcessed=true;
+
+  try{
+
+    if(!gameStarted){
+
+      fetch(
+        `${FB}/rooms/${roomId}.json`,
+        {
+          method:'DELETE',
+          keepalive:true
+        }
+      );
+
+    }else if(!gameEnded){
+
+      const winner=opp(myColor);
+
+      const body=JSON.stringify({
+        event:{
+          type:'end',
+          winner,
+          reason:`${myColor==='w'?'White':'Black'} left the game`,
+          at:Date.now(),
+          by:MY_ID
+        },
+        status:'ended'
+      });
+
+      fetch(
+        `${FB}/rooms/${roomId}.json`,
+        {
+          method:'PATCH',
+          headers:{
+            'Content-Type':'application/json'
+          },
+          body,
+          keepalive:true
+        }
+      );
+    }
+
+  }catch(e){}
+}
+
+
+/* ============================================================
+   GAME STATE
+============================================================ */
+
 const INIT_BOARD=[
+
   ['r','n','b','q','k','b','n','r'],
+
   ['p','p','p','p','p','p','p','p'],
-  Array(8).fill(null),Array(8).fill(null),Array(8).fill(null),Array(8).fill(null),
+
+  Array(8).fill(null),
+  Array(8).fill(null),
+  Array(8).fill(null),
+  Array(8).fill(null),
+
   ['P','P','P','P','P','P','P','P'],
+
   ['R','N','B','Q','K','B','N','R']
 ];
+
 let G={};
+
 function initGame(){
+
   G={
-    board:INIT_BOARD.map(r=>r.slice()),
+
+    board:INIT_BOARD.map(
+      r=>r.slice()
+    ),
+
     turn:'w',
-    castling:{wK:true,wQR:true,wKR:true,bK:true,bQR:true,bKR:true},
+
+    castling:{
+      wK:true,
+      wQR:true,
+      wKR:true,
+      bK:true,
+      bQR:true,
+      bKR:true
+    },
+
     enPassant:null,
+
     halfClock:0,
+
     posHist:[],
+
     log:[],
+
     lastMove:null,
+
     status:'playing'
   };
-  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
-  moveTimeLeft={w:MOVE_TIME,b:MOVE_TIME};
+
+  G.posHist.push(
+    posKey(
+      G.board,
+      G.turn,
+      G.castling,
+      G.enPassant
+    )
+  );
+
+  moveTimeLeft={
+    w:MOVE_TIME,
+    b:MOVE_TIME
+  };
+
+  turnStartedAt=Date.now();
+
   gameEnded=false;
+  timeoutProcessed=false;
+  drawOfferPending=false;
 }
 
-let selected=null, legalNow=[], pendingPromo=null;
+let selected=null;
+let legalNow=[];
+let pendingPromo=null;
 
-function executeMove(move, local){
+
+/* ============================================================
+   EXECUTE MOVE
+============================================================ */
+
+function executeMove(move,local){
+
   if(gameEnded) return;
-  const p=G.board[move.fr]?.[move.fc]; if(!p) return;
-  if(local&&colorOf(p)!==myColor) return;
 
-  const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant);
-  const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
-  const isPawn=p.toLowerCase()==='p';
+  const p=
+    G.board[move.fr]?.[move.fc];
 
-  const {board:nb,castling:nc,enPassant:nep}=doMove(G.board,move,G.castling,G.enPassant);
-  G.halfClock=(isPawn||isCapture)?0:G.halfClock+1;
-  G.board=nb; G.castling=nc; G.enPassant=nep;
-  G.log.push({color:G.turn,note});
-  G.lastMove=move;
+  if(!p) return;
+
+  if(local&&colorOf(p)!==myColor){
+    return;
+  }
+
+  if(
+    local&&
+    G.turn!==myColor
+  ){
+    return;
+  }
+
+  const legalForTurn=legalMoves(
+    G.board,
+    G.turn,
+    G.castling,
+    G.enPassant
+  );
+
+  const valid=legalForTurn.some(m=>
+    m.fr===move.fr&&
+    m.fc===move.fc&&
+    m.tr===move.tr&&
+    m.tc===move.tc&&
+    (m.promo||null)===(move.promo||null)&&
+    !!m.isEnPassant===!!move.isEnPassant&&
+    (m.castleSide||null)===(move.castleSide||null)
+  );
+
+  if(!valid){
+    return;
+  }
+
+  const note=toSAN(
+    G.board,
+    move,
+    G.turn,
+    G.castling,
+    G.enPassant
+  );
+
+  const isCapture=
+    !!G.board[move.tr][move.tc]||
+    move.isEnPassant;
+
+  const isPawn=
+    p.toLowerCase()==='p';
+
   const movedColor=G.turn;
+
+  const result=doMove(
+    G.board,
+    move,
+    G.castling,
+    G.enPassant
+  );
+
+  G.halfClock=
+    (isPawn||isCapture)
+      ?0
+      :G.halfClock+1;
+
+  G.board=result.board;
+  G.castling=result.castling;
+  G.enPassant=result.enPassant;
+
+  G.log.push({
+    color:G.turn,
+    note
+  });
+
+  G.lastMove={
+    fr:move.fr,
+    fc:move.fc,
+    tr:move.tr,
+    tc:move.tc
+  };
+
   G.turn=opp(G.turn);
+
   turnStartedAt=Date.now();
-  selected=null; legalNow=[];
 
-  G.posHist.push(posKey(G.board,G.turn,G.castling,G.enPassant));
+  selected=null;
+  legalNow=[];
+
   moveTimeLeft[movedColor]=MOVE_TIME;
-  clearInterval(timerInterval);
 
-  const status=evalStatus(G.board,G.turn,G.castling,G.enPassant,G.halfClock,G.posHist);
+  G.posHist.push(
+    posKey(
+      G.board,
+      G.turn,
+      G.castling,
+      G.enPassant
+    )
+  );
+
+  const status=evalStatus(
+    G.board,
+    G.turn,
+    G.castling,
+    G.enPassant,
+    G.halfClock,
+    G.posHist
+  );
+
   G.status=status;
 
-  if(status==='checkmate') G.log[G.log.length-1].note+='#';
-  else if(status==='check') G.log[G.log.length-1].note+='+';
+  if(status==='checkmate'){
+    G.log[G.log.length-1].note+='#';
+  }else if(status==='check'){
+    G.log[G.log.length-1].note+='+';
+  }
 
-  renderBoard(); updateUI(); renderTimers();
-  if(local) sendMoveData(move);
+  renderBoard();
+  updateUI();
+  renderTimers();
+
+  if(local){
+
+    sendMoveData({
+      ...move,
+      color:movedColor
+    });
+  }
 
   if(status==='checkmate'){
-    if(local) broadcastEnd(movedColor,'Checkmate');
-    triggerGameEnd('checkmate',movedColor);
+
+    if(local){
+
+      broadcastEnd(
+        movedColor,
+        'Checkmate'
+      );
+    }
+
+    triggerGameEnd(
+      'checkmate',
+      movedColor,
+      'Checkmate'
+    );
+
   }else if(status==='stalemate'){
-    if(local) broadcastEnd('draw','Stalemate');
-    triggerGameEnd('stalemate','draw');
+
+    if(local){
+
+      broadcastEnd(
+        'draw',
+        'Stalemate'
+      );
+    }
+
+    triggerGameEnd(
+      'stalemate',
+      'draw',
+      'Stalemate'
+    );
+
   }else if(status==='insufficient'){
-    if(local) broadcastEnd('draw','Draw — insufficient material');
-    triggerGameEnd('insufficient','draw');
+
+    if(local){
+
+      broadcastEnd(
+        'draw',
+        'Draw — insufficient material'
+      );
+    }
+
+    triggerGameEnd(
+      'insufficient',
+      'draw',
+      'Draw — insufficient material'
+    );
+
   }else if(status==='fifty'){
-    if(local) broadcastEnd('draw','Draw — fifty-move rule');
-    triggerGameEnd('fifty','draw');
+
+    if(local){
+
+      broadcastEnd(
+        'draw',
+        'Draw — fifty-move rule'
+      );
+    }
+
+    triggerGameEnd(
+      'fifty',
+      'draw',
+      'Draw — fifty-move rule'
+    );
+
   }else if(status==='repetition'){
-    if(local) broadcastEnd('draw','Draw — threefold repetition');
-    triggerGameEnd('repetition','draw');
+
+    if(local){
+
+      broadcastEnd(
+        'draw',
+        'Draw — threefold repetition'
+      );
+    }
+
+    triggerGameEnd(
+      'repetition',
+      'draw',
+      'Draw — threefold repetition'
+    );
+
   }else{
+
     startMoveTimer();
+
+    if(local){
+      publishGameState();
+    }
   }
 }
 
+
+/* ============================================================
+   BOARD INPUT
+============================================================ */
+
 function handleSquareClick(r,c){
-  if(gameEnded||G.status==='checkmate'||G.status==='stalemate'||G.status==='ended') return;
-  if(G.turn!==myColor) return;
+
+  if(
+    gameEnded||
+    G.status==='checkmate'||
+    G.status==='stalemate'||
+    G.status==='ended'
+  ){
+    return;
+  }
+
+  if(G.turn!==myColor){
+    return;
+  }
+
   const p=G.board[r][c];
 
   if(selected){
-    const mv=legalNow.find(m=>m.tr===r&&m.tc===c&&!m.promo) || legalNow.find(m=>m.tr===r&&m.tc===c);
+
+    const mv=
+      legalNow.find(
+        m=>
+          m.tr===r&&
+          m.tc===c&&
+          !m.promo
+      )||
+      legalNow.find(
+        m=>
+          m.tr===r&&
+          m.tc===c
+      );
+
     if(mv){
-      if(G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&(mv.tr===0||mv.tr===7)){
-        pendingPromo={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc,isEnPassant:mv.isEnPassant};
-        showPromoModal(); return;
+
+      if(
+        G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&
+        (mv.tr===0||mv.tr===7)
+      ){
+
+        pendingPromo={
+          fr:mv.fr,
+          fc:mv.fc,
+          tr:mv.tr,
+          tc:mv.tc,
+          isEnPassant:mv.isEnPassant
+        };
+
+        showPromoModal();
+
+        return;
       }
-      executeMove(mv,true); return;
+
+      executeMove(
+        mv,
+        true
+      );
+
+      return;
     }
-    if(p&&colorOf(p)===myColor){
+
+    if(
+      p&&
+      colorOf(p)===myColor
+    ){
+
       selected=[r,c];
-      legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
-      renderBoard(); return;
+
+      legalNow=
+        legalMoves(
+          G.board,
+          G.turn,
+          G.castling,
+          G.enPassant
+        ).filter(
+          m=>
+            m.fr===r&&
+            m.fc===c
+        );
+
+      renderBoard();
+
+      return;
     }
-    selected=null; legalNow=[]; renderBoard(); return;
+
+    selected=null;
+    legalNow=[];
+
+    renderBoard();
+
+    return;
   }
-  if(p&&colorOf(p)===myColor){
+
+  if(
+    p&&
+    colorOf(p)===myColor
+  ){
+
     selected=[r,c];
-    legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
+
+    legalNow=
+      legalMoves(
+        G.board,
+        G.turn,
+        G.castling,
+        G.enPassant
+      ).filter(
+        m=>
+          m.fr===r&&
+          m.fc===c
+      );
+
     renderBoard();
   }
 }
 
+
+/* ============================================================
+   PROMOTION
+============================================================ */
+
 function showPromoModal(){
-  const pieces=myColor==='w'?['Q','R','B','N']:['q','r','b','n'];
-  const box=document.getElementById('promo-choices'); box.innerHTML='';
+
+  const pieces=
+    myColor==='w'
+      ?['Q','R','B','N']
+      :['q','r','b','n'];
+
+  const box=document.getElementById(
+    'promo-choices'
+  );
+
+  box.innerHTML='';
+
   pieces.forEach(pc=>{
-    const div=document.createElement('div'); div.className='promo-piece';
-    const img=document.createElement('img');
+
+    const div=document.createElement(
+      'div'
+    );
+
+    div.className='promo-piece';
+
+    const img=document.createElement(
+      'img'
+    );
+
     img.src=pieceUrl(pc);
     img.alt=pc;
-    // No crossOrigin — not needed for display and causes Safari CORS issues
+
     div.appendChild(img);
+
     div.onclick=()=>{
-      document.getElementById('promo-modal').classList.remove('show');
-      executeMove({...pendingPromo,promo:pc.toLowerCase()},true);
+
+      document.getElementById(
+        'promo-modal'
+      ).classList.remove('show');
+
+      if(!pendingPromo) return;
+
+      executeMove(
+        {
+          ...pendingPromo,
+          promo:pc.toLowerCase()
+        },
+        true
+      );
+
+      pendingPromo=null;
     };
+
     box.appendChild(div);
   });
-  document.getElementById('promo-modal').classList.add('show');
+
+  document.getElementById(
+    'promo-modal'
+  ).classList.add('show');
 }
 
-// ══════════════════════════════════════════════════════════════
-//  RENDER
-// ══════════════════════════════════════════════════════════════
+
+/* ============================================================
+   RENDER BOARD
+============================================================ */
+
 function renderBoard(){
-  const boardEl=document.getElementById('board'); boardEl.innerHTML='';
+
+  const boardEl=document.getElementById(
+    'board'
+  );
+
+  boardEl.innerHTML='';
+
   const flip=myColor==='b';
-  const kpos=(G.status==='check'||G.status==='checkmate')?findKing(G.board,G.turn):null;
-  const legalSet=new Set(legalNow.map(m=>m.tr*8+m.tc));
 
-  for(let ri=0;ri<8;ri++) for(let ci=0;ci<8;ci++){
-    const r=flip?7-ri:ri, c=flip?7-ci:ci;
-    const sq=document.createElement('div');
-    sq.className='sq '+((r+c)%2===0?'light':'dark');
-    sq.dataset.r=r; sq.dataset.c=c;
+  const kpos=
+    (G.status==='check'||
+     G.status==='checkmate')
+      ?findKing(G.board,G.turn)
+      :null;
 
-    if(selected&&selected[0]===r&&selected[1]===c){
-      sq.classList.add('selected');
-    }else if(legalSet.has(r*8+c)){
-      sq.classList.add('moveable');
-      if(G.board[r][c]||legalNow.some(m=>m.tr===r&&m.tc===c&&m.isEnPassant)) sq.classList.add('occupied');
+  const legalSet=new Set(
+    legalNow.map(
+      m=>m.tr*8+m.tc
+    )
+  );
+
+  for(let ri=0;ri<8;ri++){
+
+    for(let ci=0;ci<8;ci++){
+
+      const r=
+        flip
+          ?7-ri
+          :ri;
+
+      const c=
+        flip
+          ?7-ci
+          :ci;
+
+      const sq=document.createElement(
+        'div'
+      );
+
+      sq.className=
+        'sq '+
+        ((r+c)%2===0
+          ?'light'
+          :'dark');
+
+      sq.dataset.r=r;
+      sq.dataset.c=c;
+
+      if(
+        selected&&
+        selected[0]===r&&
+        selected[1]===c
+      ){
+
+        sq.classList.add(
+          'selected'
+        );
+
+      }else if(
+        legalSet.has(r*8+c)
+      ){
+
+        sq.classList.add(
+          'moveable'
+        );
+
+        if(
+          G.board[r][c]||
+          legalNow.some(
+            m=>
+              m.tr===r&&
+              m.tc===c&&
+              m.isEnPassant
+          )
+        ){
+          sq.classList.add(
+            'occupied'
+          );
+        }
+      }
+
+      if(G.lastMove){
+
+        if(
+          G.lastMove.fr===r&&
+          G.lastMove.fc===c
+        ){
+          sq.classList.add(
+            'last-from'
+          );
+        }
+
+        if(
+          G.lastMove.tr===r&&
+          G.lastMove.tc===c
+        ){
+          sq.classList.add(
+            'last-to'
+          );
+        }
+      }
+
+      if(
+        kpos&&
+        kpos[0]===r&&
+        kpos[1]===c
+      ){
+        sq.classList.add(
+          'in-check'
+        );
+      }
+
+      const piece=G.board[r][c];
+
+      if(
+        piece&&
+        PIECE_FILES[piece]
+      ){
+        sq.appendChild(
+          makePieceEl(piece)
+        );
+      }
+
+      if(ci===0){
+
+        const co=document.createElement(
+          'div'
+        );
+
+        co.className='coord-rank';
+        co.textContent=8-r;
+
+        sq.appendChild(co);
+      }
+
+      if(ri===7){
+
+        const co=document.createElement(
+          'div'
+        );
+
+        co.className='coord-file';
+        co.textContent=FILES_STR[c];
+
+        sq.appendChild(co);
+      }
+
+      sq.onclick=()=>{
+        handleSquareClick(
+          +sq.dataset.r,
+          +sq.dataset.c
+        );
+      };
+
+      boardEl.appendChild(sq);
     }
-
-    if(G.lastMove){
-      if(G.lastMove.fr===r&&G.lastMove.fc===c) sq.classList.add('last-from');
-      if(G.lastMove.tr===r&&G.lastMove.tc===c) sq.classList.add('last-to');
-    }
-    if(kpos&&kpos[0]===r&&kpos[1]===c) sq.classList.add('in-check');
-
-    const piece=G.board[r][c];
-    if(piece&&PIECE_FILES[piece]) sq.appendChild(makePieceEl(piece));
-
-    if(ci===0){const co=document.createElement('div');co.className='coord-rank';co.textContent=8-r;sq.appendChild(co);}
-    if(ri===7){const co=document.createElement('div');co.className='coord-file';co.textContent=FILES_STR[c];sq.appendChild(co);}
-
-    sq.onclick=()=>handleSquareClick(+sq.dataset.r,+sq.dataset.c);
-    boardEl.appendChild(sq);
   }
 }
+
+
+/* ============================================================
+   UI
+============================================================ */
 
 function updateUI(){
-  const statusEl=document.getElementById('status-bar');
+
+  const statusEl=document.getElementById(
+    'status-bar'
+  );
+
   const s=G.status;
+
   let txt='';
-  if(gameEnded||s==='ended')         txt='Game over';
-  else if(s==='checkmate'){
+
+  if(gameEnded||s==='ended'){
+
+    txt='Game over';
+
+  }else if(s==='checkmate'){
+
     const w=opp(G.turn);
-    txt=w===myColor?'<span class="good">🏆 Checkmate — You win!</span>':'<span class="warn">💔 Checkmate — You lose!</span>';
+
+    txt=
+      w===myColor
+        ?'<span class="good">🏆 Checkmate — You win!</span>'
+        :'<span class="warn">💔 Checkmate — You lose!</span>';
+
+  }else if(s==='stalemate'){
+
+    txt=
+      '<span class="accent">🤝 Stalemate — Draw</span>';
+
+  }else if(s==='insufficient'){
+
+    txt=
+      '<span class="accent">🤝 Draw — Insufficient material</span>';
+
+  }else if(s==='fifty'){
+
+    txt=
+      '<span class="accent">🤝 Draw — Fifty-move rule</span>';
+
+  }else if(s==='repetition'){
+
+    txt=
+      '<span class="accent">🤝 Draw — Threefold repetition</span>';
+
+  }else if(s==='check'){
+
+    txt=
+      G.turn===myColor
+        ?'<span class="warn">⚠ Your king is in check!</span>'
+        :'<span class="accent">Check — opponent\'s king is in check</span>';
+
+  }else{
+
+    txt=
+      G.turn===myColor
+        ?'<span class="accent">Your turn</span>'
+        :"<em>Opponent's turn…</em>";
   }
-  else if(s==='stalemate')    txt='<span class="accent">🤝 Stalemate — Draw</span>';
-  else if(s==='insufficient') txt='<span class="accent">🤝 Draw — Insufficient material</span>';
-  else if(s==='fifty')        txt='<span class="accent">🤝 Draw — Fifty-move rule</span>';
-  else if(s==='repetition')   txt='<span class="accent">🤝 Draw — Threefold repetition</span>';
-  else if(s==='check')
-    txt=G.turn===myColor?'<span class="warn">⚠ Your king is in check!</span>':"<span class=\"accent\">Check — opponent's king is in check</span>";
-  else
-    txt=G.turn===myColor?'<span class="accent">Your turn</span>':"<em>Opponent's turn…</em>";
 
   statusEl.innerHTML=txt;
-  document.getElementById('turn-disp').textContent=G.turn==='w'?'♔ White':'♚ Black';
 
-  const logEl=document.getElementById('move-log');
+  document.getElementById(
+    'turn-disp'
+  ).textContent=
+    G.turn==='w'
+      ?'♔ White'
+      :'♚ Black';
+
+  const logEl=document.getElementById(
+    'move-log'
+  );
+
   let html='';
+
   for(let i=0;i<G.log.length;i+=2){
-    const num=Math.floor(i/2)+1;
-    const w=G.log[i]?.note||'', b=G.log[i+1]?.note||'';
-    html+=`<span class="mv-num">${num}.</span><span class="mv-w">${w}</span>${b?`<span class="mv-b">${b}</span>`:''} `;
+
+    const num=
+      Math.floor(i/2)+1;
+
+    const w=
+      G.log[i]?.note||'';
+
+    const b=
+      G.log[i+1]?.note||'';
+
+    html+=
+      `<span class="mv-num">${num}.</span>`+
+      `<span class="mv-w">${escapeHtml(w)}</span>`+
+      (b
+        ?`<span class="mv-b">${escapeHtml(b)}</span>`
+        :'')+
+      ' ';
   }
-  logEl.innerHTML=html||'<em style="color:#555;font-style:italic">No moves yet</em>';
-  logEl.scrollTop=logEl.scrollHeight;
+
+  logEl.innerHTML=
+    html||
+    '<em style="color:#555;font-style:italic">No moves yet</em>';
+
+  logEl.scrollTop=
+    logEl.scrollHeight;
 }
 
-window.addEventListener('beforeunload',()=>{
-  clearInterval(spectatorPollTimer); clearInterval(spectatorChatTimer); clearInterval(spectatorTimerInterval);
-  releaseUsername();
-  if(roomId && !gameStarted && roomType){
-    try{ fetch(`${FB}/rooms/${roomId}.json`,{method:'DELETE',keepalive:true}); }catch(e){}
+
+/* ============================================================
+   CLEANUP
+============================================================ */
+
+window.addEventListener(
+  'beforeunload',
+  ()=>{
+    clearInterval(
+      spectatorPollTimer
+    );
+
+    clearInterval(
+      spectatorChatTimer
+    );
+
+    clearInterval(
+      spectatorTimerInterval
+    );
+
+    clearInterval(
+      publicPollTimer
+    );
+
+    clearInterval(
+      livePollTimer
+    );
+
+    clearInterval(
+      pollTimer
+    );
+
+    clearInterval(
+      timerInterval
+    );
+
+    clearInterval(
+      heartbeatTimer
+    );
+
+    clearInterval(
+      codeExpireTimer
+    );
+
+    clearInterval(
+      usernameHeartbeatTimer
+    );
+
+    /*
+      Critical cleanup:
+      waiting public/private rooms are deleted immediately.
+      active games publish a loss for the player who leaves.
+    */
+    emergencyLeave();
+
+    releaseUsername();
   }
-});
-window.addEventListener('pagehide',releaseUsername);
+);
 
-if(document.getElementById('name-input')){
-  document.getElementById('name-input').addEventListener('keydown',e=>{
-    if(e.key==='Enter') claimUsername();
-  });
-  document.getElementById('spectate-chat-input')?.addEventListener('keydown',e=>{ if(e.key==='Enter') sendSpectatorChat(); });
-}
+window.addEventListener(
+  'pagehide',
+  ()=>{
+    emergencyLeave();
+    releaseUsername();
+  }
+);
 
-// ══════════════════════════════════════════════════════════════
+
+/* ============================================================
+   KEYBOARD
+============================================================ */
+
+document.getElementById(
+  'name-input'
+)?.addEventListener(
+  'keydown',
+  e=>{
+    if(e.key==='Enter'){
+      claimUsername();
+    }
+  }
+);
+
+document.getElementById(
+  'spectate-chat-input'
+)?.addEventListener(
+  'keydown',
+  e=>{
+    if(e.key==='Enter'){
+      sendSpectatorChat();
+    }
+  }
+);
+
+
+/* ============================================================
+   INITIALIZATION
+============================================================ */
+
 initGame();
 
-// Auto-play on first user interaction (browsers require this before playing audio)
+
+/* ============================================================
+   MUSIC AUTOPLAY AFTER USER INTERACTION
+============================================================ */
+
 (function(){
+
   function _startMusic(){
-    document.removeEventListener('click', _startMusic);
-    document.removeEventListener('keydown', _startMusic);
-    document.removeEventListener('touchstart', _startMusic);
-    if (!_musicPlaying) musicToggle();
+
+    document.removeEventListener(
+      'click',
+      _startMusic
+    );
+
+    document.removeEventListener(
+      'keydown',
+      _startMusic
+    );
+
+    document.removeEventListener(
+      'touchstart',
+      _startMusic
+    );
+
+    if(!_musicPlaying){
+      musicToggle();
+    }
   }
-  document.addEventListener('click', _startMusic);
-  document.addEventListener('keydown', _startMusic);
-  document.addEventListener('touchstart', _startMusic);
+
+  document.addEventListener(
+    'click',
+    _startMusic
+  );
+
+  document.addEventListener(
+    'keydown',
+    _startMusic
+  );
+
+  document.addEventListener(
+    'touchstart',
+    _startMusic
+  );
+
 })();
 </script>
+
 </body>
 </html>
