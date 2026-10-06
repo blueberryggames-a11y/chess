@@ -355,6 +355,10 @@
   }
 
   .timer-box .t-label {
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
     font-size:.7rem;
     letter-spacing:1px;
     color:var(--muted);
@@ -2328,9 +2332,9 @@ button.ghost{background:transparent}
   -webkit-mask-size:contain;mask-size:contain}
 .skin-overlay.on-white{mix-blend-mode:multiply}
 .skin-overlay.on-black{mix-blend-mode:screen}
-.skin-overlay.anim{background-size:200% 100%;background-repeat:repeat;animation:skinFlow 3s linear infinite}
+.skin-overlay.anim{background-size:200% 100%;background-repeat:repeat;animation:skinFlow 6s linear infinite}
 @keyframes skinFlow{from{background-position:0 0}to{background-position:200% 0}}
-.piece-wrap.skin-glow{animation:skinGlow 4s linear infinite}
+.piece-wrap.skin-glow{animation:skinGlow 6s linear infinite}
 @keyframes skinGlow{
   0%,100%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #ff3b3b)}
   17%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #ff9f1c)}
@@ -2341,7 +2345,7 @@ button.ghost{background:transparent}
 }
 html.no-mask .skin-overlay{display:none}
 html.no-mask .piece-wrap:not(.skin-glow) .piece-img.has-grad{filter:var(--skin-fallback) !important}
-html.no-mask .piece-wrap.skin-glow .piece-img{animation:skinHue 4s linear infinite}
+html.no-mask .piece-wrap.skin-glow .piece-img{animation:skinHue 6s linear infinite}
 @keyframes skinHue{from{filter:var(--skin-fallback) hue-rotate(0deg)}to{filter:var(--skin-fallback) hue-rotate(360deg)}}
 .shop-preview .piece-wrap{width:70%;height:70%}
 .shop-preview .piece-wrap img{width:100%;height:100%}
@@ -2598,12 +2602,12 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
 
   <div id="timers">
     <div class="timer-box" id="timer-white">
-      <div class="t-label">White ♔</div>
+      <div class="t-label" id="tl-white">Player 1</div>
       <div class="t-val" id="tv-white">0:30</div>
     </div>
 
     <div class="timer-box" id="timer-black">
-      <div class="t-label">Black ♚</div>
+      <div class="t-label" id="tl-black">Player 2</div>
       <div class="t-val" id="tv-black">0:30</div>
     </div>
   </div>
@@ -2644,7 +2648,7 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
 
       <div id="spectate-info">
         <div class="info-box">
-          <div class="label">White</div>
+          <div class="label">Player 1</div>
           <div class="value" id="spectate-white">—</div>
         </div>
 
@@ -2654,19 +2658,19 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
         </div>
 
         <div class="info-box">
-          <div class="label">Black</div>
+          <div class="label">Player 2</div>
           <div class="value" id="spectate-black">—</div>
         </div>
       </div>
 
       <div id="spectate-timers">
         <div class="timer-box" id="spectate-timer-white">
-          <div class="t-label">White ♔</div>
+          <div class="t-label" id="stl-white">Player 1</div>
           <div class="t-val" id="spectate-tv-white">0:30</div>
         </div>
 
         <div class="timer-box" id="spectate-timer-black">
-          <div class="t-label">Black ♚</div>
+          <div class="t-label" id="stl-black">Player 2</div>
           <div class="t-val" id="spectate-tv-black">0:30</div>
         </div>
       </div>
@@ -2790,7 +2794,7 @@ const SPECIAL_EMAILS = [
 
 const RAINBOW_GRADIENT = 'linear-gradient(135deg,#ff3b3b 0%,#ff9f1c 17%,#ffe135 33%,#3ddc84 50%,#2ec4ff 67%,#5b6cff 83%,#c04dff 100%)';
 // first and last colour match so the animation loops with no jump
-const RAINBOW_LOOP_GRADIENT = 'linear-gradient(90deg,#ff3b3b,#ff9f1c,#ffe135,#3ddc84,#2ec4ff,#5b6cff,#c04dff,#ff3b3b)';
+const RAINBOW_LOOP_GRADIENT = 'linear-gradient(90deg,#ff3b3b 0%,#ff7a1a 8%,#ffc21a 16%,#f4f23a 24%,#6fe34a 33%,#27e0a0 41%,#2ec4ff 50%,#4a8bff 58%,#6a5cff 66%,#b04dff 75%,#ff4de0 83%,#ff4d8d 92%,#ff3b3b 100%)';
 
 const SKINS = [
   { id:'classic', name:'Classic', price:0,
@@ -2894,6 +2898,52 @@ const SKINS = [
   { id:'void', name:'Void', price:30,
     desc:'Inverted darkness from beyond',
     filter:'grayscale(1) invert(1) brightness(.55) contrast(1.4) drop-shadow(0 0 7px rgba(255,255,255,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+
+  { id:'peach', name:'Peach', price:10,
+    desc:'Soft juicy orange-pink',
+    filter:'sepia(1) hue-rotate(-15deg) saturate(2) brightness(1.35) drop-shadow(0 0 6px rgba(253,186,140,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'sky', name:'Sky', price:10,
+    desc:'Bright open-air blue',
+    filter:'sepia(1) hue-rotate(155deg) saturate(2) brightness(1.3) drop-shadow(0 0 6px rgba(125,211,252,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'lemon', name:'Lemon', price:10,
+    desc:'Zesty pale yellow',
+    filter:'sepia(1) hue-rotate(10deg) saturate(3) brightness(1.4) drop-shadow(0 0 6px rgba(253,224,71,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'cherry', name:'Cherry', price:15,
+    desc:'Deep glossy red-pink',
+    filter:'sepia(1) hue-rotate(-60deg) saturate(6) brightness(.85) drop-shadow(0 0 6px rgba(225,29,72,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'jade', name:'Jade', price:15,
+    desc:'Carved green stone',
+    filter:'sepia(1) hue-rotate(110deg) saturate(3.5) brightness(.85) drop-shadow(0 0 6px rgba(5,150,105,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'copper', name:'Copper', price:15,
+    desc:'Warm burnished metal',
+    filter:'sepia(1) hue-rotate(-12deg) saturate(3) brightness(.85) drop-shadow(0 0 6px rgba(194,100,50,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'indigo', name:'Indigo', price:20,
+    desc:'Midnight blue-violet dye',
+    filter:'sepia(1) hue-rotate(205deg) saturate(5) brightness(.75) drop-shadow(0 0 6px rgba(79,70,229,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'magma', name:'Magma', price:20,
+    desc:'Glowing molten orange',
+    filter:'sepia(1) hue-rotate(-45deg) saturate(9) brightness(.8) contrast(1.3) drop-shadow(0 0 7px rgba(251,146,60,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'cotton', name:'Cotton Candy', price:20,
+    desc:'Fluffy pastel dream',
+    filter:'sepia(1) hue-rotate(290deg) saturate(1.5) brightness(1.5) drop-shadow(0 0 6px rgba(251,207,232,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'steel', name:'Steel', price:20,
+    desc:'Cold blue-grey armor',
+    filter:'sepia(.5) hue-rotate(180deg) saturate(1.5) brightness(1) contrast(1.1) drop-shadow(0 0 6px rgba(148,163,184,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'cyber', name:'Cyber', price:25,
+    desc:'Electric cyan circuitry',
+    filter:'sepia(1) hue-rotate(150deg) saturate(9) brightness(1.1) drop-shadow(0 0 7px rgba(6,182,212,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'plasma', name:'Plasma', price:25,
+    desc:'Crackling magenta energy',
+    filter:'sepia(1) hue-rotate(290deg) saturate(9) brightness(1) drop-shadow(0 0 7px rgba(217,70,239,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'arctic', name:'Arctic', price:30,
+    desc:'Glacier ice-white and blue',
+    filter:'sepia(.6) hue-rotate(170deg) saturate(2.5) brightness(1.5) drop-shadow(0 0 7px rgba(186,230,253,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'twilight', name:'Twilight', price:30,
+    desc:'Dusky deep violet',
+    filter:'sepia(1) hue-rotate(260deg) saturate(6) brightness(.7) contrast(1.2) drop-shadow(0 0 7px rgba(139,92,246,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'blood', name:'Blood Moon', price:30,
+    desc:'Dark crimson night',
+    filter:'sepia(1) hue-rotate(-50deg) saturate(10) brightness(.6) contrast(1.4) drop-shadow(0 0 7px rgba(153,27,27,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
 
   /* ----- skins unlocked by winning games (not for sale) ----- */
   { id:'veteran', name:'Veteran', price:0, winReq:5,
@@ -3322,6 +3372,13 @@ function pieceUrl(p){
   return `${PIECE_REPO}/${PIECE_FILES[p]}`;
 }
 
+// All animated skins share one global clock. Every time a piece is (re)built it joins the
+// animation at the current phase, so redrawing the board never makes the rainbow jump back.
+const SKIN_ANIM_MS=6000;
+function skinPhaseDelay(){
+  return '-'+((Date.now()%SKIN_ANIM_MS)/1000).toFixed(3)+'s';
+}
+
 // skinArg can be a skin object (preferred) or a plain CSS filter string
 function makePieceEl(p,skinArg){
   const skin=(skinArg && typeof skinArg==='object') ? skinArg : null;
@@ -3343,13 +3400,19 @@ function makePieceEl(p,skinArg){
     const ov=document.createElement('div');
     ov.className='skin-overlay '+(p===p.toUpperCase()?'on-white':'on-black')+(skin.anim?' anim':'');
     ov.style.backgroundImage=skin.grad;
+    if(skin.anim) ov.style.animationDelay=skinPhaseDelay();
     ov.style.webkitMaskImage='url("'+url+'")';
     ov.style.maskImage='url("'+url+'")';
     img.classList.add('has-grad');
     img.style.setProperty('--skin-fallback', skin.fallback||'none');
     w.appendChild(ov);
   }
-  if(skin && skin.glow) w.classList.add('skin-glow');
+  if(skin && skin.glow){
+    w.classList.add('skin-glow');
+    const d=skinPhaseDelay();
+    w.style.animationDelay=d;
+    img.style.setProperty('animation-delay',d);   // only used by the no-mask fallback
+  }
   return w;
 }
 
@@ -3778,6 +3841,30 @@ let roomCleanedUp=false;
 let coinsAwardedThisGame=false;
 
 let currentRoomSkins = { w:'classic', b:'classic' };
+let _lastRoomSkinSig = null;
+
+/* ---------- player names (shown instead of "White"/"Black") ---------- */
+let playerNames = { w:'', b:'' };
+
+function colorName(c){
+  const n = playerNames[c];
+  return n ? n : (c==='w' ? 'Player 1' : 'Player 2');
+}
+
+function setPlayerNames(w,b){
+  let changed=false;
+  if(w && playerNames.w!==w){ playerNames.w=w; changed=true; }
+  if(b && playerNames.b!==b){ playerNames.b=b; changed=true; }
+  if(changed) refreshPlayerLabels();
+}
+
+function refreshPlayerLabels(){
+  const setText=(id,t)=>{ const el=document.getElementById(id); if(el && el.textContent!==t) el.textContent=t; };
+  setText('tl-white', colorName('w') + (myColor==='w' ? ' (you)' : ''));
+  setText('tl-black', colorName('b') + (myColor==='b' ? ' (you)' : ''));
+  if(myColor) setText('my-color', myName);
+  if(typeof G!=='undefined' && G && G.turn) setText('turn-disp', colorName(G.turn));
+}
 
 
 /* ============================================================
@@ -3930,7 +4017,7 @@ async function loadOrCreateProfile(user){
   isGuest = false;
 }
 
-const BUILD_ID='2026-10-05-d-rainbow';
+const BUILD_ID='2026-10-05-e-smooth';
 console.log('Chess build '+BUILD_ID);
 let _authDone=false;
 function finishAuth(){
@@ -5012,6 +5099,9 @@ function startGame(){
   stopLobbyHeartbeat();
   gameStarted=true;
   gameEnded=false;
+  _lastRoomSkinSig=null;
+  playerNames={ w:'', b:'' };
+  playerNames[myColor]=myName;
   leaveProcessed=false;
   timeoutProcessed=false;
   drawOfferPending=false;
@@ -5029,7 +5119,9 @@ function startGame(){
   document.getElementById('leaderboard-page').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
 
-  document.getElementById('my-color').textContent = myColor==='w'?'♔ White':'♚ Black';
+  document.getElementById('my-color').textContent = myName;
+  refreshPlayerLabels();
+  fbGet(`rooms/${roomId}`).then(r=>{ if(r) setPlayerNames(r.whiteName,r.blackName); }).catch(()=>{});
   document.getElementById('room-disp').textContent = roomId;
 
   _chatSignatures.game=null;
@@ -5085,7 +5177,7 @@ function startHeartbeat(){
     if(!oppHb||Date.now()-oppHb>DISCONNECT_GRACE){
       if(room.black&&room.white){
         const winner=myColor;
-        const reason=myColor==='w'?'Black disconnected':'White disconnected';
+        const reason=`${colorName(opp(myColor))} disconnected`;
         await broadcastEnd(winner,reason);
         triggerGameEnd('disconnect',winner,'Opponent disconnected');
       }
@@ -5125,8 +5217,8 @@ async function checkClock(){
     clearInterval(timerInterval);
     timerInterval=null;
     const winner=opp(current);
-    await broadcastEnd(winner,`${current==='w'?'White':'Black'} ran out of time`);
-    triggerGameEnd('timeout',winner,`${current==='w'?'White':'Black'} ran out of time`);
+    await broadcastEnd(winner,`${colorName(current)} ran out of time`);
+    triggerGameEnd('timeout',winner,`${colorName(current)} ran out of time`);
   }
 }
 
@@ -5181,9 +5273,15 @@ async function pollMoves(){
       }
     );
 
+    // Redraw only when someone's skin actually changed (redrawing every poll restarts animations)
     if(room.skins && gameStarted && !gameEnded){
-      renderBoard();
+      const skinSig=currentRoomSkins.w+'|'+currentRoomSkins.b;
+      if(skinSig!==_lastRoomSkinSig){
+        _lastRoomSkinSig=skinSig;
+        renderBoard();
+      }
     }
+    setPlayerNames(room.whiteName,room.blackName);
 
     if(gameEnded) return;
 
@@ -5266,8 +5364,8 @@ async function sendMoveData(data){
 async function skipTurn(sc){
   if(gameEnded||G.status!=='playing'||G.turn!==sc||timeoutProcessed) return;
   timeoutProcessed=true;
-  await broadcastEnd(opp(sc),`${sc==='w'?'White':'Black'} ran out of time`);
-  triggerGameEnd('timeout',opp(sc),`${sc==='w'?'White':'Black'} ran out of time`);
+  await broadcastEnd(opp(sc),`${colorName(sc)} ran out of time`);
+  triggerGameEnd('timeout',opp(sc),`${colorName(sc)} ran out of time`);
 }
 
 function processSkip(sc){
@@ -5315,7 +5413,7 @@ async function loadLiveGames(){
     row.className='live-game';
     const info=document.createElement('div');
     info.innerHTML=
-      `<div class="game-title">${escapeHtml(r.whiteName||'White')} vs ${escapeHtml(r.blackName||'Black')}</div>`+
+      `<div class="game-title">${escapeHtml(r.whiteName||'Player 1')} vs ${escapeHtml(r.blackName||'Player 2')}</div>`+
       `<div class="game-meta">Room ${escapeHtml(r.code)} · <span class="live-badge">● LIVE</span></div>`;
     const btn=document.createElement('button');
     btn.textContent='Spectate';
@@ -5334,6 +5432,7 @@ let spectatorState=null;
 let spectateSig='';
 let spectateRoomStatus='playing';
 let spectatorSkins={w:'classic',b:'classic'};
+let spectatorNames={ w:'Player 1', b:'Player 2' };
 
 async function openSpectator(code){
   if(!myName){ showToast('Not signed in'); return; }
@@ -5381,8 +5480,12 @@ function renderSpectatorRoom(room){
 
   spectateRoomStatus=room.status||'playing';
 
-  document.getElementById('spectate-white').textContent=room.whiteName||'White';
-  document.getElementById('spectate-black').textContent=room.blackName||'Black';
+  document.getElementById('spectate-white').textContent=room.whiteName||'Player 1';
+  document.getElementById('spectate-black').textContent=room.blackName||'Player 2';
+  { const a=document.getElementById('stl-white'), b=document.getElementById('stl-black');
+    if(a) a.textContent=room.whiteName||'Player 1';
+    if(b) b.textContent=room.blackName||'Player 2'; }
+  spectatorNames={ w:room.whiteName||'Player 1', b:room.blackName||'Player 2' };
 
   if(room.skins){
     spectatorSkins={
@@ -5500,13 +5603,13 @@ function renderSpectatorUI(){
     st.status==='fifty'||
     st.status==='repetition';
 
-  const turnName=st.turn==='w'?'White':'Black';
+  const turnName=spectatorNames[st.turn]||(st.turn==='w'?'Player 1':'Player 2');
   document.getElementById('spectate-turn').textContent=ended?'Game Over':turnName;
 
   let statusHtml;
   if(ended) statusHtml='<span class="accent">Game Over</span>';
-  else if(st.status==='check') statusHtml='Watching live · <span class="warn">'+turnName+' in check!</span>';
-  else statusHtml='Watching live · <span class="accent">'+turnName+' to move</span>';
+  else if(st.status==='check') statusHtml='Watching live · <span class="warn">'+escapeHtml(turnName)+' in check!</span>';
+  else statusHtml='Watching live · <span class="accent">'+escapeHtml(turnName)+' to move</span>';
 
   document.getElementById('spectate-status').innerHTML=statusHtml;
 
@@ -5571,7 +5674,7 @@ async function pollSpectator(){
   renderSpectatorRoom(room);
 
   if(room.status==='ended'&&room.event){
-    const title=room.event.winner==='draw'?'Draw':`${room.event.winner==='w'?'White':'Black'} wins`;
+    const title=room.event.winner==='draw'?'Draw':`${(room.event.winner==='w'?room.whiteName:room.blackName)||(room.event.winner==='w'?'Player 1':'Player 2')} wins`;
     document.getElementById('spectate-status').innerHTML=
       `<span class="accent">Game Over · ${escapeHtml(title)}</span>`+
       (room.event.reason?`<br><small style="color:var(--muted)">${escapeHtml(room.event.reason)}</small>`:'');
@@ -5624,8 +5727,8 @@ async function resignGame(){
   if(gameEnded||G.status!=='playing') return;
   if(!confirm('Resign this game?')) return;
   const winner=opp(myColor);
-  await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} resigned`);
-  triggerGameEnd('resign',winner,`${myColor==='w'?'White':'Black'} resigned`);
+  await broadcastEnd(winner,`${colorName(myColor)} resigned`);
+  triggerGameEnd('resign',winner,`${colorName(myColor)} resigned`);
 }
 
 async function broadcastEnd(winner,reason){
@@ -5697,7 +5800,7 @@ function triggerGameEnd(type,winner,reason){
   const title=isDraw?'Draw':iWin?'Victory!':'Defeated';
 
   const texts={
-    checkmate:`Checkmate — ${winner==='w'?'White':'Black'} wins!`,
+    checkmate:`Checkmate — ${colorName(winner)} wins!`,
     stalemate:'Stalemate — no legal moves',
     resign:reason||'Opponent resigned',
     disconnect:'Opponent disconnected',
@@ -5724,7 +5827,8 @@ function triggerGameEnd(type,winner,reason){
 function handleRemoteEnd(winner,reason){
   if(gameEnded) return;
   let type='draw';
-  const lower=String(reason||'').toLowerCase();
+  let lower=String(reason||'').toLowerCase();
+  [playerNames.w,playerNames.b].forEach(n=>{ if(n) lower=lower.split(String(n).toLowerCase()).join(' '); });
   if(lower.includes('resigned')) type='resign';
   else if(lower.includes('disconnected')) type='disconnect';
   else if(lower.includes('checkmate')) type='checkmate';
@@ -5748,7 +5852,7 @@ async function leaveGame(){
 
   leaveProcessed=true;
   const winner=opp(myColor);
-  await broadcastEnd(winner,`${myColor==='w'?'White':'Black'} left the game`);
+  await broadcastEnd(winner,`${colorName(myColor)} left the game`);
 
   clearInterval(timerInterval);
   clearInterval(pollTimer);
@@ -5770,7 +5874,7 @@ function emergencyLeave(){
         event:{
           type:'end',
           winner,
-          reason:`${myColor==='w'?'White':'Black'} left the game`,
+          reason:`${colorName(myColor)} left the game`,
           at:Date.now(),
           by:MY_ID
         },
@@ -6081,13 +6185,13 @@ function updateUI(){
   else if(s==='check'){
     txt=G.turn===myColor
       ?'<span class="warn">⚠ Your king is in check!</span>'
-      :'<span class="accent">Check — opponent\'s king is in check</span>';
+      :'<span class="accent">Check — '+escapeHtml(colorName(G.turn))+'\'s king is in check</span>';
   }else{
-    txt=G.turn===myColor?'<span class="accent">Your turn</span>':"<em>Opponent's turn…</em>";
+    txt=G.turn===myColor?'<span class="accent">Your turn</span>':'<em>'+escapeHtml(colorName(G.turn))+'\'s turn…</em>';
   }
 
   statusEl.innerHTML=txt;
-  document.getElementById('turn-disp').textContent=G.turn==='w'?'♔ White':'♚ Black';
+  document.getElementById('turn-disp').textContent=colorName(G.turn);
 
   const logEl=document.getElementById('move-log');
   let html='';
