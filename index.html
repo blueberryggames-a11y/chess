@@ -1626,7 +1626,7 @@
     border-radius:22px;
     padding:14px 16px;
     width:320px;
-    max-width:calc(100vw - 32px);
+    max-width:calc(100vw - 32px - var(--mh-w,30px) - 6px);
     display:flex;
     flex-direction:column;
     gap:11px;
@@ -1895,6 +1895,137 @@
   }
 
   #music-btn-skip { font-size:.85rem; }
+
+  /* ---------- collapsible dock (double-chevron handle) ---------- */
+
+  #music-player { --mh-w:30px; --mp-right:20px; }
+
+  #music-drawer {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    pointer-events:none;
+    transition:transform .65s cubic-bezier(.77,0,.18,1);
+  }
+
+  #music-drawer.collapsed {
+    transform:translateX(calc(100% - var(--mh-w) + var(--mp-right)));
+  }
+
+  #music-panel {
+    transition:opacity .4s ease, filter .4s ease, visibility 0s linear 0s;
+  }
+
+  #music-drawer.collapsed #music-panel {
+    opacity:0;
+    filter:blur(3px);
+    pointer-events:none;
+    visibility:hidden;
+    transition:opacity .35s ease, filter .35s ease, visibility 0s linear .65s;
+  }
+
+  #music-handle {
+    pointer-events:auto;
+    position:relative;
+    flex-shrink:0;
+    width:var(--mh-w);
+    height:62px;
+    padding:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    perspective:160px;
+    border-radius:16px;
+    border:1px solid rgba(201,168,76,.3);
+    background:linear-gradient(150deg,rgba(26,26,44,.86) 0%,rgba(19,19,31,.92) 100%);
+    background-image:linear-gradient(150deg,rgba(26,26,44,.86) 0%,rgba(19,19,31,.92) 100%);
+    -webkit-backdrop-filter:blur(18px) saturate(170%);
+    backdrop-filter:blur(18px) saturate(170%);
+    color:var(--gold);
+    cursor:pointer;
+    letter-spacing:0;
+    font-size:1rem;
+    box-shadow:0 8px 24px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.07) inset;
+    transition:border-radius .65s cubic-bezier(.77,0,.18,1),
+               background .25s, border-color .25s, color .25s,
+               box-shadow .3s, transform .15s;
+  }
+
+  #music-drawer.collapsed #music-handle {
+    border-radius:20px 0 0 20px;
+    border-right-color:transparent;
+  }
+
+  #music-handle:hover {
+    background:linear-gradient(150deg,rgba(201,168,76,.34) 0%,rgba(201,168,76,.12) 100%);
+    background-image:linear-gradient(150deg,rgba(201,168,76,.34) 0%,rgba(201,168,76,.12) 100%);
+    border-color:var(--gold);
+    color:var(--gold-light);
+    transform:none;
+    box-shadow:0 8px 26px rgba(201,168,76,.32), 0 1px 0 rgba(255,255,255,.14) inset;
+  }
+
+  #music-handle:active { transform:scale(.94); }
+
+  #music-handle:focus-visible {
+    outline:2px solid var(--gold-light);
+    outline-offset:2px;
+  }
+
+  #music-handle .mh-icon {
+    width:20px;
+    height:20px;
+    display:block;
+    overflow:visible;
+    transition:transform .65s cubic-bezier(.77,0,.18,1);
+    transform-style:preserve-3d;
+    filter:drop-shadow(0 0 4px rgba(201,168,76,.45));
+  }
+
+  #music-handle .mh-icon path {
+    fill:none;
+    stroke:currentColor;
+    stroke-width:2.5;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    transition:transform .25s ease, opacity .25s ease;
+  }
+
+  #music-handle .mh-icon .c1 { opacity:.5; }
+
+  /* flip >>  into  <<  when the player is tucked away */
+  #music-drawer.collapsed #music-handle .mh-icon { transform:rotateY(180deg); }
+
+  /* chevrons lean in the direction they point on hover */
+  #music-handle:hover .mh-icon path { transform:translateX(2px); }
+  #music-handle:hover .mh-icon .c1 { opacity:.8; }
+
+  /* when tucked away the chevrons gently pulse so the tab is easy to spot */
+  @keyframes mhNudge {
+    0%,100% { transform:translateX(0); }
+    50%     { transform:translateX(2.5px); }
+  }
+  #music-drawer.collapsed #music-handle .mh-icon path { animation:mhNudge 2s ease-in-out infinite; }
+  #music-drawer.collapsed #music-handle .mh-icon .c2  { animation-delay:.18s; }
+  #music-drawer.collapsed #music-handle:hover .mh-icon path { animation-play-state:paused; transform:translateX(3px); }
+
+  /* glow on the tab while music is playing and the player is tucked away */
+  @keyframes mhGlow {
+    0%,100% { box-shadow:0 8px 24px rgba(0,0,0,.45), 0 0 0 0 rgba(201,168,76,.0), 0 1px 0 rgba(255,255,255,.07) inset; }
+    50%     { box-shadow:0 8px 24px rgba(0,0,0,.45), 0 0 18px 2px rgba(201,168,76,.55), 0 1px 0 rgba(255,255,255,.07) inset; }
+  }
+  #music-drawer.collapsed #music-handle.playing { animation:mhGlow 2.4s ease-in-out infinite; }
+
+  /* no transitions while restoring the saved state on page load */
+  #music-player.mp-init #music-drawer,
+  #music-player.mp-init #music-drawer * { transition:none !important; animation:none !important; }
+
+  @media (prefers-reduced-motion:reduce) {
+    #music-drawer, #music-panel, #music-handle, #music-handle .mh-icon { transition-duration:.01s !important; }
+    #music-handle .mh-icon path, #music-handle.playing { animation:none !important; }
+  }
+
+  :root[data-ui="sharp"] #music-handle { border-radius:0 !important; }
 
   /* ============================================================
      SETTINGS
@@ -2247,7 +2378,7 @@
     body { padding-left:7px; padding-right:7px; }
     #game-btns button { padding:9px 14px; }
     .card { padding:20px 16px; }
-    #music-player { right:10px; bottom:10px; }
+    #music-player { right:10px; bottom:10px; --mp-right:10px; }
     #music-panel { width:290px; padding:12px 14px; }
     #music-vol-wrap { max-width:108px; }
     #settings-btn { top:10px; right:10px; width:38px; height:38px; font-size:1rem; }
@@ -2725,6 +2856,15 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
 <div id="music-player">
   <div id="music-info"></div>
 
+  <div id="music-drawer">
+  <button id="music-handle" type="button" onclick="toggleMusicPlayer()"
+          title="Hide music player" aria-label="Hide music player" aria-expanded="true" aria-controls="music-panel">
+    <svg class="mh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path class="c1" d="M5.5 6.5 L11 12 L5.5 17.5"/>
+      <path class="c2" d="M12.5 6.5 L18 12 L12.5 17.5"/>
+    </svg>
+  </button>
+
   <div id="music-panel">
     <div id="music-track-row">
       <span id="music-icon">♪</span>
@@ -2746,6 +2886,7 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
       <button class="music-btn" id="music-btn-skip" onclick="musicSkip()" title="Next track">&#9654;&#9654;</button>
       <button class="music-btn" id="music-btn-play" onclick="musicToggle()" title="Play / Pause">♪</button>
     </div>
+  </div>
   </div>
 </div>
 
@@ -3160,7 +3301,47 @@ function _updatePlayBtn(){
   btn.classList.toggle('playing',_musicPlaying);
   btn.title=_musicPlaying?'Pause':'Play music';
   btn.innerHTML=_musicPlaying?'&#9646;&#9646;':'&#9834;';
+  const handle=document.getElementById('music-handle');
+  if(handle) handle.classList.toggle('playing',_musicPlaying);
 }
+
+/* ---------- collapse / expand the music player ---------- */
+const MUSIC_COLLAPSE_KEY='chessMusicCollapsed';
+
+function setMusicCollapsed(collapsed,persist){
+  const drawer=document.getElementById('music-drawer');
+  const handle=document.getElementById('music-handle');
+  const panel=document.getElementById('music-panel');
+  if(!drawer||!handle) return;
+  drawer.classList.toggle('collapsed',!!collapsed);
+  const label=collapsed?'Show music player':'Hide music player';
+  handle.title=label;
+  handle.setAttribute('aria-label',label);
+  handle.setAttribute('aria-expanded',String(!collapsed));
+  if(panel){
+    if(collapsed) panel.setAttribute('inert','');
+    else panel.removeAttribute('inert');
+  }
+  if(persist){
+    try{ localStorage.setItem(MUSIC_COLLAPSE_KEY,collapsed?'1':'0'); }catch(e){}
+  }
+}
+
+function toggleMusicPlayer(){
+  const drawer=document.getElementById('music-drawer');
+  if(!drawer) return;
+  setMusicCollapsed(!drawer.classList.contains('collapsed'),true);
+}
+
+(function initMusicCollapse(){
+  const mp=document.getElementById('music-player');
+  if(!mp) return;
+  let collapsed=false;
+  try{ collapsed=localStorage.getItem(MUSIC_COLLAPSE_KEY)==='1'; }catch(e){}
+  mp.classList.add('mp-init');
+  setMusicCollapsed(collapsed,false);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>mp.classList.remove('mp-init')));
+})();
 
 function musicToggle(){
   if(!MUSIC_FILES.length){ showToast('No tracks configured',3000); return; }
@@ -4017,7 +4198,7 @@ async function loadOrCreateProfile(user){
   isGuest = false;
 }
 
-const BUILD_ID='2026-10-05-e-smooth';
+const BUILD_ID='2026-10-05-f-dock';
 console.log('Chess build '+BUILD_ID);
 let _authDone=false;
 function finishAuth(){
