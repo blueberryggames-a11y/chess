@@ -2474,6 +2474,28 @@ button.ghost{background:transparent}
   67%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #2ec4ff)}
   83%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #b04dff)}
 }
+/* ---------- Chase: glowing blue + letters sliding up ---------- */
+.piece-wrap.skin-glow-blue{animation:skinGlowBlue 3s ease-in-out infinite}
+@keyframes skinGlowBlue{
+  0%,100%{filter:drop-shadow(0 0 2px #bfe6ff) drop-shadow(0 0 6px #1f6bff)}
+  50%{filter:drop-shadow(0 0 4px #e6fbff) drop-shadow(0 0 14px #00b4ff) drop-shadow(0 0 22px #1f6bff)}
+}
+.piece-wrap.has-text{container-type:inline-size}
+.skin-text{position:absolute;left:0;right:0;bottom:8%;display:flex;justify-content:center;
+  overflow:hidden;pointer-events:none;z-index:3;line-height:1.15;
+  font-family:'Cinzel',serif;font-weight:900;letter-spacing:.04em;font-size:9px;
+  font-size:max(7px,19cqw)}
+.skin-text span{display:inline-block;color:#fff;transform:translateY(130%);opacity:0;
+  text-shadow:0 0 4px #00b4ff,0 0 8px #1f6bff,0 1px 2px rgba(0,0,20,.9);
+  animation:chaseRise 6s ease-in-out infinite}
+@keyframes chaseRise{
+  0%{transform:translateY(130%);opacity:0}
+  6%{transform:translateY(0);opacity:1}
+  68%{transform:translateY(0);opacity:1}
+  76%{transform:translateY(-130%);opacity:0}
+  100%{transform:translateY(-130%);opacity:0}
+}
+html.no-mask .piece-wrap.skin-glow-blue .piece-img{animation:none}
 html.no-mask .skin-overlay{display:none}
 html.no-mask .piece-wrap:not(.skin-glow) .piece-img.has-grad{filter:var(--skin-fallback) !important}
 html.no-mask .piece-wrap.skin-glow .piece-img{animation:skinHue 6s linear infinite}
@@ -2938,6 +2960,9 @@ const RAINBOW_GRADIENT = 'linear-gradient(135deg,#ff3b3b 0%,#ff9f1c 17%,#ffe135 
 // first and last colour match so the animation loops with no jump
 const RAINBOW_LOOP_GRADIENT = 'linear-gradient(90deg,#ff3b3b 0%,#ff7a1a 8%,#ffc21a 16%,#f4f23a 24%,#6fe34a 33%,#27e0a0 41%,#2ec4ff 50%,#4a8bff 58%,#6a5cff 66%,#b04dff 75%,#ff4de0 83%,#ff4d8d 92%,#ff3b3b 100%)';
 
+// first and last colour match so the animation loops with no jump
+const BLUE_LOOP_GRADIENT = 'linear-gradient(90deg,#0a2cff 0%,#1f6bff 14%,#2e9bff 28%,#7fe0ff 40%,#e6fbff 46%,#7fe0ff 52%,#2e9bff 64%,#1f6bff 78%,#0a2cff 100%)';
+
 const SKINS = [
   { id:'classic', name:'Classic', price:0,
     desc:'Standard chess pieces',
@@ -3115,7 +3140,12 @@ const SKINS = [
     desc:'Exclusive · animated glowing rainbow',
     filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
     grad:RAINBOW_LOOP_GRADIENT, anim:true, glow:true,
-    fallback:'sepia(1) hue-rotate(300deg) saturate(6) brightness(1.15) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
+    fallback:'sepia(1) hue-rotate(300deg) saturate(6) brightness(1.15) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'chase', name:'Chase', price:0, special:true,
+    desc:'Exclusive · glowing animated blue',
+    filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:BLUE_LOOP_GRADIENT, anim:true, glowBlue:true, text:'CHASE',
+    fallback:'sepia(1) hue-rotate(165deg) saturate(6) brightness(1.1) drop-shadow(0 0 6px rgba(46,155,255,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
 ];
 
 function findSkin(id){
@@ -3594,6 +3624,24 @@ function makePieceEl(p,skinArg){
     const d=skinPhaseDelay();
     w.style.animationDelay=d;
     img.style.setProperty('animation-delay',d);   // only used by the no-mask fallback
+  }
+  if(skin && skin.glowBlue){
+    w.classList.add('skin-glow-blue');
+    w.style.animationDelay=skinPhaseDelay();
+  }
+  if(skin && skin.text){
+    // letters slide up one after another, 0.5s apart (all pieces stay in sync)
+    const phase=(Date.now()%SKIN_ANIM_MS)/1000;
+    const t=document.createElement('div');
+    t.className='skin-text';
+    String(skin.text).split('').forEach((ch,i)=>{
+      const sp=document.createElement('span');
+      sp.textContent=ch;
+      sp.style.animationDelay=(i*0.5-phase).toFixed(3)+'s';
+      t.appendChild(sp);
+    });
+    w.classList.add('has-text');
+    w.appendChild(t);
   }
   return w;
 }
