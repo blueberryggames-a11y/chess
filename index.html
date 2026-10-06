@@ -2318,8 +2318,38 @@ button.ghost{background:transparent}
   box-shadow:0 18px 70px rgba(0,0,0,.65),0 0 40px color-mix(in srgb,var(--gold) 10%,transparent)}
 .sq:hover{filter:brightness(1.08)}
 .sq.selected{background:#8fd18f !important;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
-.piece-wrap{transition:transform .12s ease}
+.piece-wrap{transition:transform .12s ease;position:relative;isolation:isolate}
 .sq:hover .piece-wrap{transform:scale(1.07)}
+
+/* ---------- gradient / animated skins ---------- */
+.skin-overlay{position:absolute;inset:0;pointer-events:none;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-size:contain;mask-size:contain}
+.skin-overlay.on-white{mix-blend-mode:multiply}
+.skin-overlay.on-black{mix-blend-mode:screen}
+.skin-overlay.anim{background-size:200% 100%;background-repeat:repeat;animation:skinFlow 3s linear infinite}
+@keyframes skinFlow{from{background-position:0 0}to{background-position:200% 0}}
+.piece-wrap.skin-glow{animation:skinGlow 4s linear infinite}
+@keyframes skinGlow{
+  0%,100%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #ff3b3b)}
+  17%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #ff9f1c)}
+  33%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #ffe135)}
+  50%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #3ddc84)}
+  67%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #2ec4ff)}
+  83%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #b04dff)}
+}
+html.no-mask .skin-overlay{display:none}
+html.no-mask .piece-wrap:not(.skin-glow) .piece-img.has-grad{filter:var(--skin-fallback) !important}
+html.no-mask .piece-wrap.skin-glow .piece-img{animation:skinHue 4s linear infinite}
+@keyframes skinHue{from{filter:var(--skin-fallback) hue-rotate(0deg)}to{filter:var(--skin-fallback) hue-rotate(360deg)}}
+.shop-preview .piece-wrap{width:70%;height:70%}
+.shop-preview .piece-wrap img{width:100%;height:100%}
+.shop-item .skin-tag{position:absolute;top:8px;left:8px;z-index:3;font-family:'Cinzel',serif;
+  font-size:.5rem;font-weight:700;letter-spacing:1.5px;padding:3px 7px;border-radius:20px;color:#fff;
+  background:linear-gradient(90deg,#ff3b3b,#ff9f1c,#3ddc84,#2ec4ff,#b04dff,#ff3b3b);background-size:200% 100%;
+  animation:skinFlow 3s linear infinite;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.shop-item.exclusive{border-color:#ff9f1c}
 .sq.in-check{background:radial-gradient(circle,#ff6b5b 0%,#c0392b 70%) !important}
 .timer-box{position:relative;overflow:hidden}
 .timer-box.active{box-shadow:0 0 18px color-mix(in srgb,var(--gold) 25%,transparent)}
@@ -2751,6 +2781,17 @@ try{
    SHOP — SKINS
 ============================================================ */
 
+const SPECIAL_EMAILS = [
+  'chilten44pallock@gmail.com',
+  '30copallock@pulaskischools.org',
+  'coltenboop@gmail.com',
+  'blueberryggames@gmail.com'
+].map(e => e.toLowerCase());
+
+const RAINBOW_GRADIENT = 'linear-gradient(135deg,#ff3b3b 0%,#ff9f1c 17%,#ffe135 33%,#3ddc84 50%,#2ec4ff 67%,#5b6cff 83%,#c04dff 100%)';
+// first and last colour match so the animation loops with no jump
+const RAINBOW_LOOP_GRADIENT = 'linear-gradient(90deg,#ff3b3b,#ff9f1c,#ffe135,#3ddc84,#2ec4ff,#5b6cff,#c04dff,#ff3b3b)';
+
 const SKINS = [
   { id:'classic', name:'Classic', price:0,
     desc:'Standard chess pieces',
@@ -2820,11 +2861,102 @@ const SKINS = [
     filter:'sepia(1) hue-rotate(120deg) saturate(5) brightness(1.2) drop-shadow(0 0 6px rgba(52,211,153,.9)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
   { id:'inverted', name:'Inverted', price:30,
     desc:'Colors flipped inside out',
-    filter:'invert(1) hue-rotate(180deg) saturate(1.5) drop-shadow(0 0 6px rgba(125,211,252,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
+    filter:'invert(1) hue-rotate(180deg) saturate(1.5) drop-shadow(0 0 6px rgba(125,211,252,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+
+  /* ----- more skins you can buy with coins ----- */
+  { id:'lavender', name:'Lavender', price:10,
+    desc:'Calm purple-lilac field',
+    filter:'sepia(1) hue-rotate(245deg) saturate(2) brightness(1.25) drop-shadow(0 0 6px rgba(196,181,253,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'coral', name:'Coral', price:10,
+    desc:'Warm reef pink-orange',
+    filter:'sepia(1) hue-rotate(-30deg) saturate(3.5) brightness(1.2) drop-shadow(0 0 6px rgba(251,113,133,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'bone', name:'Bone', price:15,
+    desc:'Old ivory relics',
+    filter:'sepia(.8) saturate(1.2) brightness(1.2) contrast(.92) drop-shadow(0 0 5px rgba(245,235,210,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'teal', name:'Teal', price:15,
+    desc:'Deep lagoon blue-green',
+    filter:'sepia(1) hue-rotate(140deg) saturate(4) brightness(.95) drop-shadow(0 0 6px rgba(20,184,166,.75)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'emerald', name:'Emerald', price:20,
+    desc:'Rich jewel green',
+    filter:'sepia(1) hue-rotate(80deg) saturate(5) brightness(.9) drop-shadow(0 0 6px rgba(16,185,129,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'midnight', name:'Midnight', price:20,
+    desc:'Dark navy night shift',
+    filter:'sepia(1) hue-rotate(215deg) saturate(3) brightness(.55) drop-shadow(0 0 6px rgba(99,102,241,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'amethyst', name:'Amethyst', price:25,
+    desc:'Glittering violet crystal',
+    filter:'sepia(1) hue-rotate(255deg) saturate(5) brightness(1) drop-shadow(0 0 6px rgba(192,132,252,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'matrix', name:'Matrix', price:25,
+    desc:'Green terminal code',
+    filter:'sepia(1) hue-rotate(80deg) saturate(8) brightness(.8) contrast(1.3) drop-shadow(0 0 7px rgba(0,255,70,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'solar', name:'Solar', price:30,
+    desc:'Blazing sun-yellow flare',
+    filter:'sepia(1) hue-rotate(5deg) saturate(8) brightness(1.25) drop-shadow(0 0 8px rgba(250,204,21,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'void', name:'Void', price:30,
+    desc:'Inverted darkness from beyond',
+    filter:'grayscale(1) invert(1) brightness(.55) contrast(1.4) drop-shadow(0 0 7px rgba(255,255,255,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+
+  /* ----- skins unlocked by winning games (not for sale) ----- */
+  { id:'veteran', name:'Veteran', price:0, winReq:5,
+    desc:'Bronze finish · unlocks at 5 wins',
+    filter:'sepia(1) hue-rotate(-5deg) saturate(2.5) brightness(.9) drop-shadow(0 0 6px rgba(205,127,50,.8)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'platinum', name:'Platinum', price:0, winReq:10,
+    desc:'Cool brilliant metal · unlocks at 10 wins',
+    filter:'grayscale(1) brightness(1.45) contrast(1.1) drop-shadow(0 0 7px rgba(165,243,252,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'spectrum', name:'Spectrum', price:0, winReq:15,
+    desc:'Rainbow gradient · unlocks at 15 wins',
+    filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:RAINBOW_GRADIENT,
+    fallback:'sepia(1) hue-rotate(300deg) saturate(5) brightness(1.1) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'galaxy', name:'Galaxy', price:0, winReq:25,
+    desc:'Cosmic gradient · unlocks at 25 wins',
+    filter:'drop-shadow(0 0 4px rgba(147,51,234,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:'linear-gradient(135deg,#4f46e5 0%,#9333ea 40%,#ec4899 70%,#38bdf8 100%)',
+    fallback:'sepia(1) hue-rotate(250deg) saturate(5) brightness(1) drop-shadow(0 0 5px rgba(147,51,234,.7)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+  { id:'champion', name:'Champion', price:0, winReq:50,
+    desc:'Gleaming gold gradient · unlocks at 50 wins',
+    filter:'drop-shadow(0 0 6px rgba(245,197,24,.9)) drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:'linear-gradient(135deg,#fff3b0 0%,#f5c518 35%,#b8860b 65%,#f5c518 100%)',
+    fallback:'sepia(1) hue-rotate(20deg) saturate(6) brightness(1.15) drop-shadow(0 0 6px rgba(245,197,24,.9)) drop-shadow(0 2px 4px rgba(0,0,0,.45))' },
+
+  /* ----- EXCLUSIVE: only appears in the shop for the accounts listed in SPECIAL_EMAILS ----- */
+  { id:'prismatic', name:'Prismatic', price:0, special:true,
+    desc:'Exclusive · animated glowing rainbow',
+    filter:'drop-shadow(0 2px 4px rgba(0,0,0,.45))',
+    grad:RAINBOW_LOOP_GRADIENT, anim:true, glow:true,
+    fallback:'sepia(1) hue-rotate(300deg) saturate(6) brightness(1.15) drop-shadow(0 2px 4px rgba(0,0,0,.45))' }
 ];
 
 function findSkin(id){
   return SKINS.find(s => s.id === id) || SKINS[0];
+}
+
+/* ---------- access rules ---------- */
+
+function isSpecialUser(){
+  if(isGuest || !currentUser || !currentUser.email) return false;
+  if(currentUser.emailVerified === false) return false;
+  return SPECIAL_EMAILS.indexOf(String(currentUser.email).trim().toLowerCase()) !== -1;
+}
+
+function isSkinVisible(skin){
+  return !skin.special || isSpecialUser();
+}
+
+function isSkinOwned(skin){
+  if(!skin || !userProfile || isGuest) return false;
+  if(!isSkinVisible(skin)) return false;
+  if(skin.special) return true;
+  if(skin.winReq) return (userProfile.wins||0) >= skin.winReq;
+  return !!(userProfile.ownedSkins && userProfile.ownedSkins[skin.id]);
+}
+
+function visibleSkins(){
+  // exclusive skins first, everything else keeps its order
+  return SKINS.filter(isSkinVisible).sort((a,b)=>(b.special?1:0)-(a.special?1:0));
+}
+
+function ownedSkinCount(){
+  return SKINS.filter(isSkinOwned).length;
 }
 
 
@@ -3142,8 +3274,8 @@ function renderAccountInfo(){
   if(currentUser && !isGuest){
     const coins = userProfile ? (userProfile.coins||0) : 0;
     const wins = userProfile ? (userProfile.wins||0) : 0;
-    const owned = userProfile ? Object.keys(userProfile.ownedSkins||{}).length : 1;
-    box.innerHTML=`Signed in as <strong style="color:var(--gold)">${escapeHtml(myName)}</strong><br>${coins} coins · ${wins} wins · ${owned}/${SKINS.length} skins`;
+    const owned = userProfile ? ownedSkinCount() : 1;
+    box.innerHTML=`Signed in as <strong style="color:var(--gold)">${escapeHtml(myName)}</strong><br>${coins} coins · ${wins} wins · ${owned}/${visibleSkins().length} skins`;
     if(out) out.style.display='inline-block';
     if(cn) cn.style.display='inline-block';
   }else{
@@ -3190,7 +3322,10 @@ function pieceUrl(p){
   return `${PIECE_REPO}/${PIECE_FILES[p]}`;
 }
 
-function makePieceEl(p,filter){
+// skinArg can be a skin object (preferred) or a plain CSS filter string
+function makePieceEl(p,skinArg){
+  const skin=(skinArg && typeof skinArg==='object') ? skinArg : null;
+  const filter=skin ? skin.filter : skinArg;
   const w=document.createElement('div');
   w.className='piece-wrap';
   const img=document.createElement('img');
@@ -3202,8 +3337,32 @@ function makePieceEl(p,filter){
     img.style.filter=filter;
   }
   w.appendChild(img);
+
+  if(skin && skin.grad){
+    const url=pieceUrl(p);
+    const ov=document.createElement('div');
+    ov.className='skin-overlay '+(p===p.toUpperCase()?'on-white':'on-black')+(skin.anim?' anim':'');
+    ov.style.backgroundImage=skin.grad;
+    ov.style.webkitMaskImage='url("'+url+'")';
+    ov.style.maskImage='url("'+url+'")';
+    img.classList.add('has-grad');
+    img.style.setProperty('--skin-fallback', skin.fallback||'none');
+    w.appendChild(ov);
+  }
+  if(skin && skin.glow) w.classList.add('skin-glow');
   return w;
 }
+
+// gradient skins use the piece image as a CSS mask, which needs CORS.
+// If the image host blocks that, fall back to a plain colour filter.
+(function probeMaskSupport(){
+  try{
+    const t=new Image();
+    t.crossOrigin='anonymous';
+    t.onerror=function(){ document.documentElement.classList.add('no-mask'); };
+    t.src=pieceUrl('N');
+  }catch(e){}
+})();
 
 
 /* ============================================================
@@ -3771,7 +3930,8 @@ async function loadOrCreateProfile(user){
   isGuest = false;
 }
 
-console.log('Chess build 2026-10-05-c');
+const BUILD_ID='2026-10-05-d-rainbow';
+console.log('Chess build '+BUILD_ID);
 let _authDone=false;
 function finishAuth(){
   if(_authDone) return;
@@ -4059,7 +4219,7 @@ function renderShop(){
   if(tag){
     tag.textContent = isGuest
       ? 'Sign in to buy skins'
-      : `Owned: ${Object.keys(userProfile?.ownedSkins||{}).length} / ${SKINS.length}`;
+      : `Owned: ${ownedSkinCount()} / ${visibleSkins().length} · build ${BUILD_ID}`;
   }
 
   grid.innerHTML='';
@@ -4069,27 +4229,34 @@ function renderShop(){
     empty.className='shop-empty';
     empty.innerHTML='🎨 <strong style="color:var(--gold)">Sign in with Google</strong> to unlock skins.<br>Guests cannot earn coins or buy skins.';
     grid.appendChild(empty);
-    SKINS.forEach(skin=> grid.appendChild(buildShopItem(skin, false)));
+    visibleSkins().forEach(skin=> grid.appendChild(buildShopItem(skin, false)));
     return;
   }
 
-  SKINS.forEach(skin=> grid.appendChild(buildShopItem(skin, true)));
+  visibleSkins().forEach(skin=> grid.appendChild(buildShopItem(skin, true)));
 }
 
 function buildShopItem(skin, interactive){
-  const owned = !!(userProfile && userProfile.ownedSkins && userProfile.ownedSkins[skin.id]);
-  const equipped = !!(userProfile && userProfile.equippedSkin === skin.id);
+  const owned = interactive && isSkinOwned(skin);
+  const equipped = !!(interactive && userProfile && getMyEquippedSkin() === skin.id);
+  const myWins = userProfile ? (userProfile.wins||0) : 0;
 
   const item=document.createElement('div');
-  item.className='shop-item'+(equipped?' equipped':'');
+  item.className='shop-item'+(equipped?' equipped':'')+(skin.special?' exclusive':'');
+
+  if(skin.special){
+    const tag=document.createElement('span');
+    tag.className='skin-tag';
+    tag.textContent='EXCLUSIVE';
+    item.appendChild(tag);
+  }
 
   const preview=document.createElement('div');
   preview.className='shop-preview';
-  const img=document.createElement('img');
-  img.src=pieceUrl('N');
-  img.alt=skin.name;
-  img.style.filter=skin.filter;
-  preview.appendChild(img);
+  const pieceEl=makePieceEl('N', skin);
+  const pieceImg=pieceEl.querySelector('img');
+  if(pieceImg) pieceImg.alt=skin.name;
+  preview.appendChild(pieceEl);
 
   const nameEl=document.createElement('div');
   nameEl.className='shop-name';
@@ -4101,8 +4268,15 @@ function buildShopItem(skin, interactive){
 
   const priceEl=document.createElement('div');
   priceEl.className='shop-price'+(owned?' owned':'');
-  if(skin.price===0 || owned){
-    priceEl.innerHTML = owned ? '✓ Owned' : 'Free';
+  if(skin.special){
+    priceEl.className='shop-price owned';
+    priceEl.textContent='✦ Exclusive';
+  }else if(owned){
+    priceEl.textContent='✓ Owned';
+  }else if(skin.winReq){
+    priceEl.textContent=`🏆 ${Math.min(myWins,skin.winReq)} / ${skin.winReq} wins`;
+  }else if(skin.price===0){
+    priceEl.textContent='Free';
   }else{
     priceEl.innerHTML = `<span class="mini-coin">$</span>${skin.price} coins`;
   }
@@ -4116,6 +4290,10 @@ function buildShopItem(skin, interactive){
     btn.className='equip';
     btn.textContent='EQUIP';
     btn.onclick = ()=> equipSkin(skin.id);
+  }else if(skin.winReq){
+    btn.className='buy';
+    btn.textContent = interactive ? 'LOCKED' : 'SIGN IN';
+    btn.disabled = true;
   }else if(skin.price===0){
     btn.className='equip';
     btn.textContent='GET';
@@ -4139,11 +4317,16 @@ async function buySkin(skinId){
     showToast('Sign in to buy skins');
     return;
   }
-  const skin=findSkin(skinId);
-  if(!skin) return;
+  const skin=SKINS.find(s=>s.id===skinId);
+  if(!skin || !isSkinVisible(skin)) return;
 
-  if(userProfile.ownedSkins[skinId]){
+  if(isSkinOwned(skin)){
     equipSkin(skinId);
+    return;
+  }
+  if(skin.special) return;
+  if(skin.winReq){
+    showToast(`Win ${skin.winReq} games to unlock ${skin.name}`);
     return;
   }
   if(userProfile.coins < skin.price){
@@ -4171,7 +4354,8 @@ async function equipSkin(skinId){
     showToast('Sign in to equip skins');
     return;
   }
-  if(!userProfile.ownedSkins[skinId]) return;
+  const skinToEquip=SKINS.find(s=>s.id===skinId);
+  if(!skinToEquip || !isSkinOwned(skinToEquip)) return;
 
   userProfile.equippedSkin=skinId;
 
@@ -4193,7 +4377,11 @@ async function equipSkin(skinId){
 
 function getMyEquippedSkin(){
   if(isGuest || !userProfile) return 'classic';
-  return userProfile.equippedSkin || 'classic';
+  const id = userProfile.equippedSkin || 'classic';
+  const s = SKINS.find(x=>x.id===id);
+  // falls back to classic if the skin no longer exists or isn't unlocked for this account
+  if(!s || !(s.id==='classic' || isSkinOwned(s))) return 'classic';
+  return id;
 }
 
 
@@ -5275,20 +5463,10 @@ function renderSpectatorBoard(){
 
       const p=st.board[r]?st.board[r][c]:null;
       if(p&&PIECE_FILES[p]){
-        const img=document.createElement('img');
-        img.className='spectate-piece';
-        img.src=pieceUrl(p);
-        img.alt=p;
-        img.draggable=false;
-
         const pc=colorOf(p);
         const skinId=spectatorSkins[pc]||'classic';
         const skin=findSkin(skinId);
-        if(skin.filter&&skin.filter!=='none'){
-          img.style.filter=skin.filter;
-        }
-
-        sq.appendChild(img);
+        sq.appendChild(makePieceEl(p,skin));
       }
 
       if(c===0){
@@ -5471,8 +5649,10 @@ async function awardWinCoins(){
     return;
   }
 
+  const winsBefore=userProfile.wins||0;
   userProfile.coins=(userProfile.coins||0)+WIN_REWARD;
-  userProfile.wins=(userProfile.wins||0)+1;
+  userProfile.wins=winsBefore+1;
+  const unlockedNow=SKINS.filter(s=>s.winReq && winsBefore<s.winReq && userProfile.wins>=s.winReq).map(s=>s.name);
 
   try{
     await fbPatch(`users/${currentUser.uid}`,{
@@ -5482,7 +5662,8 @@ async function awardWinCoins(){
     updatePlayerNameDisplay();
     updateAccountButton();
     renderAccountInfo();
-    showToast(`🏆 +${WIN_REWARD} coins! (${userProfile.wins} total wins)`, 3500);
+    showToast(`🏆 +${WIN_REWARD} coins! (${userProfile.wins} total wins)`
+      + (unlockedNow.length ? ` · 🎉 Unlocked ${unlockedNow.join(', ')}!` : ''), unlockedNow.length?5000:3500);
   }catch(e){}
 }
 
@@ -5854,7 +6035,7 @@ function renderBoard(){
         const pc=colorOf(piece);
         const skinId=currentRoomSkins[pc]||'classic';
         const skin=findSkin(skinId);
-        sq.appendChild(makePieceEl(piece,skin.filter));
+        sq.appendChild(makePieceEl(piece,skin));
       }
 
       if(ci===0){
