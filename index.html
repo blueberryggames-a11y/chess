@@ -2756,6 +2756,7 @@ input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 20%,transparent)}
     <button class="ghost" onclick="emailInvite()">✉ Email</button>
     <button class="ghost" onclick="offerDraw()">½ Draw</button>
     <button class="ghost" onclick="resignGame()">Resign</button>
+    <button class="ghost" id="admin-bypass-btn" onclick="toggleAdminBypass()" style="display:none;">Admin Bypass: Off</button>
     <button class="ghost" onclick="leaveGame()">Leave</button>
   </div>
 
@@ -5288,6 +5289,8 @@ function startGame(){
   drawOfferPending=false;
   roomCleanedUp=false;
   coinsAwardedThisGame=false;
+  adminBypassOn=false;
+  refreshAdminBypassBtn();
 
   if(gameEndReturnTimer){ clearInterval(gameEndReturnTimer); gameEndReturnTimer=null; }
   if(publicPollTimer){ clearInterval(publicPollTimer); publicPollTimer=null; }
@@ -6116,6 +6119,54 @@ let selected=null;
 let legalNow=[];
 let pendingPromo=null;
 
+/* ============================================================
+   ADMIN BYPASS (only for accounts in SPECIAL_EMAILS)
+   Lets you move your own pieces to any square, ignoring chess rules.
+============================================================ */
+
+let adminBypassOn=false;
+
+function adminBypassActive(){
+  return adminBypassOn && isSpecialUser();
+}
+
+function refreshAdminBypassBtn(){
+  const btn=document.getElementById('admin-bypass-btn');
+  if(!btn) return;
+  const allowed=isSpecialUser();
+  btn.style.display=allowed?'':'none';
+  if(!allowed) adminBypassOn=false;
+  btn.textContent='Admin Bypass: '+(adminBypassOn?'On':'Off');
+  btn.style.background=adminBypassOn?'var(--gold-dim)':'';
+}
+
+function toggleAdminBypass(){
+  if(!isSpecialUser()) return;
+  adminBypassOn=!adminBypassOn;
+  selected=null;
+  legalNow=[];
+  refreshAdminBypassBtn();
+  renderBoard();
+}
+
+// Real legal moves for the piece, plus a bypass move to every other square
+// that doesn't hold one of your own pieces.
+function movesForSelection(r,c){
+  const real=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
+  if(!adminBypassActive()) return real;
+  const out=real.slice();
+  for(let tr=0;tr<8;tr++){
+    for(let tc=0;tc<8;tc++){
+      if(tr===r&&tc===c) continue;
+      const t=G.board[tr][tc];
+      if(t&&colorOf(t)===myColor) continue;
+      if(real.some(m=>m.tr===tr&&m.tc===tc)) continue;
+      out.push({fr:r,fc:c,tr,tc,bypass:true});
+    }
+  }
+  return out;
+}
+
 
 /* ============================================================
    EXECUTE MOVE
@@ -6136,7 +6187,12 @@ function executeMove(move,local){
     !!m.isEnPassant===!!move.isEnPassant&&
     (m.castleSide||null)===(move.castleSide||null)
   );
-  if(!valid) return;
+  if(!valid){
+    // Illegal move: only allowed via admin bypass (locally if enabled, or flagged by an admin's client)
+    const allowBypass=local?(adminBypassActive()&&!!move.bypass):!!move.bypass;
+    if(!allowBypass) return;
+  }
+  const usedBypass=!valid;
 
   const note=toSAN(G.board,move,G.turn,G.castling,G.enPassant);
   const isCapture=!!G.board[move.tr][move.tc]||move.isEnPassant;
@@ -6177,7 +6233,8 @@ function executeMove(move,local){
       promo:move.promo||null,
       isEnPassant:!!move.isEnPassant,
       castleSide:move.castleSide||null,
-      color:movedColor
+      color:movedColor,
+      bypass:usedBypass
     });
   }
 
@@ -6219,7 +6276,7 @@ function handleSquareClick(r,c){
 
     if(mv){
       if(G.board[mv.fr][mv.fc]?.toLowerCase()==='p'&&(mv.tr===0||mv.tr===7)){
-        pendingPromo={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc,isEnPassant:mv.isEnPassant};
+        pendingPromo={fr:mv.fr,fc:mv.fc,tr:mv.tr,tc:mv.tc,isEnPassant:mv.isEnPassant,bypass:mv.bypass};
         showPromoModal();
         return;
       }
@@ -6229,7 +6286,7 @@ function handleSquareClick(r,c){
 
     if(p&&colorOf(p)===myColor){
       selected=[r,c];
-      legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
+      legalNow=movesForSelection(r,c);
       renderBoard();
       return;
     }
@@ -6242,7 +6299,7 @@ function handleSquareClick(r,c){
 
   if(p&&colorOf(p)===myColor){
     selected=[r,c];
-    legalNow=legalMoves(G.board,G.turn,G.castling,G.enPassant).filter(m=>m.fr===r&&m.fc===c);
+    legalNow=movesForSelection(r,c);
     renderBoard();
   }
 }
